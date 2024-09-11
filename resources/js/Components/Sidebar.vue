@@ -25,7 +25,7 @@
                             </button>
                         </div>
                         <div class="flex-shrink-0 flex items-center px-4">
-                            <img class="h-8 w-auto" src="/pakib.svg" alt="Workflow">
+                            <img class="h-8 w-auto" src="/assets/logo-2.svg" alt="Workflow">
                         </div>
                         <div class="mt-5 flex-1 h-0 overflow-y-auto">
                             <nav class="px-2 space-y-1">
@@ -76,7 +76,7 @@
                 <div class="flex flex-col w-64">
                     <div class="flex flex-col flex-grow pb-4 overflow-y-auto">
                         <div class="md:hidden flex items-center flex-shrink-0 px-4">
-                            <img class="h-8 w-auto" src="/icon.png" alt="Workflow">
+                            <img class="h-8 w-auto" src="/assets/logo-2.svg" alt="Workflow">
                         </div>
                         <div class="mt-5 flex-1 flex flex-col">
                             <nav class="flex-1 px-2 space-y-1">
@@ -189,7 +189,7 @@ const navigationItems2 = [
     { name: 'Kategori', href: '/admin/kategori', icon: 'tabler:category-plus' },
     { name: 'Pemasukan', href: '/admin/pemasukan', icon: 'uil:money-withdraw' },
     { name: 'Pengeluaran', href: '/admin/pengeluaran', icon: 'uil:money-insert' },
-    { name: 'Pengguna', href: '/admin/pengguna', icon: 'tdesign:user' },
+    { name: 'Pengguna', href: '/admin/users', icon: 'tdesign:user' },
     { name: 'Laporan', href: '/admin/laporan', icon: 'mdi:report-box-outline' },
 ];
 
