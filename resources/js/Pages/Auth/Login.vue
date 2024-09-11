@@ -44,11 +44,12 @@ const submit = () => {
                 <TextInput
                     id="email"
                     type="email"
-                    class="mt-1 block w-full"
+                    class="mt-2 block w-full"
                     v-model="form.email"
                     required
                     autofocus
                     autocomplete="username"
+                    placeholder="Masukkan Email"
                 />
 
                 <InputError class="mt-2" :message="form.errors.email" />
@@ -60,10 +61,11 @@ const submit = () => {
                 <TextInput
                     id="password"
                     type="password"
-                    class="mt-1 block w-full"
+                    class="mt-2 block w-full"
                     v-model="form.password"
                     required
                     autocomplete="current-password"
+                    placeholder="Masukkan Password"
                 />
 
                 <InputError class="mt-2" :message="form.errors.password" />
