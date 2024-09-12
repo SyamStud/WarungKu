@@ -30,6 +30,7 @@ import SelectContent from '@/Components/ui/select/SelectContent.vue';
 import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
 import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
+import TableHead from '@/Components/ui/table/TableHead.vue';
 
 const Toast = useToast();
 
@@ -37,14 +38,20 @@ const Toast = useToast();
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
+const isPhotoModalOpen = ref(false);
 const selectedUser = ref(null);
 const isEdit = ref(false);
 
 const openAddModal = () => {
     form.setValues({
-        nama: '',
+        name: '',
         email: '',
-        telepon: '',
+        password: '',
+        phone: '',
+        nik: '',
+        address: '',
+        photo: '',
+        role: '',
     });
     isEdit.value = false;
     isAddModalOpen.value = true;
@@ -55,13 +62,12 @@ const openEditModal = (user) => {
     selectedUser.value = user;
     form.resetForm();
     form.setValues({
-        nama: user.nama,
+        name: user.name,
         email: user.email,
-        telepon: user.telepon || '',
-        no_kk: user.no_kk || '',
-        alamat_domisili: user.alamat_domisili || '',
-        status: user.status || '',
-        role: user.roles || '',
+        phone: user.phone,
+        nik: user.nik,
+        address: user.address,
+        role: user.roles,
     });
     isEditModalOpen.value = true;
 };
@@ -71,22 +77,31 @@ const openDeleteModal = (user) => {
     isDeleteModalOpen.value = true;
 };
 
+const openPhotoModal = (user) => {
+    selectedUser.value = user;
+    isPhotoModalOpen.value = true;
+};
+
 // VALIDATION FRONT END FORM
 const addFormSchema = toTypedSchema(z.object({
-    nama: z.string().min(2).max(50),
+    nik: z.number().optional(),
+    name: z.string().min(2).max(50),
     email: z.string().email(),
-    password: z.string().min(8).max(20),
-    foto: z.any().optional(),
+    password: z.string().min(6).max(50),
+    phone: z.number().optional(),
+    role: z.string().min(2).max(50),
+    photo: z.any().nullable(),
+    address: z.string().optional(),
 }));
 
 const editFormSchema = toTypedSchema(z.object({
-    nama: z.string().min(2).max(50),
+    nik: z.string().optional(),
+    name: z.string().min(2).max(50),
     email: z.string().email(),
-    telepon: z.string().min(10).max(15),
-    no_kk: z.string().min(16),
-    alamat_domisili: z.string().min(10).max(255),
-    status: z.string().min(2).max(50),
+    phone: z.string().optional(),
     role: z.string().min(2).max(50),
+    photo: z.any().nullable(),
+    address: z.string().optional(),
 }));
 
 const form = useForm({
@@ -101,22 +116,27 @@ const onSubmit = form.handleSubmit(async (values) => {
         isLoading.value = true;
         let response;
         if (isEdit.value) {
-            response = await axios.put(`/admin/pengguna/${selectedUser.value.id}`, values);
+            console.log(values);
+            response = await axios.post(`/admin/users/${selectedUser.value.id}?_method=PUT`, values, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
         } else {
-            response = await axios.post('/admin/pengguna', values, {
+            response = await axios.post('/admin/users', values, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
         }
 
         if (response.data.status === 'error') {
+            isLoading.value = false;
+
             return Toast.fire({
                 icon: "error",
-                title: "pengguna gagal ditambahkan",
+                title: response.data.message,
             });
         } else {
             Toast.fire({
                 icon: "success",
-                title: "pengguna berhasil ditambahkan",
+                title: response.data.message,
             });
         }
 
@@ -132,7 +152,7 @@ const onSubmit = form.handleSubmit(async (values) => {
 const deleteUser = async () => {
     if (selectedUser.value) {
         try {
-            const response = await axios.post(`/admin/pengguna/${selectedUser.value.id}?_method=DELETE`);
+            const response = await axios.post(`/admin/users/${selectedUser.value.id}?_method=DELETE`);
             if (response.data.status === 'error') {
                 return Toast.fire({
                     icon: "error",
@@ -157,22 +177,19 @@ const deleteUser = async () => {
 // FILE UPLOAD
 const onFileChange = (event) => {
     const file = event.target.files[0];
-    form.setValues({ foto: file });
+    form.setValues({ photo: file });
     console.log('Selected file:', file);
 };
 
 /* TABLE */
 const columns = [
-    { accessorKey: 'nama', header: 'Nama' },
+    { accessorKey: 'nik', header: 'NIK' },
+    { accessorKey: 'name', header: 'Nama' },
     { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'telepon', header: 'Telepon' },
-    { accessorKey: 'no_kk', header: 'Nomor KK' },
-    { accessorKey: 'alamat_domisili', header: 'Alamat Domisili' },
+    { accessorKey: 'phone', header: 'Telepon' },
+    { accessorKey: 'address', header: 'Alamat' },
     { accessorKey: 'roles', header: 'Role' },
-    { accessorKey: 'status', header: 'Status' },
 ];
-
-console.log('columns:', columns);
 
 const data = ref([]);
 const globalFilter = ref('');
@@ -262,10 +279,10 @@ const handlePageChange = (newPageIndex) => {
 
     <AdminLayout>
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Pengguna</h1>
-        <div class="flex justify-between">
-            <Button @click="openAddModal()" class="mt-4 bg-green-700 hover:bg-green-800">Tambah Pengguna</Button>
-            <div class="flex items-center py-4 w-72">
-                <Input placeholder="Cari Pengguna..." v-model="globalFilter" class="max-w-sm"
+        <div class="flex flex-col md:flex-row justify-between">
+            <Button @click="openAddModal()" class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah Pengguna</Button>
+            <div class="flex items-center py-4 w-full md:w-72">
+                <Input placeholder="Cari Pengguna..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"
                     @input="debouncedFetchData" />
             </div>
         </div>
@@ -274,7 +291,9 @@ const handlePageChange = (newPageIndex) => {
             <!-- Table  -->
             <div class="rounded-md border">
                 <Table>
-                    <TableHeaderWrapper :columns="columns" :sorting="sorting" @sort="sortBy" />
+                    <TableHeaderWrapper :columns="columns" :sorting="sorting" @sort="sortBy">
+                        <TableHead>Foto</TableHead>
+                    </TableHeaderWrapper>
 
                     <TableBody>
                         <TableRow v-for="(row, index) in table.getRowModel().rows" :key="row.id">
@@ -288,10 +307,16 @@ const handlePageChange = (newPageIndex) => {
                                 {{ cell.getValue() }}
                             </TableCell>
 
+                            <TableCell>
+                                <div class="flex gap-2">
+                                    <Button @click="() => openPhotoModal(row.original)">Lihat</Button>
+                                </div>
+                            </TableCell>
+
                             <!-- Kolom untuk aksi -->
                             <TableCell>
                                 <div class="flex gap-2">
-                                    <Button @click="() => openEditModal(row.original)">Edit</Button>
+                                    <Button @click="() => openEditModal(row.original)">Ubah</Button>
                                     <Button @click="() => openDeleteModal(row.original)">Hapus</Button>
                                 </div>
                             </TableCell>
@@ -304,12 +329,60 @@ const handlePageChange = (newPageIndex) => {
             <PaginationWrapper :pagination="pagination" :onPageChange="handlePageChange" />
 
             <!-- Add Modal -->
-            <DialogWrapper v-model:open="isAddModalOpen" title="Tambah Pengguna"
-                desc="Pengguna harus melengkapi data sendiri.">
+            <DialogWrapper v-model:open="isAddModalOpen" title="Tambah Pengguna" desc="Tambah pengguna">
                 <form @submit="onSubmit" enctype="multipart/form-data" class="space-y-4">
-                    <FormInput name="nama" label="Nama" type="text" />
-                    <FormInput name="email" label="Email" type="text" />
-                    <FormInput name="password" label="Password" type="password" />
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <FormInput name="nik" label="NIK" type="number" />
+                        <FormInput name="name" label="Nama" type="text" />
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <FormInput name="email" label="Email" type="text" />
+                        <FormInput name="password" label="Password" type="password" />
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <FormInput name="phone" label="Telepon" type="number" />
+                        <div class="w-full">
+                            <FormField v-slot="{ componentField }" name="role">
+                                <FormItem>
+                                    <FormLabel>Role</FormLabel>
+                                    <Select v-bind="componentField">
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih Role" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectItem value="cashier">
+                                                    Kasir
+                                                </SelectItem>
+                                                <SelectItem value="admin">
+                                                    Admin
+                                                </SelectItem>
+                                                <SelectItem value="super-admin">
+                                                    Super Admin
+                                                </SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            </FormField>
+                        </div>
+                    </div>
+                    <FormInput name="photo" label="Foto" type="file">
+                        <Input class="w-full" type="file" name="photo" @change="onFileChange" />
+                    </FormInput>
+                    <FormField v-slot="{ componentField }" name="address">
+                        <FormItem>
+                            <FormLabel>Alamat</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="Masukkan alamat saat ini." class="resize-none"
+                                    v-bind="componentField" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    </FormField>
                     <DialogFooter>
                         <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">
                             {{ isLoading ? 'Mohon tunggu ...' : 'Tambah Pengguna' }}
@@ -320,82 +393,61 @@ const handlePageChange = (newPageIndex) => {
 
             <!-- Edit Modal -->
             <DialogWrapper v-model:open="isEditModalOpen" title="Ubah Pengguna" desc="Ubah pengguna">
-                <form @submit="onSubmit">
-                    <div class="grid gap-4 py-4">
-                        <div class="flex gap-4">
-                            <FormInput name="nama" label="Nama" placeholder="shadcn" type="text" />
-                            <FormInput name="email" label="Email" placeholder="shadcn" type="text" />
-                        </div>
-                        <div class="flex gap-4">
-                            <FormInput name="telepon" label="Nomor Telepon" placeholder="shadcn" type="text" />
-                            <FormInput name="no_kk" label="Nomor Kartu Keluarga" placeholder="shadcn" type="text" />
-                        </div>
-                        <div class="flex gap-4">
-                            <div class="w-full">
-                                <FormField v-slot="{ componentField }" name="status">
-                                    <FormItem>
-                                        <FormLabel>Status</FormLabel>
-                                        <Select v-bind="componentField">
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih Status" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectItem value="aktif">
-                                                        Aktif
-                                                    </SelectItem>
-                                                    <SelectItem value="nonaktif">
-                                                        Nonaktif
-                                                    </SelectItem>
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                </FormField>
-                            </div>
-                            <div class="w-full">
-                                <FormField v-slot="{ componentField }" name="role">
-                                    <FormItem>
-                                        <FormLabel>Role</FormLabel>
-                                        <Select v-bind="componentField">
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Pilih Role" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    <SelectItem value="user">
-                                                        User
-                                                    </SelectItem>
-                                                    <SelectItem value="admin">
-                                                        Admin
-                                                    </SelectItem>
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                </FormField>
-                            </div>
-                        </div>
-                        <FormField v-slot="{ componentField }" name="alamat_domisili">
-                            <FormItem>
-                                <FormLabel>Alamat Domisili</FormLabel>
-                                <FormControl>
-                                    <Textarea placeholder="Masukkan alamat saat ini." class="resize-none"
-                                        v-bind="componentField" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        </FormField>
+                <form @submit="onSubmit" enctype="multipart/form-data" class="space-y-4">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <FormInput name="nik" label="NIK" type="number" />
+                        <FormInput name="name" label="Nama" type="text" />
                     </div>
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <FormInput name="email" label="Email" type="text" />
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <FormInput name="phone" label="Telepon" type="number" />
+                        <div class="w-full">
+                            <FormField v-slot="{ componentField }" name="role">
+                                <FormItem>
+                                    <FormLabel>Role</FormLabel>
+                                    <Select v-bind="componentField">
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih Role" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectItem value="cashier">
+                                                    Kasir
+                                                </SelectItem>
+                                                <SelectItem value="admin">
+                                                    Admin
+                                                </SelectItem>
+                                                <SelectItem value="super-admin">
+                                                    Super Admin
+                                                </SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            </FormField>
+                        </div>
+                    </div>
+                    <FormInput name="photo" label="Foto" type="file">
+                        <Input class="w-full" type="file" name="photo" @change="onFileChange" />
+                    </FormInput>
+                    <FormField v-slot="{ componentField }" name="address">
+                        <FormItem>
+                            <FormLabel>Alamat</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="Masukkan alamat saat ini." class="resize-none"
+                                    v-bind="componentField" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    </FormField>
                     <DialogFooter>
-                        <Button type="submit">
-                            Simpan Perubahan
+                        <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">
+                            {{ isLoading ? 'Mohon tunggu ...' : 'Ubah Pengguna' }}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -406,6 +458,17 @@ const handlePageChange = (newPageIndex) => {
                 <DialogFooter>
                     <Button @click="isDeleteModalOpen = false" variant="outline">Batal</Button>
                     <Button @click="deleteUser" variant="destructive">Hapus</Button>
+                </DialogFooter>
+            </DialogWrapper>
+
+            <!-- Photo Modal -->
+            <DialogWrapper v-model:open="isPhotoModalOpen" title="Photo" desc="">
+                <div class="flex gap-2">
+                    <img :src="`http://127.0.0.1:8000/${selectedUser.photo}`"
+                        class="h-72 p-1 w-full rounded-xl border-dashed border-2">
+                </div>
+                <DialogFooter>
+                    <Button @click="isPhotoModalOpen = false" variant="outline">Tutup</Button>
                 </DialogFooter>
             </DialogWrapper>
         </div>
