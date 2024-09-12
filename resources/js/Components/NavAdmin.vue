@@ -44,7 +44,7 @@
                                 </button>
                             </div>
                             <div v-if="isProfileMenuOpen"
-                                class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                class="z-50 origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
                                 role="menu" aria-orientation="vertical" aria-labelledby="user-menu">
                                 <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                     role="menuitem">Your Profile</a>
@@ -60,9 +60,6 @@
                 </div>
             </div>
         </div>
-
-        <DeleteModal ref="deleteModal" title="Confirm Deletion" message="Are you sure you want to delete this item?"
-            @delete="handleDelete" />
     </nav>
 </template>
 
@@ -74,17 +71,4 @@ const isProfileMenuOpen = ref(false);
 const toggleProfileMenu = () => {
     isProfileMenuOpen.value = !isProfileMenuOpen.value;
 };
-
-// import DeleteModal from "@/Components/LogoutModal.vue";
-
-// const deleteModal = ref(null)
-
-// const showDeleteModal = () => {
-//     deleteModal.value.showModal()
-// }
-
-// const handleDelete = () => {
-//     // Perform delete operation
-//     console.log('Item deleted')
-// }
 </script>

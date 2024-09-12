@@ -1,11 +1,13 @@
 <?php
 
-use App\Http\Controllers\Admin\UserController;
 use Inertia\Inertia;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\CategoryController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 Route::get('/email/verify', function () {
@@ -41,6 +43,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::resource('/admin/users', UserController::class);
+    Route::resource('/admin/categories', CategoryController::class);
 });
 
 require __DIR__ . '/auth.php';

@@ -186,7 +186,7 @@ const navigationItems1 = [
 ];
 
 const navigationItems2 = [
-    { name: 'Kategori', href: '/admin/kategori', icon: 'tabler:category-plus' },
+    { name: 'Kategori', href: '/admin/categories', icon: 'tabler:category-plus' },
     { name: 'Pemasukan', href: '/admin/pemasukan', icon: 'uil:money-withdraw' },
     { name: 'Pengeluaran', href: '/admin/pengeluaran', icon: 'uil:money-insert' },
     { name: 'Pengguna', href: '/admin/users', icon: 'tdesign:user' },
