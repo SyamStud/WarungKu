@@ -272,9 +272,8 @@ const navigationItems1 = [
         type: 'dropdown',
         icon: 'tabler:shopping-cart-copy',
         children: [
-            { name: 'Daftar Transaksi', href: '/admin/transaction' },
+            { name: 'Daftar Transaksi', href: '/admin/transactions' },
             { name: 'Item Transaksi', href: '/admin/transaction-items' },
-            { name: 'Riwayat Transaksi', href: '/admin/transaction-history' }
         ]
     },
 ];

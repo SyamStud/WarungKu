@@ -8,7 +8,9 @@ use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CartItemController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\StockMovementController;
+use App\Http\Controllers\Admin\TransactionItemController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -22,3 +24,5 @@ Route::get('/stocks', [StockController::class, 'stockData']);
 Route::get('/stock-movements', [StockMovementController::class, 'stockMovementData']);
 Route::get('/carts', [CartController::class, 'cartData']);
 Route::get('/cart-items', [CartItemController::class, 'cartItemData']);
+Route::get('/transactions', [TransactionController::class, 'transactionData']);
+Route::get('/transaction-items', [TransactionItemController::class, 'transactionItemData']);

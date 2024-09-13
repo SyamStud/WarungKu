@@ -11,8 +11,10 @@ use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CartItemController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\StockMovementController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\Admin\TransactionItemController;
 
 Route::get('/email/verify', function () {
     return view('auth.verify-email');
@@ -55,6 +57,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('/admin/stock-movements', StockMovementController::class);
     Route::resource('/admin/carts', CartController::class);
     Route::resource('/admin/cart-items', CartItemController::class);
+    Route::resource('/admin/transactions', TransactionController::class);
+    Route::resource('/admin/transaction-items', TransactionItemController::class);
 });
 
 require __DIR__ . '/auth.php';

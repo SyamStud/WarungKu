@@ -14,46 +14,15 @@ import { DialogFooter } from '@/Components/ui/dialog';
 import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
-const Toast = useToast();
-
-/* MODAL */
-const isDeleteModalOpen = ref(false);
-const selectedCart = ref(null);
-
-const openDeleteModal = (cart) => {
-    selectedCart.value = cart;
-    isDeleteModalOpen.value = true;
-};
-
-const deleteCart = async () => {
-    if (selectedCart.value) {
-        try {
-            const response = await axios.post(`/admin/carts/${selectedCart.value.id}?_method=DELETE`);
-            if (response.data.status === 'error') {
-                return Toast.fire({
-                    icon: "error",
-                    title: response.data.message,
-                });
-            } else {
-                Toast.fire({
-                    icon: "success",
-                    title: response.data.message,
-                });
-            }
-
-            isDeleteModalOpen.value = false;
-            fetchData();
-        } catch (error) {
-            console.error('Error deleting cart:', error);
-        }
-    }
-};
+const Toast = useToast();;
 
 /* TABLE */
 const columns = [
-    { accessorKey: 'transaction_code', header: 'Kode Transaksi' },
-    { accessorKey: 'total_price', header: 'Total Belanja' },
-    { accessorKey: 'user', header: 'Kasir' },
+    { accessorKey: 'transaction', header: 'Kode Transaksi' },
+    { accessorKey: 'product', header: 'Produk' },
+    { accessorKey: 'quantity', header: 'Jumlah' },
+    { accessorKey: 'price', header: 'Harga Satuan' },
+    { accessorKey: 'total_price', header: 'Total Harga' },
 ];
 
 const data = ref([]);
@@ -93,7 +62,7 @@ const table = useVueTable({
 
 const fetchData = async () => {
     try {
-        const response = await axios.get('/api/carts', {
+        const response = await axios.get('/api/transaction-items', {
             params: {
                 search: globalFilter.value,
                 page: pagination.value.pageIndex + 1,
@@ -143,13 +112,13 @@ const handlePageChange = (newPageIndex) => {
 
 <template>
 
-    <Head title="Daftar Transaksi Sementara" />
+    <Head title="Daftar Item Transaksi" />
 
     <AdminLayout>
-        <h1 class="text-2xl font-semibold text-gray-900">Daftar Transaksi Sementara</h1>
+        <h1 class="text-2xl font-semibold text-gray-900">Daftar Item Transaksi</h1>
         <div class="flex flex-col md:flex-row justify-end">
             <div class="flex items-center py-4 w-full md:w-72">
-                <Input placeholder="Cari Transaksi Sementara..." v-model="globalFilter"
+                <Input placeholder="Cari Item Transaksi..." v-model="globalFilter"
                     class="w-full max-w-full md:max-w-sm" @input="debouncedFetchData" />
             </div>
         </div>
@@ -158,7 +127,7 @@ const handlePageChange = (newPageIndex) => {
             <!-- Table  -->
             <div class="rounded-md border">
                 <Table>
-                    <TableHeaderWrapper :columns="columns" :sorting="sorting" @sort="sortBy" />
+                    <TableHeaderWrapper :columns="columns" :sorting="sorting" @sort="sortBy" :showActions="false" />
 
                     <TableBody>
                         <TableRow v-for="(row, index) in table.getRowModel().rows" :key="row.id">
@@ -171,13 +140,6 @@ const handlePageChange = (newPageIndex) => {
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
                                 {{ cell.getValue() }}
                             </TableCell>
-
-                            <!-- Kolom untuk aksi -->
-                            <TableCell>
-                                <div class="flex gap-2">
-                                    <Button @click="() => openDeleteModal(row.original)">Hapus</Button>
-                                </div>
-                            </TableCell>
                         </TableRow>
                     </TableBody>
                 </Table>
@@ -185,14 +147,6 @@ const handlePageChange = (newPageIndex) => {
 
             <!-- Pagination -->
             <PaginationWrapper :pagination="pagination" :onPageChange="handlePageChange" />
-
-            <!-- Delete Modal -->
-            <DialogWrapper v-model:open="isDeleteModalOpen" title="Hapus Transaksi Sementara" desc="Hapus transaksi Sementara">
-                <DialogFooter>
-                    <Button @click="isDeleteModalOpen = false" variant="outline">Batal</Button>
-                    <Button @click="deleteCart" variant="destructive">Hapus</Button>
-                </DialogFooter>
-            </DialogWrapper>
         </div>
     </AdminLayout>
 </template>
