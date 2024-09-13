@@ -12,6 +12,8 @@ class Category extends Model
 {
     use HasSlug, HasFactory;
 
+    protected $fillable = ['name', 'slug'];
+
     public function setNameAttribute($value)
     {
         $this->attributes['name'] = $value;
@@ -23,5 +25,10 @@ class Category extends Model
         return SlugOptions::create()
             ->generateSlugsFrom('name')
             ->saveSlugsTo('slug');
+    }
+
+    public function products()
+    {
+        return $this->hasMany(Product::class);
     }
 }

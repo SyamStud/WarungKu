@@ -187,8 +187,8 @@ const navigationItems1 = [
 
 const navigationItems2 = [
     { name: 'Kategori', href: '/admin/categories', icon: 'tabler:category-plus' },
-    { name: 'Pemasukan', href: '/admin/pemasukan', icon: 'uil:money-withdraw' },
-    { name: 'Pengeluaran', href: '/admin/pengeluaran', icon: 'uil:money-insert' },
+    { name: 'Produk', href: '/admin/products', icon: 'icon-park-outline:ad-product' },
+    { name: 'Stok', href: '/admin/stocks', icon: 'gridicons:product' },
     { name: 'Pengguna', href: '/admin/users', icon: 'tdesign:user' },
     { name: 'Laporan', href: '/admin/laporan', icon: 'mdi:report-box-outline' },
 ];

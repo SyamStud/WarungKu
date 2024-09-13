@@ -14,8 +14,8 @@
             <FormLabel>{{ label }}</FormLabel>
             <FormControl>
                 <div class="flex gap-2">
-                    <Input :name="name" class="w-full" :type="type" :placeholder="placeholder" v-bind="componentField"
-                        :readonly="disable == true || disable == true" />
+                    <Input :required="required" :name="name" class="w-full" :type="type" :placeholder="placeholder"
+                        v-bind="componentField" :readonly="disable == true || disable == true" />
                     <slot />
                 </div>
             </FormControl>
@@ -46,6 +46,10 @@ const props = defineProps({
         default: ''
     },
     disable: {
+        type: Boolean,
+        default: false
+    },
+    required: {
         type: Boolean,
         default: false
     }
