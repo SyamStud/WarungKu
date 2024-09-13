@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Stock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
@@ -49,7 +50,23 @@ class ProductController extends Controller
             ]);
         }
 
-        $product = Product::create($request->all());
+        $product = Product::create($request->except('stock'));
+
+        $stock = new Stock();
+        $stock->product_id = $product->id;
+        $stock->quantity = $request->stock ? $request->stock : 0;
+
+        if ($request->stock == 0) {
+            $stock->status = 'not-set';
+        } else if ($request->stock < 10) {
+            $stock->status = 'limit-stock';
+        } else if ($request->stock >= 10) {
+            $stock->status = 'in-stock';
+        } else {
+            $stock->status = 'out-of-stock';
+        }
+
+        $stock->save();
 
         return response()->json([
             'message' => 'Produk berhasil ditambahkan',
@@ -126,7 +143,7 @@ class ProductController extends Controller
      */
     public function productData(Request $request)
     {
-        $query = Product::query()->with('category');
+        $query = Product::query()->with('category')->with('stock');
 
         // Handle global search
         if ($request->has('search')) {
@@ -162,6 +179,7 @@ class ProductController extends Controller
                 'cost' => $product->cost ? $product->cost : '-',
                 'description' => $product->description ? $product->description : '-',
                 'status' => $product->status,
+                'stock' => $product->stock ? $product->stock->quantity : 0,
             ];
         });
 

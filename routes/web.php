@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CategoryController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -47,6 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('/admin/users', UserController::class);
     Route::resource('/admin/categories', CategoryController::class);
     Route::resource('/admin/products', ProductController::class);
+    Route::resource('/admin/stocks', StockController::class);
 });
 
 require __DIR__ . '/auth.php';

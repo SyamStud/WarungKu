@@ -54,6 +54,7 @@ const openAddModal = () => {
         cost: '',
         description: '',
         status: '',
+        stock: '',
     });
     isEdit.value = false;
     isAddModalOpen.value = true;
@@ -92,23 +93,24 @@ const openPhotoModal = (product) => {
 
 // VALIDATION FRONT END FORM
 const addFormSchema = toTypedSchema(z.object({
-    sku: z.string().min(2).max(50),
-    name: z.string().min(2).max(50),
-    category_id: z.number().min(1).max(50),
+    sku: z.string().min(2),
+    name: z.string().min(2),
+    category_id: z.number().min(1),
     price: z.number(),
     cost: z.number(),
     description: z.string().min(1),
-    status: z.string().min(2).max(50),
+    status: z.string().min(2),
+    stock: z.number(),
 }));
 
 const editFormSchema = toTypedSchema(z.object({
-    sku: z.string().min(2).max(50),
-    name: z.string().min(2).max(50),
-    category_id: z.number().min(1).max(50),
+    sku: z.string().min(2),
+    name: z.string().min(2),
+    category_id: z.number().min(1),
     price: z.number(),
     cost: z.number(),
     description: z.string().min(2),
-    status: z.string().min(2).max(50),
+    status: z.string().min(2),
 }));
 
 const form = useForm({
@@ -426,6 +428,7 @@ const generateSKU = async () => {
                                 </FormItem>
                             </FormField>
                         </div>
+                        <FormInput name="stock" label="Stok" type="number" />
                     </div>
                     <FormField v-slot="{ componentField }" name="description">
                         <FormItem>
