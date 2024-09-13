@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\StockMovement;
+use App\Models\Cart;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class StockMovementController extends Controller
+class CartController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return Inertia::render('Admin/StockMovements');
+        return Inertia::render('Admin/Cart');
     }
 
     /**
@@ -36,7 +36,7 @@ class StockMovementController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(StockMovement $stockMovement)
+    public function show(Cart $cart)
     {
         //
     }
@@ -44,7 +44,7 @@ class StockMovementController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(StockMovement $stockMovement)
+    public function edit(Cart $cart)
     {
         //
     }
@@ -52,7 +52,7 @@ class StockMovementController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, StockMovement $stockMovement)
+    public function update(Request $request, Cart $cart)
     {
         //
     }
@@ -60,24 +60,30 @@ class StockMovementController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(StockMovement $stockMovement)
+    public function destroy(Cart $cart)
     {
-        //
+        $cart->delete();
+
+        return response()->json([
+            'message' => 'Cart deleted successfully',
+            'status' => 'success',
+        ]);
     }
 
     /**
-     * Get all stocks data.
+     * Get all carts data.
      */
-    public function stockMovementData(Request $request)
+    public function cartData(Request $request)
     {
-        $query = StockMovement::query()->with('product')->orderBy('created_at', 'desc');
+        $query = Cart::query()->with('user');
 
         // Handle global search
         if ($request->has('search')) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('quantity', 'like', "%{$searchTerm}%")
-                    ->orWhereHas('product', function ($q) use ($searchTerm) {
+                $q->where('transaction_code', 'like', "%{$searchTerm}%")
+                    ->orWhere('total_price', 'like', "%{$searchTerm}%")
+                    ->orWhereHas('user', function ($q) use ($searchTerm) {
                         $q->where('name', 'like', "%{$searchTerm}%");
                     });
             });
@@ -92,31 +98,30 @@ class StockMovementController extends Controller
 
         // Handle pagination
         $perPage = $request->input('per_page', 10);
-        $stocks = $query->paginate($perPage);
+        $carts = $query->paginate($perPage);
 
 
         // Calculate 'from' and 'to'
-        $from = ($stocks->currentPage() - 1) * $stocks->perPage() + 1;
-        $to = min($from + $stocks->count() - 1, $stocks->total());
+        $from = ($carts->currentPage() - 1) * $carts->perPage() + 1;
+        $to = min($from + $carts->count() - 1, $carts->total());
 
-        $transformedStocks = $stocks->map(function ($stock) {
+        $transformedCarts = $carts->map(function ($cart) {
             return [
-                'id' => $stock->id,
-                'product' => $stock->product->name,
-                'quantity' => $stock->quantity,
-                'type' => $stock->type,
-                'reference' => $stock->reference,
-                'created_at' => $stock->created_at->format('d/m/Y H:i:s'),
+                'id' => $cart->id,
+                'transaction_code' => $cart->transaction_code,
+                'total_price' => $cart->total_price,
+                'user' => $cart->user_id ? $cart->user->name : '-',
+                'created_at' => $cart->created_at->format('d F Y H:i'),
             ];
         });
 
         return response()->json([
-            'data' => $transformedStocks,
+            'data' => $transformedCarts,
             'meta' => [
-                'current_page' => $stocks->currentPage(),
-                'last_page' => $stocks->lastPage(),
-                'per_page' => $stocks->perPage(),
-                'total' => $stocks->total(),
+                'current_page' => $carts->currentPage(),
+                'last_page' => $carts->lastPage(),
+                'per_page' => $carts->perPage(),
+                'total' => $carts->total(),
                 'from' => $from,
                 'to' => $to,
             ],

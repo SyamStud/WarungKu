@@ -5,9 +5,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\CartController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\CartItemController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\StockMovementController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -51,6 +53,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('/admin/products', ProductController::class);
     Route::resource('/admin/stocks', StockController::class);
     Route::resource('/admin/stock-movements', StockMovementController::class);
+    Route::resource('/admin/carts', CartController::class);
+    Route::resource('/admin/cart-items', CartItemController::class);
 });
 
 require __DIR__ . '/auth.php';

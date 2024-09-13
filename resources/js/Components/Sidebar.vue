@@ -115,14 +115,34 @@
                                     <p class="text-sm font-semibold text-gray-500">Transaksi</p>
                                     <hr class="mt-1 flex-grow ml-2 border-gray-300">
                                 </div>
-                                <Link v-for="item in currentNavigationItems1" :key="item.name" :href="item.href"
-                                    :class="[item.current ? 'ps-4 bg-gray-100 text-gray-900' : 'ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
-                                <Icon :icon="item.icon" :class="[
-                                    item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500',
-                                    'mr-3 flex-shrink-0 h-6 w-6'
-                                ]" />
-                                {{ item.name }}
-                                </Link>
+                                <template v-for="item in currentNavigationItems1" :key="item.name">
+                                    <Link v-if="item.type !== 'dropdown'" :href="item.href"
+                                        :class="[item.current ? 'ps-4 bg-gray-100 text-gray-900' : 'ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+                                    <Icon :icon="item.icon"
+                                        :class="[item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500', 'mr-3 flex-shrink-0 h-6 w-6']" />
+                                    {{ item.name }}
+                                    </Link>
+
+                                    <DropdownMenu v-else>
+                                        <DropdownMenuTrigger class="w-full">
+                                            <Button
+                                                :class="[item.current ? 'ps-4 bg-gray-100 hover:bg-gray-100 text-gray-900' : 'bg-white ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'w-full justify-start group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+                                                <Icon :icon="item.icon"
+                                                    :class="[item.current ? 'text-gray-500 group-hover:text-gray-500' : 'text-gray-400 group-hover:text-gray-500', 'mr-3 flex-shrink-0 h-6 w-6']" />
+                                                {{ item.name }}
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent class="w-72 md:w-56">
+                                            <DropdownMenuLabel>{{ item.name }}</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem v-for="subItem in item.children" :key="subItem.name"
+                                                class="p-0">
+                                                <Link class="w-full h-full p-2" :href="subItem.href">{{ subItem.name }}
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </template>
                                 <div class="py-2 px-2 flex items-center">
                                     <p class="text-sm font-semibold text-gray-500">Data Master</p>
                                     <hr class="mt-1 flex-grow ml-2 border-gray-300">
@@ -238,17 +258,26 @@ const currentPath = ref('');
 // const windowLocation = window.location.pathname;
 
 const navigationItems1 = [
-    { name: 'Transaksi', href: '/admin/tagihan', icon: 'mingcute:bill-2-line' },
-    { name: 'Riwayat Tagihan', href: '/admin/riwayat-tagihan', icon: 'mingcute:bill-2-line' },
-    { name: 'Riwayat Pembayaran', href: '/admin/riwayat-pembayaran', icon: 'mingcute:bill-line' },
+    {
+        name: 'Transaksi Sementara',
+        type: 'dropdown',
+        icon: 'tabler:shopping-cart-pause',
+        children: [
+            { name: 'Daftar transaksi Sementara', href: '/admin/carts' },
+            { name: 'Item transaksi Sementara', href: '/admin/cart-items' },
+        ]
+    },
+    {
+        name: 'Transaksi',
+        type: 'dropdown',
+        icon: 'tabler:shopping-cart-copy',
+        children: [
+            { name: 'Daftar Transaksi', href: '/admin/transaction' },
+            { name: 'Item Transaksi', href: '/admin/transaction-items' },
+            { name: 'Riwayat Transaksi', href: '/admin/transaction-history' }
+        ]
+    },
 ];
-
-// const navigationItems2 = [
-//     { name: 'Kategori', href: '/admin/categories', icon: 'tabler:category-plus' },
-//     { name: 'Produk', href: '/admin/products', icon: 'icon-park-outline:ad-product' },
-//     { name: 'Pengguna', href: '/admin/users', icon: 'tdesign:user' },
-//     { name: 'Laporan', href: '/admin/laporan', icon: 'mdi:report-box-outline' },
-// ];
 
 const currentNavigationItems1 = computed(() => {
     return navigationItems1.map(item => ({
@@ -256,13 +285,6 @@ const currentNavigationItems1 = computed(() => {
         current: currentPath.value === item.href
     }));
 });
-
-// const currentNavigationItems2 = computed(() => {
-//     return navigationItems2.map(item => ({
-//         ...item,
-//         current: currentPath.value === item.href
-//     }));
-// });
 
 const navigationItems2 = [
     { name: 'Kategori', href: '/admin/categories', icon: 'tabler:category-plus' },
