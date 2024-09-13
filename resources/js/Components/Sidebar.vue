@@ -55,14 +55,35 @@
                                     <p class="text-sm font-semibold text-gray-500">Data Master</p>
                                     <hr class="mt-1 flex-grow ml-2 border-gray-300">
                                 </div>
-                                <Link v-for="item in currentNavigationItems2" :key="item.name" :href="item.href"
-                                    :class="[item.current ? 'ps-4 bg-gray-100 text-gray-900' : 'ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
-                                <Icon :icon="item.icon" :class="[
-                                    item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500',
-                                    'mr-3 flex-shrink-0 h-6 w-6'
-                                ]" />
-                                {{ item.name }}
-                                </Link>
+
+                                <template v-for="item in currentNavigationItems2" :key="item.name">
+                                    <Link v-if="item.type !== 'dropdown'" :href="item.href"
+                                        :class="[item.current ? 'ps-4 bg-gray-100 text-gray-900' : 'ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+                                    <Icon :icon="item.icon"
+                                        :class="[item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500', 'mr-3 flex-shrink-0 h-6 w-6']" />
+                                    {{ item.name }}
+                                    </Link>
+
+                                    <DropdownMenu v-else>
+                                        <DropdownMenuTrigger class="w-full">
+                                            <Button
+                                                :class="[item.current ? 'ps-4 bg-gray-100 hover:bg-gray-100 text-gray-900' : 'bg-white ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'w-full justify-start group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+                                                <Icon :icon="item.icon"
+                                                    :class="[item.current ? 'text-gray-500 group-hover:text-gray-500' : 'text-gray-400 group-hover:text-gray-500', 'mr-3 flex-shrink-0 h-6 w-6']" />
+                                                {{ item.name }}
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent class="w-72 md:w-56">
+                                            <DropdownMenuLabel>{{ item.name }}</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem v-for="subItem in item.children" :key="subItem.name"
+                                                class="p-0">
+                                                <Link class="w-full h-full p-2" :href="subItem.href">{{ subItem.name }}
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </template>
                             </nav>
                         </div>
                     </div>
@@ -91,7 +112,7 @@
                                 Dashboard
                                 </Link>
                                 <div class="py-2 px-2 flex items-center">
-                                    <p class="text-sm font-semibold text-gray-500">Tagihan</p>
+                                    <p class="text-sm font-semibold text-gray-500">Transaksi</p>
                                     <hr class="mt-1 flex-grow ml-2 border-gray-300">
                                 </div>
                                 <Link v-for="item in currentNavigationItems1" :key="item.name" :href="item.href"
@@ -106,14 +127,35 @@
                                     <p class="text-sm font-semibold text-gray-500">Data Master</p>
                                     <hr class="mt-1 flex-grow ml-2 border-gray-300">
                                 </div>
-                                <Link v-for="item in currentNavigationItems2" :key="item.name" :href="item.href"
-                                    :class="[item.current ? 'ps-4 bg-gray-100 text-gray-900' : 'ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
-                                <Icon :icon="item.icon" :class="[
-                                    item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500',
-                                    'mr-3 flex-shrink-0 h-6 w-6'
-                                ]" />
-                                {{ item.name }}
-                                </Link>
+
+                                <template v-for="item in currentNavigationItems2" :key="item.name">
+                                    <Link v-if="item.type !== 'dropdown'" :href="item.href"
+                                        :class="[item.current ? 'ps-4 bg-gray-100 text-gray-900' : 'ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+                                    <Icon :icon="item.icon"
+                                        :class="[item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500', 'mr-3 flex-shrink-0 h-6 w-6']" />
+                                    {{ item.name }}
+                                    </Link>
+
+                                    <DropdownMenu v-else>
+                                        <DropdownMenuTrigger class="w-full">
+                                            <Button
+                                                :class="[item.current ? 'ps-4 bg-gray-100 hover:bg-gray-100 text-gray-900' : 'bg-white ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'w-full justify-start group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+                                                <Icon :icon="item.icon"
+                                                    :class="[item.current ? 'text-gray-500 group-hover:text-gray-500' : 'text-gray-400 group-hover:text-gray-500', 'mr-3 flex-shrink-0 h-6 w-6']" />
+                                                {{ item.name }}
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent class="w-72 md:w-56">
+                                            <DropdownMenuLabel>{{ item.name }}</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem v-for="subItem in item.children" :key="subItem.name"
+                                                class="p-0">
+                                                <Link class="w-full h-full p-2" :href="subItem.href">{{ subItem.name }}
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </template>
                             </nav>
                         </div>
                     </div>
@@ -135,15 +177,31 @@
     </div>
 </template>
 
+<style scoped>
+div[data-radix-popper-content-wrapper] {
+    width: 100%;
+}
+</style>
+
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import NavAdmin from './NavAdmin.vue';
 import { Link } from '@inertiajs/vue3';
 import { Icon } from '@iconify/vue';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/Components/ui/dropdown-menu'
+import Button from '@/Components/ui/button/Button.vue';
 
 const isSidebarOpen = ref(window.innerWidth < 768 ? false : true);
 const isProfileMenuOpen = ref(false);
 const isBackgroundVisible = ref(false);
+const windowLocation = ref('');
 
 const toggleSidebar = () => {
     isSidebarOpen.value = !isSidebarOpen.value;
@@ -177,21 +235,20 @@ const toggleProfileMenu = () => {
 
 const currentPath = ref('');
 
-const windowLocation = window.location.pathname;
+// const windowLocation = window.location.pathname;
 
 const navigationItems1 = [
-    { name: 'Tagihan Pengguna', href: '/admin/tagihan', icon: 'mingcute:bill-2-line' },
+    { name: 'Transaksi', href: '/admin/tagihan', icon: 'mingcute:bill-2-line' },
     { name: 'Riwayat Tagihan', href: '/admin/riwayat-tagihan', icon: 'mingcute:bill-2-line' },
     { name: 'Riwayat Pembayaran', href: '/admin/riwayat-pembayaran', icon: 'mingcute:bill-line' },
 ];
 
-const navigationItems2 = [
-    { name: 'Kategori', href: '/admin/categories', icon: 'tabler:category-plus' },
-    { name: 'Produk', href: '/admin/products', icon: 'icon-park-outline:ad-product' },
-    { name: 'Stok', href: '/admin/stocks', icon: 'gridicons:product' },
-    { name: 'Pengguna', href: '/admin/users', icon: 'tdesign:user' },
-    { name: 'Laporan', href: '/admin/laporan', icon: 'mdi:report-box-outline' },
-];
+// const navigationItems2 = [
+//     { name: 'Kategori', href: '/admin/categories', icon: 'tabler:category-plus' },
+//     { name: 'Produk', href: '/admin/products', icon: 'icon-park-outline:ad-product' },
+//     { name: 'Pengguna', href: '/admin/users', icon: 'tdesign:user' },
+//     { name: 'Laporan', href: '/admin/laporan', icon: 'mdi:report-box-outline' },
+// ];
 
 const currentNavigationItems1 = computed(() => {
     return navigationItems1.map(item => ({
@@ -200,15 +257,45 @@ const currentNavigationItems1 = computed(() => {
     }));
 });
 
+// const currentNavigationItems2 = computed(() => {
+//     return navigationItems2.map(item => ({
+//         ...item,
+//         current: currentPath.value === item.href
+//     }));
+// });
+
+const navigationItems2 = [
+    { name: 'Kategori', href: '/admin/categories', icon: 'tabler:category-plus' },
+    { name: 'Produk', href: '/admin/products', icon: 'icon-park-outline:ad-product' },
+    {
+        name: 'Stok',
+        type: 'dropdown',
+        icon: 'gridicons:product',
+        children: [
+            { name: 'Daftar Stok', href: '/admin/stocks' },
+            { name: 'Riwayat Stok', href: '/admin/stock-movements' }
+        ]
+    },
+    { name: 'Pengguna', href: '/admin/users', icon: 'tdesign:user' },
+    { name: 'Laporan', href: '/admin/laporan', icon: 'mdi:report-box-outline' },
+];
+
 const currentNavigationItems2 = computed(() => {
     return navigationItems2.map(item => ({
         ...item,
-        current: currentPath.value === item.href
+        current: item.type === 'dropdown'
+            ? item.children.some(child => windowLocation.value === child.href)
+            : windowLocation.value === item.href,
+        children: item.children?.map(child => ({
+            ...child,
+            current: windowLocation.value === child.href
+        }))
     }));
 });
 
 onMounted(() => {
     currentPath.value = window.location.pathname;
+    windowLocation.value = window.location.pathname;
 });
 
 // Watch for changes in the URL (if user navigates without a full page reload)

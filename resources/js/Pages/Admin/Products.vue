@@ -397,7 +397,7 @@ const generateSKU = async () => {
                     </div>
                     <div class="flex flex-col md:flex-row gap-4">
                         <FormInput name="price" label="Harga Jual" type="number" />
-                        <FormInput name="cost" label="Harga Beli" type="number" />
+                        <FormInput name="cost" label="Harga Modal" type="number" />
                     </div>
                     <div class="flex flex-col md:flex-row gap-4">
                         <div class="w-full">
@@ -477,7 +477,7 @@ const generateSKU = async () => {
                     </div>
                     <div class="flex flex-col md:flex-row gap-4">
                         <FormInput name="price" label="Harga Jual" type="number" />
-                        <FormInput name="cost" label="Harga Beli" type="number" />
+                        <FormInput name="cost" label="Harga Modal" type="number" />
                     </div>
                     <div class="flex flex-col md:flex-row gap-4">
                         <div class="w-full">

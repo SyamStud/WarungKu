@@ -7,6 +7,7 @@ use App\Models\Stock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\StockMovement;
 use Illuminate\Support\Facades\Validator;
 
 class StockController extends Controller
@@ -63,6 +64,13 @@ class StockController extends Controller
 
         $stock->save();
 
+        $stockMovements = StockMovement::create([
+            'product_id' => $request->product_id,
+            'quantity' => $request->quantity,
+            'type' => 'in',
+            'reference' => 'Penambahan Stok',
+        ]);
+
         return response()->json([
             'message' => 'Stok berhasil ditambahkan',
             'stock' => $stock,
@@ -103,6 +111,8 @@ class StockController extends Controller
             ]);
         }
 
+        $countStockMovement = $request->quantity - $stock->quantity;
+
         $stock->quantity = $request->quantity;
 
         // Update status based on new quantity
@@ -115,6 +125,20 @@ class StockController extends Controller
         }
 
         $stock->save();
+
+        $stockMovements = new StockMovement();
+        $stockMovements->product_id = $stock->product_id;
+        $stockMovements->quantity = $countStockMovement;
+
+        if ($stockMovements->quantity > 0) {
+            $stockMovements->type = 'in';
+            $stockMovements->reference = 'Penambahan Stok';
+        } else {
+            $stockMovements->type = 'out';
+            $stockMovements->reference = 'Pengurangan Stok';
+        }
+
+        $stockMovements->save();
 
         return response()->json([
             'message' => 'Stok berhasil diperbarui',
