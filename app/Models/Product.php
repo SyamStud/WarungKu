@@ -2,31 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'category_id',
         'sku',
         'name',
-        'category_id',
-        'price',
-        'cost',
-        'description',
-        'status',
     ];
 
     public function category()
     {
         return $this->belongsTo(Category::class);
-    }
-
-    public function stock()
-    {
-        return $this->hasOne(Stock::class);
     }
 
     public function stockMovements()
@@ -37,5 +29,10 @@ class Product extends Model
     public function cartItems()
     {
         return $this->hasMany(CartItem::class);
+    }
+
+    public function productVariants()
+    {
+        return $this->hasMany(ProductVariant::class);
     }
 }

@@ -15,6 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('transaction_code')->unique();
             $table->double('total_price');
+            $table->double('total_payment');
+            $table->double('total_change');
+            $table->enum('payment_method', ['cash', 'qris', 'debt'])->default('cash');
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
         });

@@ -26,4 +26,9 @@ class TransactionItem extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function debtItems()
+    {
+        return $this->hasMany(DebtItem::class);
+    }
 }

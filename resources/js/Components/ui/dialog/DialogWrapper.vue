@@ -1,6 +1,6 @@
 <template>
     <Dialog>
-        <DialogScrollContent class="sm:max-w-[425px] md:max-w-full md:w-[40rem]">
+        <DialogScrollContent :class="['sm:max-w-[425px] md:max-w-full md:w-[40rem]', customClass]">
             <DialogHeader>
                 <DialogTitle>{{ title }}</DialogTitle>
                 <DialogDescription>
@@ -33,5 +33,9 @@ const props = defineProps({
         type: String,
         default: ''
     },
+    customClass: {
+        type: String,
+        default: ''
+    }
 })
 </script>

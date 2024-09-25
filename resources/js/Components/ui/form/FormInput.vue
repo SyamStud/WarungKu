@@ -13,7 +13,7 @@
         <FormItem class="w-full">
             <FormLabel>{{ label }}</FormLabel>
             <FormControl>
-                <div class="flex gap-2">
+                <div class="flex gap-2" :class="row ? 'flex-row' : 'flex-col'">
                     <Input :required="required" :name="name" class="w-full" :type="type" :placeholder="placeholder"
                         v-bind="componentField" :readonly="disable == true || disable == true" />
                     <slot />
@@ -50,6 +50,10 @@ const props = defineProps({
         default: false
     },
     required: {
+        type: Boolean,
+        default: false
+    },
+    row: {
         type: Boolean,
         default: false
     }

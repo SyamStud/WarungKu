@@ -70,15 +70,17 @@ class StockMovementController extends Controller
      */
     public function stockMovementData(Request $request)
     {
-        $query = StockMovement::query()->with('product')->orderBy('created_at', 'desc');
+        $query = StockMovement::query()->with('productVariant')->orderBy('created_at', 'desc');
 
         // Handle global search
         if ($request->has('search')) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('quantity', 'like', "%{$searchTerm}%")
-                    ->orWhereHas('product', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%{$searchTerm}%");
+                    ->orWhereHas('productVariant', function ($query) use ($searchTerm) {
+                        $query->whereHas('product', function ($query) use ($searchTerm) {
+                            $query->where('name', 'like', "%{$searchTerm}%");
+                        });
                     });
             });
         }
@@ -102,11 +104,12 @@ class StockMovementController extends Controller
         $transformedStocks = $stocks->map(function ($stock) {
             return [
                 'id' => $stock->id,
-                'product' => $stock->product->name,
+                'product' => $stock->productVariant->product->name,
                 'quantity' => $stock->quantity,
                 'type' => $stock->type,
                 'reference' => $stock->reference,
                 'created_at' => $stock->created_at->format('d/m/Y H:i:s'),
+                'variant' => $stock->productVariant->quantity == '1' ? $stock->productVariant->unit->name : $stock->productVariant->quantity . ' ' . $stock->productVariant->unit->name,
             ];
         });
 

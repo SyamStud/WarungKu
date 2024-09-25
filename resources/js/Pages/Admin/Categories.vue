@@ -282,7 +282,7 @@ const handlePageChange = (newPageIndex) => {
             <PaginationWrapper :pagination="pagination" :onPageChange="handlePageChange" />
 
             <!-- Add Modal -->
-            <DialogWrapper v-model:open="isAddModalOpen" title="Tambah Kategori" desc="Tambah kategori">
+            <DialogWrapper style="width: 70rem;" v-model:open="isAddModalOpen" title="Tambah Kategori" desc="Tambah kategori">
                 <form @submit="onSubmit" enctype="multipart/form-data" class="space-y-4">
                     <FormInput name="name" label="Nama" type="text" />
 

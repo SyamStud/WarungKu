@@ -14,6 +14,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RoleSeeder::class);
+        \App\Models\Category::factory(10)->create();
+        $this->call(UnitSeeder::class);
 
         $user = User::create([
             'nik' => '1234567890',

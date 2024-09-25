@@ -9,10 +9,10 @@ class Stock extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['product_id', 'quantity', 'status'];
+    protected $fillable = ['product_variant_id', 'quantity', 'status'];
 
-    public function product()
+    public function productVariant()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(ProductVariant::class);
     }
 }

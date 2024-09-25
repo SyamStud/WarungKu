@@ -17,7 +17,9 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'sku' => $this->faker->unique()->word,
+            'name' => $this->faker->name,
+            'category_id' => 1,
         ];
     }
 }

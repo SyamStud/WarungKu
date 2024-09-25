@@ -28,7 +28,7 @@
                             <img class="h-8 w-auto" src="/assets/logo-2.svg" alt="Workflow">
                         </div>
                         <div class="mt-5 flex-1 h-0 overflow-y-auto">
-                            <nav class="px-2 space-y-1">
+                            <nav class="flex-1 px-2 space-y-1">
                                 <Link href="/dashboard"
                                     :class="[windowLocation == '/dashboard' ? 'ps-4 bg-gray-100 text-gray-900' : 'ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'gap-3 group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="1.7em" height="1.7em"
@@ -40,17 +40,37 @@
                                 Dashboard
                                 </Link>
                                 <div class="py-2 px-2 flex items-center">
-                                    <p class="text-sm font-semibold text-gray-500">Tagihan</p>
+                                    <p class="text-sm font-semibold text-gray-500">Transaksi</p>
                                     <hr class="mt-1 flex-grow ml-2 border-gray-300">
                                 </div>
-                                <Link v-for="item in currentNavigationItems1" :key="item.name" :href="item.href"
-                                    :class="[item.current ? 'ps-4 bg-gray-100 text-gray-900' : 'ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
-                                <Icon :icon="item.icon" :class="[
-                                    item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500',
-                                    'mr-3 flex-shrink-0 h-6 w-6'
-                                ]" />
-                                {{ item.name }}
-                                </Link>
+                                <template v-for="item in currentNavigationItems1" :key="item.name">
+                                    <Link v-if="item.type !== 'dropdown'" :href="item.href"
+                                        :class="[item.current ? 'ps-4 bg-gray-100 text-gray-900' : 'ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+                                    <Icon :icon="item.icon"
+                                        :class="[item.current ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500', 'mr-3 flex-shrink-0 h-6 w-6']" />
+                                    {{ item.name }}
+                                    </Link>
+
+                                    <DropdownMenu v-else>
+                                        <DropdownMenuTrigger class="w-full">
+                                            <Button
+                                                :class="[item.current ? 'ps-4 bg-gray-100 hover:bg-gray-100 text-gray-900' : 'bg-white ps-4 text-gray-600 hover:bg-gray-50 hover:text-gray-900', 'w-full justify-start group flex items-center px-2 py-2 text-sm font-medium rounded-md']">
+                                                <Icon :icon="item.icon"
+                                                    :class="[item.current ? 'text-gray-500 group-hover:text-gray-500' : 'text-gray-400 group-hover:text-gray-500', 'mr-3 flex-shrink-0 h-6 w-6']" />
+                                                {{ item.name }}
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent class="w-72 md:w-56">
+                                            <DropdownMenuLabel>{{ item.name }}</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem v-for="subItem in item.children" :key="subItem.name"
+                                                class="p-0">
+                                                <Link class="w-full h-full p-2" :href="subItem.href">{{ subItem.name }}
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </template>
                                 <div class="py-2 px-2 flex items-center">
                                     <p class="text-sm font-semibold text-gray-500">Data Master</p>
                                     <hr class="mt-1 flex-grow ml-2 border-gray-300">
@@ -276,6 +296,15 @@ const navigationItems1 = [
             { name: 'Item Transaksi', href: '/admin/transaction-items' },
         ]
     },
+    {
+        name: 'Hutang',
+        type: 'dropdown',
+        icon: 'bx:calculator',
+        children: [
+            { name: 'Daftar Hutang', href: '/admin/debts' },
+            { name: 'Item Hutang', href: '/admin/debt-items' },
+        ]
+    },
 ];
 
 const currentNavigationItems1 = computed(() => {
@@ -297,6 +326,7 @@ const navigationItems2 = [
             { name: 'Riwayat Stok', href: '/admin/stock-movements' }
         ]
     },
+    { name: 'Pelanggan', href: '/admin/customers', icon: 'tabler:user-star' },
     { name: 'Pengguna', href: '/admin/users', icon: 'tdesign:user' },
     { name: 'Laporan', href: '/admin/laporan', icon: 'mdi:report-box-outline' },
 ];

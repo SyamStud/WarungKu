@@ -44,21 +44,7 @@ const isPhotoModalOpen = ref(false);
 const selectedProduct = ref(null);
 const isEdit = ref(false);
 const sku = ref('');
-
-const openAddModal = () => {
-    form.setValues({
-        sku: '',
-        name: '',
-        category_id: '',
-        price: '',
-        cost: '',
-        description: '',
-        status: '',
-        stock: '',
-    });
-    isEdit.value = false;
-    isAddModalOpen.value = true;
-};
+const units = ref([]);
 
 const openEditModal = (product) => {
     isEdit.value = true;
@@ -75,8 +61,9 @@ const openEditModal = (product) => {
         category_id: oldCategory.id,
         price: product.price,
         cost: product.cost,
-        description: product.description,
         status: product.status,
+        quantity: product.quantity,
+        unit_id: product.unit_id.toString(),
     });
     isEditModalOpen.value = true;
 };
@@ -86,35 +73,19 @@ const openDeleteModal = (product) => {
     isDeleteModalOpen.value = true;
 };
 
-const openPhotoModal = (product) => {
-    selectedProduct.value = product;
-    isPhotoModalOpen.value = true;
-};
-
-// VALIDATION FRONT END FORM
-const addFormSchema = toTypedSchema(z.object({
+const formSchema = toTypedSchema(z.object({
     sku: z.string().min(2),
     name: z.string().min(2),
     category_id: z.number().min(1),
     price: z.number(),
     cost: z.number(),
-    description: z.string().min(1),
     status: z.string().min(2),
-    stock: z.number(),
-}));
-
-const editFormSchema = toTypedSchema(z.object({
-    sku: z.string().min(2),
-    name: z.string().min(2),
-    category_id: z.number().min(1),
-    price: z.number(),
-    cost: z.number(),
-    description: z.string().min(2),
-    status: z.string().min(2),
+    quantity: z.string(),
+    unit_id: z.string(),
 }));
 
 const form = useForm({
-    validationSchema: computed(() => isEdit.value ? editFormSchema : addFormSchema),
+    validationSchema: computed(() => formSchema),
 });
 
 let isLoading = ref(false);
@@ -123,13 +94,12 @@ let isLoading = ref(false);
 const onSubmit = form.handleSubmit(async (values) => {
     try {
         isLoading.value = true;
+
+        values.quantity = values.quantity.replace(/\s/g, '');
+
         let response;
-        if (isEdit.value) {
-            console.log(values);
-            response = await axios.post(`/admin/products/${selectedProduct.value.id}?_method=PUT`, values);
-        } else {
-            response = await axios.post('/admin/products', values);
-        }
+        response = await axios.post(`/admin/products/${selectedProduct.value.id}?_method=PUT`, values);
+
 
         if (response.data.status === 'error') {
             isLoading.value = false;
@@ -184,9 +154,9 @@ const columns = [
     { accessorKey: 'sku', header: 'SKU' },
     { accessorKey: 'name', header: 'Nama' },
     { accessorKey: 'category', header: 'Kategori' },
+    { accessorKey: 'variant', header: 'Variasi' },
     { accessorKey: 'price', header: 'Harga Jual' },
     { accessorKey: 'cost', header: 'Harga Modal' },
-    { accessorKey: 'description', header: 'Deskripsi' },
     { accessorKey: 'status', header: 'Status' },
 ];
 
@@ -227,7 +197,7 @@ const table = useVueTable({
 
 const fetchData = async () => {
     try {
-        const response = await axios.get('/api/products', {
+        const response = await axios.get('/api/productVariants', {
             params: {
                 search: globalFilter.value,
                 page: pagination.value.pageIndex + 1,
@@ -286,6 +256,14 @@ const fetchOptions = async () => {
             name: category.name,
             value: category.id
         }))
+
+        const unitResponse = await axios.get('/api/units')
+
+        units.value = unitResponse.data.data.map((unit) => ({
+            id: unit.id,
+            name: unit.name,
+            value: unit.id
+        }))
     } catch (error) {
         console.error('Error fetching options:', error)
     }
@@ -323,10 +301,12 @@ const generateSKU = async () => {
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Produk</h1>
         <div class="flex flex-col md:flex-row justify-between">
             <div class="flex gap-2">
-                <Button @click="openAddModal()" class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah
-                    Produk Lengkap</Button>
-                <Link :href="route('products.bulk')">
-                <Button class="w-full md:w-max mt-4">Tambah Produk Cepat</Button>
+                <Link :href="route('products.add')">
+                <Button class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah Produk</Button>
+                </Link>
+
+                <Link :href="route('products.add.variant')">
+                <Button class="w-full md:w-max mt-4">Tambah Variasi Produk</Button>
                 </Link>
             </div>
             <div class="flex items-center py-4 w-full md:w-72">
@@ -393,8 +373,8 @@ const generateSKU = async () => {
                                 </FormItem>
                             </FormField>
                         </div>
-
                     </div>
+
                     <div class="flex flex-col md:flex-row gap-4">
                         <FormInput name="price" label="Harga Jual" type="number" />
                         <FormInput name="cost" label="Harga Modal" type="number" />
@@ -475,11 +455,39 @@ const generateSKU = async () => {
                         </div>
 
                     </div>
-                    <div class="flex flex-col md:flex-row gap-4">
-                        <FormInput name="price" label="Harga Jual" type="number" />
-                        <FormInput name="cost" label="Harga Modal" type="number" />
-                    </div>
-                    <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex gap-4">
+                        <div class="w-full">
+                            <Label for="">Satuan Unit</Label>
+                            <div class="flex gap-1">
+                                <div class="w-14">
+                                    <FormInput name="quantity" label="" type="text" />
+                                </div>
+
+                                <div class="min-w-max w-full mt-2">
+                                    <FormField v-slot="{ componentField }" name="unit_id">
+                                        <FormItem>
+                                            <Select v-bind="componentField">
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Pilih Tipe" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectItem v-for="unit in units" :key="unit.id.toString()"
+                                                            :value="unit.id.toString()">
+                                                            {{ unit.name }}
+                                                        </SelectItem>
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </FormField>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="w-full">
                             <FormField v-slot="{ componentField }" name="status">
                                 <FormItem>
@@ -509,16 +517,14 @@ const generateSKU = async () => {
                             </FormField>
                         </div>
                     </div>
-                    <FormField v-slot="{ componentField }" name="description">
-                        <FormItem>
-                            <FormLabel>Deskripsi</FormLabel>
-                            <FormControl>
-                                <Textarea placeholder="Masukkan deskripsi saat ini." class="resize-none"
-                                    v-bind="componentField" />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    </FormField>
+
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <FormInput name="price" label="Harga Jual" type="number" />
+                        <FormInput name="cost" label="Harga Modal" type="number" />
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4">
+
+                    </div>
                     <DialogFooter>
                         <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">
                             {{ isLoading ? 'Mohon tunggu ...' : 'Ubah Produk' }}

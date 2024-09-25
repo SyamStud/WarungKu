@@ -66,4 +66,12 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Transaction::class);
     }
+
+    /**
+     * Get the settings for the user.
+     */
+    public function settings()
+    {
+        return $this->hasMany(Setting::class);
+    }
 }

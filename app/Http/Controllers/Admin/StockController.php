@@ -34,7 +34,7 @@ class StockController extends Controller
     public function store(Request $request)
     {
         $validation = Validator::make($request->all(), [
-            'product_id' => 'required|exists:products,id',
+            'product_variant_id' => 'required|exists:product_variants,id',
             'quantity' => 'required|numeric',
         ]);
 
@@ -47,7 +47,7 @@ class StockController extends Controller
         }
 
         $stock = Stock::updateOrCreate(
-            ['product_id' => $request->product_id],
+            ['product_variant_id' => $request->product_variant_id],
             []
         );
 
@@ -65,7 +65,7 @@ class StockController extends Controller
         $stock->save();
 
         $stockMovements = StockMovement::create([
-            'product_id' => $request->product_id,
+            'product_variant_id' => $request->product_variant_id,
             'quantity' => $request->quantity,
             'type' => 'in',
             'reference' => 'Penambahan Stok',
@@ -127,7 +127,7 @@ class StockController extends Controller
         $stock->save();
 
         $stockMovements = new StockMovement();
-        $stockMovements->product_id = $stock->product_id;
+        $stockMovements->product_variant_id = $stock->product_variant_id;
         $stockMovements->quantity = $countStockMovement;
 
         if ($stockMovements->quantity > 0) {
@@ -165,7 +165,7 @@ class StockController extends Controller
      */
     public function stockData(Request $request)
     {
-        $query = Stock::query()->with('product');
+        $query = Stock::query()->with('productVariant');
 
         // Handle global search
         if ($request->has('search')) {
@@ -173,8 +173,10 @@ class StockController extends Controller
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('quantity', 'like', "%{$searchTerm}%")
                     ->orWhere('status', 'like', "%{$searchTerm}%")
-                    ->orWhereHas('product', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%{$searchTerm}%");
+                    ->orWhereHas('productVariant', function ($query) use ($searchTerm) {
+                        $query->whereHas('product', function ($query) use ($searchTerm) {
+                            $query->where('name', 'like', "%{$searchTerm}%");
+                        });
                     });
             });
         }
@@ -198,7 +200,8 @@ class StockController extends Controller
         $transformedStocks = $stocks->map(function ($stock) {
             return [
                 'id' => $stock->id,
-                'product' => $stock->product->name,
+                'product' => $stock->productVariant->product->name,
+                'variant' => $stock->productVariant->quantity == '1' ? $stock->productVariant->unit->name : $stock->productVariant->quantity . ' ' . $stock->productVariant->unit->name,
                 'quantity' => $stock->quantity,
                 'status' => $stock->status,
             ];

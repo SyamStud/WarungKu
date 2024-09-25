@@ -21,16 +21,7 @@ import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue'
 import { FormField } from '@/Components/ui/form';
 import FormItem from '@/Components/ui/form/FormItem.vue';
 import FormLabel from '@/Components/ui/form/FormLabel.vue';
-import FormControl from '@/Components/ui/form/FormControl.vue';
-import Textarea from '@/Components/ui/textarea/Textarea.vue';
-import Select from '@/Components/ui/select/Select.vue';
-import SelectTrigger from '@/Components/ui/select/SelectTrigger.vue';
-import SelectValue from '@/Components/ui/select/SelectValue.vue';
-import SelectContent from '@/Components/ui/select/SelectContent.vue';
-import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
-import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
-import TableHead from '@/Components/ui/table/TableHead.vue';
 import Multiselect from 'vue-multiselect';
 import Label from '@/components/ui/label/Label.vue';
 
@@ -45,7 +36,7 @@ const isEdit = ref(false);
 
 const openAddModal = () => {
     form.setValues({
-        'product_id': '',
+        'product_variant_id': '',
         'quantity': '',
     });
     isEdit.value = false;
@@ -58,29 +49,24 @@ const openEditModal = (stock) => {
     selectedStock.value = stock;
     form.resetForm();
 
-    const oldProduct = options.value.find((option) => option.name === stock.product);
-    selectedProducts.value = options.value.find((option) => option.name === oldProduct.name);
+    const oldProduct = options.value.find((option) => option.rawName === stock.product);
+    selectedProducts.value = options.value.find((option) => option.rawName === oldProduct.rawName);
 
     form.setValues({
-        product_id: oldProduct.id,
+        product_variant_id: oldProduct.id,
         quantity: stock.quantity,
     });
     isEditModalOpen.value = true;
 };
 
-const openDeleteModal = (stock) => {
-    selectedStock.value = stock;
-    isDeleteModalOpen.value = true;
-};
-
 // VALIDATION FRONT END FORM
 const addFormSchema = toTypedSchema(z.object({
-    product_id: z.number().min(1),
+    product_variant_id: z.number().min(1),
     quantity: z.number().min(1),
 }));
 
 const editFormSchema = toTypedSchema(z.object({
-    product_id: z.number().min(1),
+    product_variant_id: z.number().min(1),
     quantity: z.number(),
 }));
 
@@ -96,7 +82,6 @@ const onSubmit = form.handleSubmit(async (values) => {
         isLoading.value = true;
         let response;
         if (isEdit.value) {
-            console.log(values);
             response = await axios.post(`/admin/stocks/${selectedStock.value.id}?_method=PUT`, values);
         } else {
             response = await axios.post('/admin/stocks', values);
@@ -128,34 +113,10 @@ const onSubmit = form.handleSubmit(async (values) => {
     }
 });
 
-const deleteStock = async () => {
-    if (selectedStock.value) {
-        try {
-            const response = await axios.post(`/admin/stocks/${selectedStock.value.id}?_method=DELETE`);
-            if (response.data.status === 'error') {
-                return Toast.fire({
-                    icon: "error",
-                    title: response.data.message,
-                });
-            } else {
-                Toast.fire({
-                    icon: "success",
-                    title: response.data.message,
-                });
-            }
-
-            isAddModalOpen.value = false;
-            isDeleteModalOpen.value = false;
-            fetchData();
-        } catch (error) {
-            console.error('Error deleting stock:', error);
-        }
-    }
-};
-
 /* TABLE */
 const columns = [
     { accessorKey: 'product', header: 'Nama Produk' },
+    { accessorKey: 'variant', header: 'Variasi' },
     { accessorKey: 'quantity', header: 'Kuantitas' },
     { accessorKey: 'status', header: 'Status' },
 ];
@@ -251,11 +212,12 @@ const selectedProducts = ref([])
 
 const fetchOptions = async () => {
     try {
-        const response = await axios.get('/api/products')
+        const response = await axios.get('/api/productVariants')
 
         options.value = response.data.data.map((product) => ({
             id: product.id,
-            name: product.name,
+            name: product.name + ' - ' + product.variant,
+            rawName: product.name,
             stock: product.stock,
             value: product.id
         }))
@@ -266,7 +228,7 @@ const fetchOptions = async () => {
 
 const updateIdProduct = (value) => {
     selectedProducts.value = value;
-    form.setFieldValue('product_id', value.id);
+    form.setFieldValue('product_variant_id', value.id);
 };
 </script>
 
@@ -326,7 +288,7 @@ const updateIdProduct = (value) => {
                 desc="Stok saat ini akan ditambahkan dengan stok tambahan">
                 <form @submit="onSubmit" enctype="multipart/form-data" class="space-y-4">
                     <div class="w-full">
-                        <FormField v-slot="{ field }" name="product_id">
+                        <FormField v-slot="{ field }" name="product_variant_id">
                             <FormItem>
                                 <FormLabel>Nama Produk</FormLabel>
                                 <Multiselect v-model="selectedProducts" :options="options"
@@ -364,11 +326,11 @@ const updateIdProduct = (value) => {
                     </div>
 
                     <FormInput name="quantity" label="Kuantitas" type="number" />
-                    <FormInput name="product_id" label="" type="hidden" placeholder="Masukkan stok tambahan" />
+                    <FormInput name="product_variant_id" label="" type="hidden" placeholder="Masukkan stok tambahan" />
 
                     <DialogFooter>
                         <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">
-                            {{ isLoading ? 'Mohon tunggu ...' : 'Tambah Stok' }}
+                            {{ isLoading ? 'Mohon tunggu ...' : 'Ubah Stok' }}
                         </Button>
                     </DialogFooter>
                 </form>

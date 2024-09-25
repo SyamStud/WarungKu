@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\Cart;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\CartItem;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Barryvdh\Debugbar\Facades\Debugbar;
 
 class CartController extends Controller
 {
@@ -125,6 +129,247 @@ class CartController extends Controller
                 'from' => $from,
                 'to' => $to,
             ],
+        ]);
+    }
+
+    public function getUserCart()
+    {
+        $cart = Cart::where('user_id', Auth::id())->first();
+
+        if (!$cart) {
+            return response()->json([
+                'message' => 'Cart is empty',
+                'status' => 'success',
+                'data' => [],
+            ]);
+        }
+
+        $cartItems = $cart->cartItems()->with('productVariant')->get();
+
+        $transformedCartItems = $cartItems->map(function ($cartItem) {
+            return [
+                'sku' => $cartItem->product->sku,
+                'id' => $cartItem->id,
+                'product_id' => $cartItem->product_id,
+                'name' => $cartItem->product->name,
+                'quantity' => $cartItem->quantity,
+                'price' => $cartItem->price,
+                'total_price' => $cartItem->total_price,
+                'variant_id' => (string) $cartItem->product_variant_id,
+                'product_variants' => $cartItem->productVariant->product->productVariants->map(function ($productVariant) {
+                    return [
+                        'id' => $productVariant->id,
+                        'variant' => $productVariant->quantity == '1' ? $productVariant->unit->name : $productVariant->quantity . $productVariant->unit->name,
+                        'price' => $productVariant->price,
+                    ];
+                }),
+            ];
+        });
+
+        return response()->json([
+            'message' => 'Cart items retrieved successfully',
+            'status' => 'success',
+            'data' => $transformedCartItems,
+            'total_price' => $cart->total_price,
+            'transaction_code' => $cart->transaction_code,
+        ]);
+    }
+
+    /**
+     * Add products to cart.
+     */
+    public function addProduct(Request $request)
+    {
+        $request->validate([
+            'product' => 'required|array',
+            'transaction_code' => 'required|string',
+        ]);
+
+        return DB::transaction(function () use ($request) {
+            $cart = Cart::firstOrCreate(
+                ['user_id' => Auth::id(), 'transaction_code' => $request->transaction_code],
+                ['total_price' => 0]
+            );
+
+            $cartItem = $cart->cartItems()->updateOrCreate(
+                [
+                    'product_variant_id' => $request->variant_id,
+                ],
+                [
+                    'product_id' => $request->product['id'],
+                    'quantity' => DB::raw('quantity + 1'),
+                    'price' => $request->product['product_variants'][0]['price'],
+                    'total_price' => DB::raw('price * (quantity)'),
+                ]
+            );
+
+            $cart->update(['total_price' => $cart->cartItems()->sum('total_price')]);
+
+            return response()->json([
+                'message' => 'Product added to cart successfully',
+                'status' => 'success',
+            ]);
+        });
+    }
+
+    public function updateProduct(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+            'quantity' => 'required|integer',
+            'transaction_code' => 'required|string',
+        ]);
+
+        $cartItem = CartItem::find($request->id);
+
+        if (!$cartItem) {
+            return response()->json([
+                'message' => 'Cart item not found',
+                'status' => 'error',
+            ], 404);
+        }
+
+        $cartItem->update([
+            'quantity' => $request->quantity,
+            'total_price' => $cartItem->price * $request->quantity,
+        ]);
+
+        $cart = Cart::find($cartItem->cart_id);
+        $totalPrice = $cart->cartItems()->sum('total_price');
+        $cart->update(['total_price' => $totalPrice]);
+
+        return response()->json([
+            'message' => 'Product quantity updated successfully',
+            'status' => 'success',
+        ]);
+    }
+
+    /**
+     * Remove product from cart.
+     */
+    public function removeProduct(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+        ]);
+
+        $cartItem = CartItem::find($request->id);
+
+        if (!$cartItem) {
+            return response()->json([
+                'message' => 'Cart item not found',
+                'status' => 'error',
+            ], 404);
+        }
+
+        $cartItem->delete();
+
+        return response()->json([
+            'message' => 'Product removed from cart successfully',
+            'status' => 'success',
+        ]);
+    }
+
+    public function revoke(Request $request)
+    {
+        $request->validate([
+            'transaction_code' => 'required|string',
+        ]);
+
+        $cart = Cart::where('user_id', Auth::id())->where('transaction_code', $request->transaction_code)->first();
+
+        if (!$cart) {
+            return response()->json([
+                'message' => 'Cart not found',
+                'status' => 'error',
+            ], 404);
+        }
+
+        $cart->delete();
+
+        return response()->json([
+            'message' => 'Cart revoked successfully',
+            'status' => 'success',
+        ]);
+    }
+
+    public function updateVariant(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+            'variant_id' => 'required|integer',
+            'transaction_code' => 'required|string',
+        ]);
+
+        $cartItem = CartItem::find($request->id);
+
+        if (!$cartItem) {
+            return response()->json([
+                'message' => 'Cart item not found',
+                'status' => 'error',
+            ], 404);
+        }
+
+        $newVariant = $cartItem->product->productVariants->find($request->variant_id);
+
+        if (!$newVariant) {
+            return response()->json([
+                'message' => 'Product variant not found',
+                'status' => 'error',
+            ], 404);
+        }
+
+        // Check if there's already a cart item with the same product and new variant
+        $existingItem = CartItem::where('cart_id', $cartItem->cart_id)
+            ->where('product_id', $cartItem->product_id)
+            ->where('product_variant_id', $request->variant_id)
+            ->where('id', '!=', $cartItem->id)
+            ->first();
+
+        if ($existingItem) {
+            // If exists, update the quantity and delete the original item
+            $existingItem->update([
+                'quantity' => $existingItem->quantity + $cartItem->quantity,
+                'total_price' => ($existingItem->quantity + $cartItem->quantity) * $newVariant->price,
+            ]);
+            $cartItem->delete();
+        } else {
+            // If not exists, update the current item
+            $cartItem->update([
+                'product_variant_id' => $request->variant_id,
+                'price' => $newVariant->price,
+                'total_price' => $newVariant->price * $cartItem->quantity,
+            ]);
+        }
+
+        $cart = Cart::find($cartItem->cart_id);
+        $totalPrice = $cart->cartItems()->sum('total_price');
+        $cart->update(['total_price' => $totalPrice]);
+
+        $transformedCartItems = $cart->cartItems->map(function ($cartItem) {
+            return [
+                'sku' => $cartItem->product->sku,
+                'id' => $cartItem->id,
+                'product_id' => $cartItem->product_id,
+                'name' => $cartItem->product->name,
+                'quantity' => $cartItem->quantity,
+                'price' => $cartItem->price,
+                'total_price' => $cartItem->total_price,
+                'variant_id' => (string) $cartItem->product_variant_id,
+                'product_variants' => $cartItem->productVariant->product->productVariants->map(function ($productVariant) {
+                    return [
+                        'id' => $productVariant->id,
+                        'variant' => $productVariant->quantity == '1' ? $productVariant->unit->name : $productVariant->quantity . $productVariant->unit->name,
+                        'price' => $productVariant->price,
+                    ];
+                }),
+            ];
+        });
+
+        return response()->json([
+            'message' => 'Product variant updated successfully',
+            'status' => 'success',
+            'data' => $transformedCartItems,
         ]);
     }
 }

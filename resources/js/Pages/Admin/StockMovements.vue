@@ -2,36 +2,15 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
-import * as z from 'zod';
-import { useForm } from 'vee-validate';
-import { toTypedSchema } from '@vee-validate/zod';
 import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
 
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
-import { DialogFooter } from '@/Components/ui/dialog';
-import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
-import FormInput from '@/Components/ui/form/FormInput.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
-import { FormField } from '@/Components/ui/form';
-import FormItem from '@/Components/ui/form/FormItem.vue';
-import FormLabel from '@/Components/ui/form/FormLabel.vue';
-import FormControl from '@/Components/ui/form/FormControl.vue';
-import Textarea from '@/Components/ui/textarea/Textarea.vue';
-import Select from '@/Components/ui/select/Select.vue';
-import SelectTrigger from '@/Components/ui/select/SelectTrigger.vue';
-import SelectValue from '@/Components/ui/select/SelectValue.vue';
-import SelectContent from '@/Components/ui/select/SelectContent.vue';
-import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
-import SelectItem from '@/Components/ui/select/SelectItem.vue';
-import FormMessage from '@/Components/ui/form/FormMessage.vue';
-import TableHead from '@/Components/ui/table/TableHead.vue';
-
 const Toast = useToast();
 
 let isLoading = ref(false);
@@ -40,6 +19,7 @@ let isLoading = ref(false);
 const columns = [
     { accessorKey: 'reference', header: 'Referensi' },
     { accessorKey: 'product', header: 'Nama Produk' },
+    { accessorKey: 'variant', header: 'Variasi' },
     { accessorKey: 'quantity', header: 'Kuantitas' },
     { accessorKey: 'type', header: 'Tipe' },
     { accessorKey: 'created_at', header: 'Tanggal' },
