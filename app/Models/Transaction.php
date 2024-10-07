@@ -13,6 +13,9 @@ class Transaction extends Model
         'user_id',
         'transaction_code',
         'total_price',
+        'total_payment',
+        'total_change',
+        'payment_method',
     ];
 
     public function user()

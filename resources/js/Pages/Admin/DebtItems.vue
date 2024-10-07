@@ -6,7 +6,6 @@ import { Head, Link } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
 
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';

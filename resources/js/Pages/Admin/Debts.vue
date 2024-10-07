@@ -64,7 +64,7 @@ const columns = [
     { accessorKey: 'address', header: 'Alamat' },
     { accessorKey: 'total_debt', header: 'Total Hutang' },
     { accessorKey: 'paid_amount', header: 'Total Dibayar' },
-    { accessorKey: 'remaining_amount', header: 'Hutang Tersisa' },
+    { accessorKey: 'remaining_debt', header: 'Hutang Tersisa' },
 ];
 
 const data = ref([]);
@@ -115,6 +115,7 @@ const fetchData = async () => {
         });
 
         data.value = response.data.data;
+        console.log('Data:', data.value);
         pagination.value = {
             pageIndex: response.data.meta.current_page - 1,
             pageSize: response.data.meta.per_page,

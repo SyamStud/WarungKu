@@ -431,7 +431,7 @@ class ProductController extends Controller
     }
 
 
-    public function getProductByName(Request $request)
+    public function getProductVariantByName(Request $request)
     {
         $validation = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
@@ -499,6 +499,32 @@ class ProductController extends Controller
                 'key' => $cacheKey,
                 'expires_at' => now()->addHours(24)->toIso8601String(),
             ],
+        ]);
+    }
+
+    public function getProductByName(Request $request)
+    {
+        $validation = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+        ]);
+
+        if ($validation->fails()) {
+            return response()->json([
+                'message' => 'The given data was invalid.',
+                'errors' => $validation->errors(),
+            ], 422);
+        }
+
+        $products = Product::where('name', 'like', '%' . $request->name . '%')->with('productVariants')->get();
+
+        if ($products->isEmpty()) {
+            return response()->json([
+                'message' => 'Produk tidak ditemukan',
+            ]);
+        }
+
+        return response()->json([
+            'product' => $products,
         ]);
     }
 }

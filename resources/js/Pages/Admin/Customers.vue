@@ -79,6 +79,8 @@ const addFormSchema = toTypedSchema(z.object({
 
 const editFormSchema = toTypedSchema(z.object({
     name: z.string().min(2).max(50),
+    phone: z.any().optional(),
+    address: z.string().optional(),
 }));
 
 const form = useForm({

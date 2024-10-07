@@ -45,7 +45,7 @@ class CustomerController extends Controller
         Customer::create($request->all());
 
         return response()->json([
-            'message' => 'Customer created successfully',
+            'message' => 'Pelanggan berhasil ditambahkan',
             'status' => 'success',
         ]);
     }
@@ -74,7 +74,7 @@ class CustomerController extends Controller
         $customer->update($request->all());
 
         return response()->json([
-            'message' => 'Customer updated successfully',
+            'message' => 'Pelanggan berhasil diubah',
             'status' => 'success',
         ]);
     }
@@ -87,7 +87,7 @@ class CustomerController extends Controller
         $customer->delete();
 
         return response()->json([
-            'message' => 'Customer deleted successfully',
+            'message' => 'Pelanggan berhasil dihapus',
             'status' => 'success',
         ]);
     }
@@ -97,7 +97,7 @@ class CustomerController extends Controller
      */
     public function customerData(Request $request)
     {
-        $query = Customer::query()->with('debtItems')->where('total_debt', '>', 0);
+        $query = Customer::query()->with('debtItems');
 
         // Handle global search
         if ($request->has('search')) {
@@ -130,7 +130,9 @@ class CustomerController extends Controller
                 'name' => $customer->name,
                 'phone' => $customer->phone,
                 'address' => $customer->address,
-                'total_debt' => $customer->total_debt,
+                'total_debt' => $customer->debtItems->sum('total_amount'),
+                'paid_amount' => $customer->debtItems->sum('paid_amount'),
+                'remaining_debt' => $customer->debtItems->sum('remaining_amount'),
             ];
         });
 
@@ -144,6 +146,45 @@ class CustomerController extends Controller
                 'from' => $from,
                 'to' => $to,
             ],
+        ]);
+    }
+
+    public function getCustomer(Request $request)
+    {
+        $validation = Validator::make($request->all(), [
+            'name' => 'required',
+        ]);
+
+        if ($validation->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validation->errors(),
+            ]);
+        }
+
+        $customer = Customer::where('name', $request->name)
+            ->with([
+            'debtItems' => function ($query) {
+                $query->where('status', '!=', 'paid')
+                ->with([
+                    'transactionItem.productVariant.product',
+                    'transactionItem.productVariant.unit',
+                    'transactionItem.transaction'
+                ]);
+            }
+            ])
+            ->get();
+
+        if (!$customer) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pelanggan tidak ditemukan',
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $customer,
         ]);
     }
 }

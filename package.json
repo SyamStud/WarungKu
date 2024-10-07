@@ -21,17 +21,24 @@
     "dependencies": {
         "@tanstack/vue-table": "^8.20.5",
         "@vee-validate/zod": "^4.13.2",
-        "@vueuse/core": "^11.0.3",
+        "@vueuse/core": "^11.1.0",
+        "chart.js": "^4.4.4",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.1.1",
+        "embla-carousel-autoplay": "^8.3.0",
+        "embla-carousel-vue": "^8.3.0",
+        "html2pdf.js": "^0.10.2",
         "lodash": "^4.17.21",
         "lucide-vue-next": "^0.439.0",
+        "puppeteer": "^23.4.1",
         "radix-vue": "^1.9.5",
         "sweetalert2": "^11.14.0",
         "tailwind-merge": "^2.5.2",
         "tailwindcss-animate": "^1.0.7",
         "vee-validate": "^4.13.2",
+        "vue-chartjs": "^5.3.1",
         "vue-multiselect": "^3.0.0",
+        "vue-router": "^4.4.5",
         "zod": "^3.23.8"
     }
 }

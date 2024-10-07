@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use App\Models\User;
-use Barryvdh\Debugbar\Facades\Debugbar;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Barryvdh\Debugbar\Facades\Debugbar;
+use Illuminate\Support\Facades\Validator;
 use Symfony\Component\ErrorHandler\Debug;
 
 class UserController extends Controller
@@ -196,5 +197,86 @@ class UserController extends Controller
                 'to' => $to,
             ],
         ]);
+    }
+
+
+    public function getUserChartData(Request $request)
+    {
+        $range = $request->input('range', 'weekly');
+
+        switch ($range) {
+            case 'weekly':
+                $data = $this->getWeeklyData();
+                break;
+            case 'monthly':
+                $data = $this->getMonthlyData();
+                break;
+            case 'yearly':
+                $data = $this->getYearlyData();
+                break;
+            default:
+                return response()->json(['error' => 'Invalid range'], 400);
+        }
+
+        return response()->json(['userlist' => $data]);
+    }
+
+    private function getWeeklyData(): array
+    {
+        $end = Carbon::now()->endOfWeek();
+        $start = $end->copy()->subWeeks(3)->startOfWeek();
+
+        return $this->getData($start, $end, 'W');
+    }
+
+    private function getMonthlyData(): array
+    {
+        $end = Carbon::now()->endOfMonth();
+        $start = $end->copy()->subMonths(11)->startOfMonth();
+
+        return $this->getData($start, $end, 'F');
+    }
+
+    private function getYearlyData(): array
+    {
+        $end = Carbon::now()->endOfYear();
+        $start = $end->copy()->subYears(4)->startOfYear();
+
+        return $this->getData($start, $end, 'Y');
+    }
+
+    private function getData(Carbon $start, Carbon $end, string $format): array
+    {
+        $users = User::selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->whereBetween('created_at', [$start, $end])
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $data = [];
+        $current = $start->copy();
+
+        while ($current <= $end) {
+            $key = $current->format($format);
+            $count = $users->where('date', $current->toDateString())->first()->count ?? 0;
+
+            if (!isset($data[$key])) {
+                $data[$key] = 0;
+            }
+            $data[$key] += $count;
+
+            $current->addDay();
+        }
+
+        return [
+            'labels' => array_keys($data),
+            'datasets' => [
+                [
+                    'label' => 'New Users',
+                    'backgroundColor' => '#f87979',
+                    'data' => array_values($data)
+                ]
+            ]
+        ];
     }
 }

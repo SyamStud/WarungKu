@@ -6,6 +6,7 @@ use Inertia\Inertia;
 use App\Models\DebtItem;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Barryvdh\Debugbar\Facades\Debugbar;
 
 class DebtItemController extends Controller
 {
@@ -82,8 +83,7 @@ class DebtItemController extends Controller
         if ($request->has('search')) {
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
-                $q->Where('total_price', 'like', "%{$searchTerm}%")
-                    ->orWhere('paid_amount', 'like', "%{$searchTerm}%")
+                $q->where('paid_amount', 'like', "%{$searchTerm}%")
                     ->orWhere('remaining_amount', 'like', "%{$searchTerm}%")
                     ->orWhere('status', 'like', "%{$searchTerm}%")
                     ->orWhere('last_payment_at', 'like', "%{$searchTerm}%")

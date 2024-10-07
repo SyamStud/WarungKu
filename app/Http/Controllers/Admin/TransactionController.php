@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
+use Inertia\Inertia;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Http\Controllers\Controller;
 
 class TransactionController extends Controller
 {
@@ -77,10 +78,7 @@ class TransactionController extends Controller
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('transaction_code', 'like', "%{$searchTerm}%")
-                    ->orWhere('total_price', 'like', "%{$searchTerm}%")
-                    ->orWhereHas('user', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%{$searchTerm}%");
-                    });
+                    ->orWhere('total_price', 'like', "%{$searchTerm}%");
             });
         }
 
@@ -105,7 +103,7 @@ class TransactionController extends Controller
                 'id' => $transaction->id,
                 'transaction_code' => $transaction->transaction_code,
                 'total_price' => $transaction->total_price,
-                'user' => $transaction->user_id ? $transaction->user->name : '-',
+                'transaction' => $transaction->transaction_id ? $transaction->transaction->name : '-',
                 'created_at' => $transaction->created_at->format('d F Y H:i'),
             ];
         });
@@ -121,5 +119,87 @@ class TransactionController extends Controller
                 'to' => $to,
             ],
         ]);
+    }
+
+    
+
+    public function getTransactionChartData(Request $request)
+    {
+        $range = $request->input('range', 'weekly');
+
+        switch ($range) {
+            case 'weekly':
+                $data = $this->getWeeklyData();
+                break;
+            case 'monthly':
+                $data = $this->getMonthlyData();
+                break;
+            case 'yearly':
+                $data = $this->getYearlyData();
+                break;
+            default:
+                return response()->json(['error' => 'Invalid range'], 400);
+        }
+
+        return response()->json(['transactionlist' => $data]);
+    }
+
+    private function getWeeklyData(): array
+    {
+        $end = Carbon::now()->endOfWeek();
+        $start = $end->copy()->subWeeks(3)->startOfWeek();
+
+        return $this->getData($start, $end, 'W');
+    }
+
+    private function getMonthlyData(): array
+    {
+        $end = Carbon::now()->endOfMonth();
+        $start = $end->copy()->subMonths(11)->startOfMonth();
+
+        return $this->getData($start, $end, 'F');
+    }
+
+    private function getYearlyData(): array
+    {
+        $end = Carbon::now()->endOfYear();
+        $start = $end->copy()->subYears(4)->startOfYear();
+
+        return $this->getData($start, $end, 'Y');
+    }
+
+    private function getData(Carbon $start, Carbon $end, string $format): array
+    {
+        $transactions = Transaction::selectRaw('DATE(created_at) as date, SUM(total_price) as count')
+            ->whereBetween('created_at', [$start, $end])
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $data = [];
+        $current = $start->copy();
+
+        while ($current <= $end) {
+            $key = $current->format($format);
+            $count = $transactions->where('date', $current->toDateString())->first()->count ?? 0;
+
+            if (!isset($data[$key])) {
+                $data[$key] = 0;
+            }
+            $data[$key] += $count;
+
+            $current->addDay();
+        }
+
+        return [
+            'labels' => array_keys($data),
+            'datasets' => [
+                [
+                    'label' => 'New Transactions',
+                    'backgroundColor' => '#f87979',
+                    'data' => array_values($data)
+                ]
+            ]
+        ];
     }
 }

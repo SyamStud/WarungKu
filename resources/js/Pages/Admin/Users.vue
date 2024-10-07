@@ -278,7 +278,7 @@ const handlePageChange = (newPageIndex) => {
     <Head title="Daftar Pengguna" />
 
     <AdminLayout>
-        <h1 class="text-2xl font-semibold text-gray-900">Daftar Pengguna</h1>
+        <h1 class="text-2xl font-semibold text-gray-900">Daftar Admin & Kasir</h1>
         <div class="flex flex-col md:flex-row justify-between">
             <Button @click="openAddModal()" class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah Pengguna</Button>
             <div class="flex items-center py-4 w-full md:w-72">

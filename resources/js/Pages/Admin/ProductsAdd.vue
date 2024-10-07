@@ -285,7 +285,7 @@ const updateVariantInput = (index, field, event) => {
         <hr class="my-5 border-[1.5px] bg-gray-300">
 
         <div v-if="formReady">
-            <div class="mx-auto p-6 bg-white rounded-lg shadow-lg">
+            <div class="mx-auto p-6 bg-white rounded-lg">
                 <form @submit.prevent="onSubmit" enctype="multipart/form-data" class="space-y-4">
                     <div class="flex flex-col md:flex-row gap-4">
                         <div class="w-full">

@@ -153,8 +153,8 @@ const deleteProduct = async () => {
 const columns = [
     { accessorKey: 'sku', header: 'SKU' },
     { accessorKey: 'name', header: 'Nama' },
-    { accessorKey: 'category', header: 'Kategori' },
     { accessorKey: 'variant', header: 'Variasi' },
+    { accessorKey: 'category', header: 'Kategori' },
     { accessorKey: 'price', header: 'Harga Jual' },
     { accessorKey: 'cost', header: 'Harga Modal' },
     { accessorKey: 'status', header: 'Status' },
