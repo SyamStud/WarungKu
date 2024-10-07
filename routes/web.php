@@ -13,14 +13,15 @@ use App\Http\Controllers\Admin\DebtController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\RestockListController;
+use App\Http\Controllers\UserSettingController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CartItemController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
-use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DebtItemController;
 use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Pos\DebtPaymentController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\StockMovementController;
@@ -120,7 +121,9 @@ Route::middleware('auth')->group(function () {
 
 
     //
+    Route::resource('/userSettings', UserSettingController::class);
     Route::get('/settings/getSettings', [SettingController::class, 'getSettings']);
+    Route::post('/settings/updateSettings', [SettingController::class, 'updateSettings']);
     Route::resource('/settings', SettingController::class);
     Route::resource('/restocks', RestockController::class);
 });

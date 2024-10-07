@@ -15,6 +15,7 @@ import { computed, onMounted, ref } from 'vue';
 import { z } from 'zod';
 import axios from 'axios';
 import Switch from '@/Components/ui/switch/Switch.vue';
+import PosLayout from '@/Layouts/PosLayout.vue';
 
 const customer = ref({});
 
@@ -71,7 +72,7 @@ const fetchData = async () => {
 
     <Head title="Dashboard" />
 
-    <AuthenticatedLayout>
+    <PosLayout>
         <template #header>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard</h2>
         </template>
@@ -201,5 +202,5 @@ const fetchData = async () => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </PosLayout>
 </template>

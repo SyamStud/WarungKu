@@ -6,23 +6,28 @@ use Inertia\Inertia;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class SettingController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        if ($this->isMobileDevice($request)) {
+            return Inertia::render('SettingsMobile');
+        }
+
         return Inertia::render('Settings');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    private function isMobileDevice(Request $request)
     {
-        //
+        $userAgent = strtolower($request->header('User-Agent'));
+
+        // Deteksi perangkat mobile berdasarkan user-agent string
+        return preg_match('/(android|iphone|ipad|ipod|mobile|blackberry|opera mini|opera mobi|iemobile|windows phone|palm|webos)/i', $userAgent);
     }
 
     /**
@@ -30,23 +35,35 @@ class SettingController extends Controller
      */
     public function store(Request $request)
     {
-        //
-    }
+        $validation = Validator::make(
+            $request->all(),
+            [
+                'shop_name' => 'required',
+                'shop_address' => 'required',
+            ]
+        );
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Setting $setting)
-    {
-        //
-    }
+        if ($validation->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validation->errors()->first()
+            ]);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Setting $setting)
-    {
-        //
+        Setting::updateOrCreate(
+            ['key' => 'shop_name'],
+            ['value' => $request->shop_name]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'shop_address'],
+            ['value' => $request->shop_address]
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Settings updated successfully'
+        ]);
     }
 
     /**
@@ -57,20 +74,15 @@ class SettingController extends Controller
         //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Setting $setting)
-    {
-        //
-    }
-
     public function getSettings()
     {
-        $settings = Setting::where('user_id', Auth::user()->id)->get();
-        
+        $settings = Setting::all();
+        $userSettings = Auth::user()->settings;
+
         return response()->json([
-            'settings' => $settings
+            'status' => 'success',
+            'global_settings' => $settings,
+            'user_settings' => $userSettings,
         ]);
     }
 }

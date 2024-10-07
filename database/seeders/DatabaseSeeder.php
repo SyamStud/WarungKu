@@ -30,6 +30,22 @@ class DatabaseSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
+        $settings = [
+            'sound_product_not_found' => true,
+            'sound_payment_method' => false,
+            'sound_alert_qris_payment' => true,
+            'sound_change' => true,
+            'sound_cancel_transaction' => true,
+            'sound_success_transaction' => true,
+        ];
+
+        foreach ($settings as $key => $value) {
+            $user->settings()->create([
+                'key' => $key,
+                'value' => $value,
+            ]);
+        }
+
         $user->assignRole('admin');
     }
 }

@@ -3,21 +3,19 @@
         <table class="min-w-full bg-white border rounded-lg">
             <thead class="bg-gray-100">
                 <tr>
-                    <!-- <th class="py-2 px-4 text-left whitespace-nowrap">SKU</th> -->
-                    <th class="py-2 px-4 text-left whitespace-nowrap">Nama Produk</th>
-                    <th class="py-2 px-4 text-left whitespace-nowrap">Variasi</th>
-                    <th class="py-2 px-4 text-left whitespace-nowrap">Harga</th>
-                    <th class="py-2 px-4 text-left whitespace-nowrap">Kuantitas</th>
-                    <th class="py-2 px-4 text-left whitespace-nowrap">Subtotal</th>
-                    <th class="py-2 px-4 text-left whitespace-nowrap">Aksi</th>
+                    <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Nama Produk</th>
+                    <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Variasi</th>
+                    <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Harga</th>
+                    <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Kuantitas</th>
+                    <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Subtotal</th>
+                    <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-for="(item, index) in items" :key="item.id" class="border-t"
                     :class="{ 'bg-green-100': item.id === updatingItemId || item.id === newlyAddedItemId }">
-                    <!-- <td class="py-2 px-4 whitespace-nowrap">{{ item.sku }}</td> -->
-                    <td class="py-2 px-4 whitespace-nowrap">{{ item.name }}</td>
-                    <td class="py-2 px-4 whitespace-nowrap">
+                    <td class="py-2 px-4 text-sm whitespace-nowrap">{{ item.name }}</td>
+                    <td class="py-2 px-4 text-sm whitespace-nowrap">
                         <Select v-model="item.variant_id" @update:modelValue="updateVariant(item.id, $event)">
                             <SelectTrigger class="w-[150px]">
                                 <SelectValue />
@@ -32,15 +30,15 @@
                             </SelectContent>
                         </Select>
                     </td>
-                    <td class="py-2 px-4 whitespace-nowrap">{{ formatRupiah(item.price) }}</td>
-                    <td class="py-2 px-4 whitespace-nowrap">
+                    <td class="py-2 px-4 text-sm whitespace-nowrap">{{ formatRupiah(item.price) }}</td>
+                    <td class="py-2 px-4 text-sm whitespace-nowrap">
                         <input type="number" v-model.number="item.quantity"
                             @keyup.enter="updateQuantity(item.id, item.quantity)"
                             @blur="updateQuantity(item.id, item.quantity)" @keydown.shift="unfocusInput"
                             class="w-16 px-2 py-1 border rounded"  />
                     </td>
-                    <td class="py-2 px-4 whitespace-nowrap">{{ formatRupiah(item.price * item.quantity) }}</td>
-                    <td class="py-2 px-4 whitespace-nowrap">
+                    <td class="py-2 px-4 text-sm whitespace-nowrap">{{ formatRupiah(item.price * item.quantity) }}</td>
+                    <td class="py-2 px-4 text-sm whitespace-nowrap">
                         <Button @click="() => openDeleteModal(item.id)" :class="{
                                 'flex gap-1 bg-red-500 text-white hover:bg-red-600 hover:ring-4 ring-red-300 focus-visible:ring-4 focus-visible:ring-red-300 focus-visible:ring-offset-0 focus-visible:bg-red-800': true,
                                 'ring-4 ring-red-300': isPseudoFocused(index)

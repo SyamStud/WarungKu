@@ -10,9 +10,4 @@ class Setting extends Model
     use HasFactory;
 
     protected $fillable = ['key', 'value'];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
 }

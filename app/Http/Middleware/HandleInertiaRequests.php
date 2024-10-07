@@ -34,6 +34,15 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'userSettings' => function () use ($request) {
+                if ($request->user()) {
+                    // Ambil data settings dari model `UserSetting`
+                    return \App\Models\UserSetting::where('user_id', $request->user()->id)
+                        ->pluck('value', 'key')
+                        ->toArray();
+                }
+                return [];
+            },
         ];
     }
 }

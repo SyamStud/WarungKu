@@ -1,716 +1,7 @@
-<script setup>
-import PosLayout from '@/Layouts/PosLayout.vue';
-import { Head } from '@inertiajs/vue3';
-
-defineProps({
-    canLogin: {
-        type: Boolean,
-    },
-    canRegister: {
-        type: Boolean,
-    }
-});
-
-function handleImageError() {
-    document.getElementById('screenshot-container')?.classList.add('!hidden');
-    document.getElementById('docs-card')?.classList.add('!row-span-1');
-    document.getElementById('docs-card-content')?.classList.add('!flex-row');
-    document.getElementById('background')?.classList.add('!hidden');
-}
-
-import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
-import VueMultiselect, { Multiselect } from 'vue-multiselect';
-import ProductTable from '@/Components/ProductTable.vue';
-import OrderSummary from '@/Components/OrderSummary.vue';
-import axios from 'axios';
-import Input from '@/Components/ui/input/Input.vue';
-import { Label } from '@/components/ui/label'
-import {
-    Sheet,
-    SheetClose,
-    SheetContent,
-    SheetDescription,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/Components/ui/sheet'
-import Button from '@/Components/ui/button/Button.vue';
-import Separator from '@/Components/ui/separator/Separator.vue';
-import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
-import DialogFooter from '@/Components/ui/dialog/DialogFooter.vue';
-import useSpeak from '@/Composables/useSpeak';
-import { useToast } from '@/Composables/useToast';
-import { add } from 'lodash';
-import { get } from '@vueuse/core';
-import useTerbilang from '@/Composables/useTerbilang';
-import FormInput from '@/Components/ui/form/FormInput.vue';
-import {
-    Menubar,
-    MenubarContent,
-    MenubarItem,
-    MenubarMenu,
-    MenubarSeparator,
-    MenubarShortcut,
-    MenubarTrigger,
-} from '@/Components/ui/menubar'
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from '@/Components/ui/alert-dialog'
-
-import { Link } from '@inertiajs/vue3';
-import NavigationMenu from '@/Components/ui/navigation-menu/NavigationMenu.vue';
-import NavigationMenuList from '@/Components/ui/navigation-menu/NavigationMenuList.vue';
-import NavigationMenuItem from '@/Components/ui/navigation-menu/NavigationMenuItem.vue';
-import NavigationMenuTrigger from '@/Components/ui/navigation-menu/NavigationMenuTrigger.vue';
-import NavigationMenuContent from '@/Components/ui/navigation-menu/NavigationMenuContent.vue';
-import NavigationMenuLink from '@/Components/ui/navigation-menu/NavigationMenuLink.vue';
-import { navigationMenuTriggerStyle } from '@/Components/ui/navigation-menu';
-import { FormField } from '@/Components/ui/form';
-import FormItem from '@/Components/ui/form/FormItem.vue';
-import FormLabel from '@/Components/ui/form/FormLabel.vue';
-import FormMessage from '@/Components/ui/form/FormMessage.vue';
-import PosLayoutMobile from '@/Layouts/PosLayoutMobile.vue';
-import ProductTableMobile from '@/Components/ProductTableMobile.vue';
-// import useTerbilang from '@/Composables/useTerbilang';
-
-const isAddModalOpen = ref(false);
-
-const Toast = useToast();
-const dialogRevokeButton = ref(null);
-const isRevokeModalOpen = ref(false);
-const cancelButton = ref(null);
-
-const identifierInput = ref('');
-const selectedProduct = ref(null);
-const products = ref([]);
-const cartItems = ref([]);
-const transactionCode = ref('');
-
-
-const identifierInputRef = ref(null);
-const productSelectRef = ref(null);
-const updatingItemId = ref(null);
-
-const isLoading = ref(false);
-const currentFocusIndex = ref(-1);
-const productTableRef = ref(null);
-
-const isHelperOpen = ref(false);
-const isPaymentModalOpen = ref(false);
-
-const searchingProduct = ref(null);
-
-const isLogoutModalOpen = ref(false);
-
-const openLogoutModal = () => {
-    isLogoutModalOpen.value = true;
-};
-
-const openRevokeModal = () => {
-    isRevokeModalOpen.value = true;
-};
-
-const isChangeModalOpen = ref(false);
-
-const handleEnterOnSearch = (event) => {
-    event.preventDefault(); // Prevent default behavior
-    event.stopPropagation(); // Stop event propagation
-    addProduct();
-}
-
-onMounted(() => {
-    timer = setInterval(updateDateTime, 1000);
-    // window.addEventListener('keydown', handleGlobalKeydown);
-
-    fetchCart();
-    fetchCustomer();
-
-    console.log('transactionCode', transactionCode.value);
-
-});
-
-onUnmounted(() => {
-    window.removeEventListener('keydown', handleGlobalKeydown);
-    clearInterval(timer);
-});
-
-const speakTotal = () => {
-    useSpeak('Total belanja, ' + formatRupiah(grandTotal.value));
-};
-
-const revokeTransaction = () => {
-    isLoading.value = true;
-
-    axios.post('/pos/carts/revoke', {
-        transaction_code: transactionCode.value
-    }).then(response => {
-        if (response.data && response.data.data) {
-            cartItems.value = response.data.data;
-        }
-
-        fetchCart();
-        isRevokeModalOpen.value = false;
-
-        isLoading.value = false;
-        generateTransactionCode();
-
-        useSpeak('Transaksi dibatalkan');
-    }).catch(error => {
-        console.error('Error revoking transaction:', error);
-    });
-
-};
-
-const fetchCart = async () => {
-    try {
-        isLoading.value = true;
-        const response = await axios.get('/pos/carts/getUserCart');
-        cartItems.value = response.data.data;
-        console.log('cartItems', cartItems.value);
-
-        if (cartItems.value.length > 0) {
-            transactionCode.value = response.data.transaction_code;
-        } else {
-            transactionCode.value = generateTransactionCode();
-        }
-    } catch (error) {
-        console.error('Error fetching user cart:', error);
-    } finally {
-        isLoading.value = false;
-    }
-};
-
-const customer = ref([]);
-const selectedCustomer = ref(null);
-
-const fetchCustomer = async () => {
-    try {
-        isLoading.value = true;
-        const response = await axios.get('/api/customers');
-        console.log('response', response.data);
-        customer.value = response.data.data;
-    } catch (error) {
-        console.error('Error fetching customer:', error);
-    } finally {
-        isLoading.value = false;
-    }
-};
-
-const updateIdCustomer = (value) => {
-    selectedCustomer.value = value;
-
-    console.log('selectedCustomer', selectedCustomer.value);
-};
-
-const generateTransactionCode = () => {
-    const now = () => {
-        const date = new Date();
-        return date.getFullYear().toString().slice(-2) +
-            date.getDate().toString().padStart(2, '0') +
-            (date.getMonth() + 1).toString().padStart(2, '0') +
-            date.getDate().toString().padStart(2, '0') +
-            date.getHours().toString().padStart(2, '0') +
-            date.getMinutes().toString().padStart(2, '0');
-    };
-
-    return "TRX" + now() + "-" + Math.random().toString(36).substr(2, 5).toUpperCase();
-};
-
-const successAudio = new Audio('/success.mp3');
-const errorAudio = new Audio('/error.mp3');
-
-// Preload the audio files
-successAudio.load();
-errorAudio.load();
-
-const productQueue = reactive([]);
-const isProcessingQueue = ref(false);
-const productCache = new Map();
-let debounceTimer;
-
-const getProduct = async (sku) => {
-    if (productCache.has(sku)) {
-        return productCache.get(sku);
-    }
-
-    isLoading.value = true;
-    try {
-        const response = await axios.post('/products/get', { sku });
-        productCache.set(sku, response.data.product);
-        return response.data.product;
-    } catch (error) {
-        console.error('Error fetching product:', error);
-        throw error;
-    } finally {
-        isLoading.value = false;
-    }
-};
-
-const processQueue = async () => {
-    if (productQueue.length === 0) {
-        isProcessingQueue.value = false;
-        return;
-    }
-
-    isProcessingQueue.value = true;
-    const product = productQueue.shift();
-
-    try {
-        await axios.post('/pos/carts/addProduct', {
-            product: product,
-            variant_id: product.product_variants[0].id,
-            quantity: 1,
-            transaction_code: transactionCode.value
-        });
-    } catch (error) {
-        console.error('Error adding product to cart:', error);
-        // Handle error (e.g., revert optimistic update, show error message)
-    }
-
-    // Process next item in queue
-    processQueue();
-};
-
-const updateVariant = (itemId, variantId) => {
-
-    console.log('itemId', itemId);
-    console.log('variantId', variantId);
-
-    const item = cartItems.value.find(item => item.id === itemId);
-
-    console.log('item', item);
-
-    if (item) {
-        const variant = item.product_variants.find(variant => variant.id === parseInt(variantId));
-
-        console.log('variant', variant);
-
-        if (variant) {
-            // Optimistic update
-            const existingItem = cartItems.value.find(
-                i => i.product_id === item.product_id &&
-                    i.product_variant_id === parseInt(variantId) &&
-                    i.id !== itemId
-            );
-
-            console.log('cartItems', cartItems.value);
-
-            console.log('existingItem', existingItem);
-
-            if (existingItem) {
-                existingItem.quantity += item.quantity;
-                existingItem.total_price = existingItem.quantity * variant.price;
-
-                cartItems.value = cartItems.value.filter(i => i.id !== itemId);
-            } else {
-                item.product_variant_id = parseInt(variantId);
-                item.price = variant.price;
-                item.total_price = item.quantity * variant.price;
-            }
-        }
-    }
-
-    // Optimistic update
-    updatingItemId.value = itemId;
-
-    axios.post('/pos/carts/updateVariant', {
-        id: itemId,
-        variant_id: variantId,
-        transaction_code: transactionCode.value
-    }).then(response => {
-        if (response.data && response.data.data) {
-            cartItems.value = response.data.data;
-
-            console.log('cartItems', cartItems.value);
-        }
-    }).catch(error => {
-        console.error('Error updating variant:', error);
-        fetchCartItems();
-        // You might want to show an error message to the user here
-    }).finally(() => {
-        updatingItemId.value = null;
-    });
-};
-
-const updateQuantity = (id, quantity) => {
-    const item = cartItems.value.find(item => item.id === id);
-    if (item) {
-        item.quantity = quantity;
-    }
-
-    // Optimistic update
-    updatingItemId.value = id;
-
-    if (quantity === 0) {
-        removeItem(id);
-        return;
-    } else {
-        axios.post('/pos/carts/updateProduct', {
-            id: id,
-            quantity: quantity,
-            transaction_code: transactionCode.value
-        }).then(response => {
-            if (response.data && response.data.data) {
-                cartItems.value = response.data.data;
-            }
-        }).catch(error => {
-            console.error('Error updating quantity:', error);
-            // Revert the optimistic update
-            item.quantity = item.quantity - quantity;
-            // You might want to show an error message to the user here
-        }).finally(() => {
-            updatingItemId.value = null;
-        });
-    }
-};
-
-const removeItem = (id) => {
-    cartItems.value = cartItems.value.filter(item => item.id !== id);
-
-    axios.post('/pos/carts/removeProduct', {
-        id: id,
-        transaction_code: transactionCode.value
-    }).then(response => {
-        if (response.data && response.data.data) {
-            cartItems.value = response.data.data;
-        }
-
-        if (cartItems.value.length === 0) {
-            revokeTransaction();
-            transactionCode.value = generateTransactionCode();
-        }
-    }).catch(error => {
-        console.error('Error removing item:', error);
-        // You might want to show an error message to the user here
-    });
-};
-
-const total = computed(() => {
-    return cartItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0);
-});
-
-const tax = computed(() => total.value * 0);
-const grandTotal = computed(() => total.value + tax.value);
-
-const processPayment = async () => {
-    try {
-        const order = {
-            items: cartItems.value,
-            total: total.value,
-            tax: tax.value,
-            grandTotal: grandTotal.value
-        };
-        const response = await axios.post('/api/orders', order);
-        cartItems.value = [];
-    } catch (error) {
-        console.error('Error processing payment:', error);
-    }
-};
-
-const handleGlobalKeydown = (event) => {
-    const isFocusedOnInput = () => {
-        const activeElement = document.activeElement;
-        return activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
-    };
-
-    if (event.key === '1' && !isFocusedOnInput() && document.activeElement !== identifierInputRef.value.$el) {
-        event.preventDefault();
-        identifierInputRef.value.$el.focus();
-    }
-
-    if (event.key === '2' && !isFocusedOnInput() && document.activeElement !== productSelectRef.value.$el) {
-        event.preventDefault();
-        productSelectRef.value.$el.querySelector('input').focus();
-    }
-
-    if (event.code === 'ShiftRight' && document.activeElement === identifierInputRef.value.$el) {
-        identifierInputRef.value.$el.blur();
-        identifierInput.value = '';
-    } else if (event.code === 'ShiftRight' && document.activeElement === productSelectRef.value.$el.querySelector('input')) {
-        productSelectRef.value.$el.querySelector('input').blur();
-        selectedProduct.value = null;
-    }
-
-    if (event.key === 'b' && !isFocusedOnInput() && isHelperOpen.value) {
-        event.preventDefault();
-        isHelperOpen.value = !isHelperOpen.value;
-    } else if (event.key === 'b' && !isFocusedOnInput() && !isHelperOpen.value) {
-        event.preventDefault();
-        isHelperOpen.value = !isHelperOpen.value;
-    }
-
-    const focusNextQuantityInput = () => {
-        if (productTableRef.value) {
-            productTableRef.value.focusNextQuantityInput();
-        }
-    };
-
-    const focusPreviousQuantityInput = () => {
-        if (productTableRef.value) {
-            productTableRef.value.focusPreviousQuantityInput();
-        }
-    };
-
-    const focusQuantityInput = (index) => {
-        // This function will be implemented in the ProductTable component
-        // We'll emit an event to the parent component to handle the focus
-    };
-
-    // Handle arrow down key for quantity input navigation
-    if (event.key === 'k' && !isFocusedOnInput() && productTableRef.value) {
-        event.preventDefault();
-
-        focusNextQuantityInput();
-    } else if (event.key === 'Shift') {
-        // Menghilangkan fokus dari elemen yang sedang aktif
-        if (document.activeElement instanceof HTMLElement) {
-            document.activeElement.blur();
-        }
-    }
-};
-
-const selectedItem = ref(null);
-
-const handleSelect = (product) => {
-    selectedItem.value = product;
-
-    addToCart(selectedItem.value.identifier, selectedItem.value.variant_id);
-    isAddModalOpen.value = false;
-};
-
-const addProduct = async () => {
-    if (identifierInput.value) {
-        addToCart(identifierInput.value);
-
-        identifierInput.value = '';
-    }
-};
-
-const newlyAddedItemId = ref(null);
-
-const addToCart = async (identifier, variant_id = 0) => {
-    console.log('cartItems', cartItems.value);
-    const item = cartItems.value.find(item => item.name === identifier && item.product_variant_id === variant_id || item.sku === identifier && item.product_variant_id === variant_id);
-
-    try {
-        newlyAddedItemId.value = item ? item.id : null;
-        const response = await axios.post('/pos/carts/addItem', {
-            identifier: identifier,
-            transaction_code: transactionCode.value,
-            variant_id: variant_id
-        });
-
-        if (response.data && response.data.data) {
-            console.log('response', response.data.data);
-
-            cartItems.value = response.data.data;
-        } else if (response.data && response.data.product.length > 0) {
-            console.log('response', response.data.product);
-            searchingProduct.value = response.data.product;
-            isAddModalOpen.value = true;
-        } else {
-            errorAudio.play();
-            setTimeout(() => {
-                useSpeak('Produk tidak ditemukan');
-            }, 500);
-
-            Toast.fire({
-                icon: "error",
-                title: 'Produk tidak ditemukan',
-                position: 'bottom-right',
-            });
-        }
-    } catch (error) {
-        console.error('Error adding product to cart:', error);
-    } finally {
-        newlyAddedItemId.value = null;
-    }
-};
-
-const getProductByIdentifier = async (identifier) => {
-    isLoading.value = true;
-
-    try {
-        // Try to get by SKU first
-        let response = await axios.post('/products/getBySku', { sku: identifier });
-
-        // If not found by SKU, try by name
-        if (!response.data.product) {
-            console.log('Searching by name');
-            response = await axios.post('/products/getVariantByName', { name: identifier });
-        }
-
-        if (response.data.product || response.data.products) {
-            // searchingProduct.value = response.data.product || response.data.products;
-            return response.data || response.data;
-        }
-
-        return null;
-    } catch (error) {
-        console.error('Error fetching product:', error);
-        throw error;
-    } finally {
-        isLoading.value = false;
-    }
-};
-
-// Function to clear expired cache
-const clearExpiredProductCache = () => {
-    const now = new Date();
-    Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('product_')) {
-            const cachedData = JSON.parse(localStorage.getItem(key));
-            if (new Date(cachedData.expires_at) <= now) {
-                localStorage.removeItem(key);
-            }
-        }
-    });
-};
-
-function formatRupiah(value) {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(value);
-}
-
-const openPaymentModal = () => {
-    isPaymentModalOpen.value = true;
-    console.log('Grand Total:', grandTotal.value);
-
-    useTerbilang(grandTotal.value);
-};
-
-const currentDay = ref('')
-const currentDate = ref('')
-const currentTime = ref('')
-
-const updateDateTime = () => {
-    const now = new Date()
-    const options = { timeZone: 'Asia/Jakarta' }
-
-    currentDay.value = now.toLocaleDateString('id-ID', { ...options, weekday: 'long' })
-    currentDate.value = now.toLocaleDateString('id-ID', {
-        ...options,
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    })
-    const timeString = now.toLocaleTimeString('id-ID', {
-        ...options,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-        hourCycle: 'h23'
-    });
-
-    currentTime.value = timeString.replace(/\./g, ':');
-}
-
-let timer
-
-const selectedPaymentMethod = ref('');
-
-const selectedPayment = ref(null);
-
-const selectPaymentMethod = (method) => {
-    selectedPayment.value = method;
-
-    if (selectedPayment.value !== 'cash') {
-        bayar.value = grandTotal.value;
-    } else {
-        bayar.value = '';
-    }
-};
-
-const bayar = ref('');
-const kembali = ref(null);
-const computedBayarValue = computed(() => bayar.value);
-console.log('computedBayarValue:', computedBayarValue.value);
-
-const hitungKembali = () => {
-    const bayarValue = computedBayarValue.value;
-    kembali.value = bayarValue - grandTotal.value;
-    console.log('Kembali:', kembali.value);
-};
-
-const isFormValid = computed(() => {
-    return bayar.value >= grandTotal.value;
-});
-
-const onSubmit = async () => {
-    if (!isFormValid.value) return;
-
-    isLoading.value = true;
-    try {
-        const response = await axios.post('/pos/carts/store-transaction', {
-            transaction_code: transactionCode.value,
-            payment_method: selectedPayment.value,
-            total_payment: bayar.value,
-            customer_id: selectedCustomer.value ? selectedCustomer.value.id : null,
-        });
-
-        if (response.data) {
-            fetchCart();
-            useSpeak('Transaksi berhasil');
-
-            Toast.fire({
-                icon: "success",
-                title: 'Transaksi berhasil',
-                position: 'bottom-right',
-            });
-
-            if (selectedPayment.value === 'cash') {
-                isChangeModalOpen.value = true;
-                useSpeak('Kembali, ' + useTerbilang(kembali.value));
-            }
-
-            bayar.value = '';
-            computedBayarValue.value = '';
-            selectedPayment.value = null;
-        }
-
-        isPaymentModalOpen.value = false;
-    } catch (error) {
-        console.error('Payment processing failed', error);
-    } finally {
-        isLoading.value = false;
-    }
-};
-</script>
-
-<style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
-
-<style scoped>
-tr:focus {
-    outline: 2px solid #4299e1;
-    outline-offset: -2px;
-    background-color: #b9defd;
-}
-
-tr:hover {
-    outline: 2px solid #4299e1;
-    outline-offset: -2px;
-}
-</style>
-
 <template>
-
     <Head title="Welcome" />
 
     <PosLayoutMobile>
-
         <div class="flex flex-col min-h-screen">
             <div class="flex-grow">
                 <div class="sticky top-0 bg-white z-20">
@@ -749,10 +40,16 @@ tr:hover {
                     </div>
                 </div>
 
-                <Button v-if="grandTotal" @click="openPaymentModal"
-                    class="w-full h-14 bg-blue-500 hover:bg-blue-600 mb-5">
-                    Proses Pembayaran
-                </Button>
+                <div class="flex gap-2 item-center mb-5">
+                    <Button v-if="grandTotal" @click="openRevokeModal" class="w-1/2 h-14 bg-red-500 hover:bg-red-600">
+                        Batalkan
+                    </Button>
+
+                    <Button v-if="grandTotal" @click="openPaymentModal"
+                        class="w-full h-14 bg-blue-500 hover:bg-blue-600">
+                        Proses Pembayaran
+                    </Button>
+                </div>
 
                 <div class="flex justify-center items-center p-2 w-full text-center space-x-1">
                     <p class="text-xs text-gray-500">
@@ -974,3 +271,519 @@ tr:hover {
         </div>
     </DialogWrapper>
 </template>
+
+<script setup>
+import { Head } from '@inertiajs/vue3';
+
+defineProps({
+    canLogin: {
+        type: Boolean,
+    },
+    canRegister: {
+        type: Boolean,
+    }
+});
+
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
+import axios from 'axios';
+import Input from '@/Components/ui/input/Input.vue';
+import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
+import DialogFooter from '@/Components/ui/dialog/DialogFooter.vue';
+import useSpeak from '@/Composables/useSpeak';
+import { useToast } from '@/Composables/useToast';
+import useTerbilang from '@/Composables/useTerbilang';
+import FormInput from '@/Components/ui/form/FormInput.vue';
+import PosLayoutMobile from '@/Layouts/PosLayoutMobile.vue';
+import ProductTableMobile from '@/Components/ProductTableMobile.vue';
+import Button from '@/components/ui/button/Button.vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogFooter,
+    AlertDialogHeader,
+} from '@/Components/ui/alert-dialog';
+
+const isAddModalOpen = ref(false);
+
+const Toast = useToast();
+const dialogRevokeButton = ref(null);
+const isRevokeModalOpen = ref(false);
+const cancelButton = ref(null);
+
+const identifierInput = ref('');
+const selectedProduct = ref(null);
+const cartItems = ref([]);
+const transactionCode = ref('');
+
+const identifierInputRef = ref(null);
+const productSelectRef = ref(null);
+const updatingItemId = ref(null);
+
+const isLoading = ref(false);
+const currentFocusIndex = ref(-1);
+const productTableRef = ref(null);
+
+const isHelperOpen = ref(false);
+const isPaymentModalOpen = ref(false);
+
+const searchingProduct = ref(null);
+
+const isLogoutModalOpen = ref(false);
+
+const openLogoutModal = () => {
+    isLogoutModalOpen.value = true;
+};
+
+const openRevokeModal = () => {
+    isRevokeModalOpen.value = true;
+};
+
+const isChangeModalOpen = ref(false);
+
+
+onMounted(() => {
+    timer = setInterval(updateDateTime, 1000);
+
+    fetchCart();
+    fetchCustomer();
+});
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleGlobalKeydown);
+    clearInterval(timer);
+});
+
+const revokeTransaction = () => {
+    isLoading.value = true;
+
+    axios.post('/pos/carts/revoke', {
+        transaction_code: transactionCode.value
+    }).then(response => {
+        if (response.data && response.data.data) {
+            cartItems.value = response.data.data;
+        }
+
+        fetchCart();
+        isRevokeModalOpen.value = false;
+
+        isLoading.value = false;
+        generateTransactionCode();
+
+        useSpeak('Transaksi dibatalkan');
+    }).catch(error => {
+        console.error('Error revoking transaction:', error);
+    });
+};
+
+const fetchCart = async () => {
+    try {
+        isLoading.value = true;
+        const response = await axios.get('/pos/carts/getUserCart');
+        cartItems.value = response.data.data;
+        console.log('cartItems', cartItems.value);
+
+        if (cartItems.value.length > 0) {
+            transactionCode.value = response.data.transaction_code;
+        } else {
+            transactionCode.value = generateTransactionCode();
+        }
+    } catch (error) {
+        console.error('Error fetching user cart:', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+const customer = ref([]);
+const selectedCustomer = ref(null);
+
+const fetchCustomer = async () => {
+    try {
+        isLoading.value = true;
+        const response = await axios.get('/api/customers');
+        console.log('response', response.data);
+        customer.value = response.data.data;
+    } catch (error) {
+        console.error('Error fetching customer:', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+const updateIdCustomer = (value) => {
+    selectedCustomer.value = value;
+};
+
+const generateTransactionCode = () => {
+    const now = () => {
+        const date = new Date();
+        return date.getFullYear().toString().slice(-2) +
+            date.getDate().toString().padStart(2, '0') +
+            (date.getMonth() + 1).toString().padStart(2, '0') +
+            date.getDate().toString().padStart(2, '0') +
+            date.getHours().toString().padStart(2, '0') +
+            date.getMinutes().toString().padStart(2, '0');
+    };
+
+    return "TRX" + now() + "-" + Math.random().toString(36).substr(2, 5).toUpperCase();
+};
+
+const successAudio = new Audio('/success.mp3');
+const errorAudio = new Audio('/error.mp3');
+
+// Preload the audio files
+successAudio.load();
+errorAudio.load();
+
+const updateVariant = (itemId, variantId) => {
+    const item = cartItems.value.find(item => item.id === itemId);
+
+    if (item) {
+        const variant = item.product_variants.find(variant => variant.id === parseInt(variantId));
+
+        if (variant) {
+            // Optimistic update
+            const existingItem = cartItems.value.find(
+                i => i.product_id === item.product_id &&
+                    i.product_variant_id === parseInt(variantId) &&
+                    i.id !== itemId
+            );
+
+            if (existingItem) {
+                existingItem.quantity += item.quantity;
+                existingItem.total_price = existingItem.quantity * variant.price;
+
+                cartItems.value = cartItems.value.filter(i => i.id !== itemId);
+            } else {
+                item.product_variant_id = parseInt(variantId);
+                item.price = variant.price;
+                item.total_price = item.quantity * variant.price;
+            }
+        }
+    }
+
+    // Optimistic update
+    updatingItemId.value = itemId;
+
+    axios.post('/pos/carts/updateVariant', {
+        id: itemId,
+        variant_id: variantId,
+        transaction_code: transactionCode.value
+    }).then(response => {
+        if (response.data && response.data.data) {
+            cartItems.value = response.data.data;
+
+            console.log('cartItems', cartItems.value);
+        }
+    }).catch(error => {
+        console.error('Error updating variant:', error);
+        fetchCartItems();
+    }).finally(() => {
+        updatingItemId.value = null;
+    });
+};
+
+const updateQuantity = (id, quantity) => {
+    const item = cartItems.value.find(item => item.id === id);
+    if (item) {
+        item.quantity = quantity;
+    }
+
+    // Optimistic update
+    updatingItemId.value = id;
+
+    if (quantity === 0) {
+        removeItem(id);
+        return;
+    } else {
+        axios.post('/pos/carts/updateProduct', {
+            id: id,
+            quantity: quantity,
+            transaction_code: transactionCode.value
+        }).then(response => {
+            if (response.data && response.data.data) {
+                cartItems.value = response.data.data;
+            }
+        }).catch(error => {
+            console.error('Error updating quantity:', error);
+            item.quantity = item.quantity - quantity;
+        }).finally(() => {
+            updatingItemId.value = null;
+        });
+    }
+};
+
+const removeItem = (id) => {
+    cartItems.value = cartItems.value.filter(item => item.id !== id);
+
+    axios.post('/pos/carts/removeProduct', {
+        id: id,
+        transaction_code: transactionCode.value
+    }).then(response => {
+        if (response.data && response.data.data) {
+            cartItems.value = response.data.data;
+        }
+
+        if (cartItems.value.length === 0) {
+            revokeTransaction();
+            transactionCode.value = generateTransactionCode();
+        }
+    }).catch(error => {
+        console.error('Error removing item:', error);
+    });
+};
+
+const total = computed(() => {
+    return cartItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0);
+});
+
+const tax = computed(() => total.value * 0);
+const grandTotal = computed(() => total.value + tax.value);
+
+const handleGlobalKeydown = (event) => {
+    const isFocusedOnInput = () => {
+        const activeElement = document.activeElement;
+        return activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA';
+    };
+
+    if (event.key === '1' && !isFocusedOnInput() && document.activeElement !== identifierInputRef.value.$el) {
+        event.preventDefault();
+        identifierInputRef.value.$el.focus();
+    }
+
+    if (event.key === '2' && !isFocusedOnInput() && document.activeElement !== productSelectRef.value.$el) {
+        event.preventDefault();
+        productSelectRef.value.$el.querySelector('input').focus();
+    }
+
+    if (event.code === 'ShiftRight' && document.activeElement === identifierInputRef.value.$el) {
+        identifierInputRef.value.$el.blur();
+        identifierInput.value = '';
+    } else if (event.code === 'ShiftRight' && document.activeElement === productSelectRef.value.$el.querySelector('input')) {
+        productSelectRef.value.$el.querySelector('input').blur();
+        selectedProduct.value = null;
+    }
+
+    if (event.key === 'b' && !isFocusedOnInput() && isHelperOpen.value) {
+        event.preventDefault();
+        isHelperOpen.value = !isHelperOpen.value;
+    } else if (event.key === 'b' && !isFocusedOnInput() && !isHelperOpen.value) {
+        event.preventDefault();
+        isHelperOpen.value = !isHelperOpen.value;
+    }
+
+    const focusNextQuantityInput = () => {
+        if (productTableRef.value) {
+            productTableRef.value.focusNextQuantityInput();
+        }
+    };
+
+    const focusPreviousQuantityInput = () => {
+        if (productTableRef.value) {
+            productTableRef.value.focusPreviousQuantityInput();
+        }
+    };
+
+    const focusQuantityInput = (index) => {
+        // This function will be implemented in the ProductTable component
+        // We'll emit an event to the parent component to handle the focus
+    };
+
+    // Handle arrow down key for quantity input navigation
+    if (event.key === 'k' && !isFocusedOnInput() && productTableRef.value) {
+        event.preventDefault();
+
+        focusNextQuantityInput();
+    } else if (event.key === 'Shift') {
+        // Menghilangkan fokus dari elemen yang sedang aktif
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }
+};
+
+const selectedItem = ref(null);
+
+const handleSelect = (product) => {
+    selectedItem.value = product;
+
+    addToCart(selectedItem.value.identifier, selectedItem.value.variant_id);
+    isAddModalOpen.value = false;
+};
+
+const addProduct = async () => {
+    if (identifierInput.value) {
+        addToCart(identifierInput.value);
+
+        identifierInput.value = '';
+    }
+};
+
+const newlyAddedItemId = ref(null);
+
+const addToCart = async (identifier, variant_id = 0) => {
+    console.log('cartItems', cartItems.value);
+    const item = cartItems.value.find(item => item.name === identifier && item.product_variant_id === variant_id || item.sku === identifier && item.product_variant_id === variant_id);
+
+    try {
+        newlyAddedItemId.value = item ? item.id : null;
+        const response = await axios.post('/pos/carts/addItem', {
+            identifier: identifier,
+            transaction_code: transactionCode.value,
+            variant_id: variant_id
+        });
+
+        if (response.data && response.data.data) {
+            console.log('response', response.data.data);
+
+            cartItems.value = response.data.data;
+        } else if (response.data && response.data.product.length > 0) {
+            console.log('response', response.data.product);
+            searchingProduct.value = response.data.product;
+            isAddModalOpen.value = true;
+        } else {
+            errorAudio.play();
+            setTimeout(() => {
+                useSpeak('Produk tidak ditemukan');
+            }, 500);
+
+            Toast.fire({
+                icon: "error",
+                title: 'Produk tidak ditemukan',
+                position: 'bottom-right',
+            });
+        }
+    } catch (error) {
+        console.error('Error adding product to cart:', error);
+    } finally {
+        newlyAddedItemId.value = null;
+    }
+};
+
+function formatRupiah(value) {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(value);
+}
+
+const openPaymentModal = () => {
+    isPaymentModalOpen.value = true;
+    console.log('Grand Total:', grandTotal.value);
+
+    useTerbilang(grandTotal.value);
+};
+
+const currentDay = ref('')
+const currentDate = ref('')
+const currentTime = ref('')
+
+const updateDateTime = () => {
+    const now = new Date()
+    const options = { timeZone: 'Asia/Jakarta' }
+
+    currentDay.value = now.toLocaleDateString('id-ID', { ...options, weekday: 'long' })
+    currentDate.value = now.toLocaleDateString('id-ID', {
+        ...options,
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    })
+    const timeString = now.toLocaleTimeString('id-ID', {
+        ...options,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        hourCycle: 'h23'
+    });
+
+    currentTime.value = timeString.replace(/\./g, ':');
+}
+
+let timer
+
+const selectedPayment = ref(null);
+
+const selectPaymentMethod = (method) => {
+    selectedPayment.value = method;
+
+    if (selectedPayment.value !== 'cash') {
+        bayar.value = grandTotal.value;
+    } else {
+        bayar.value = '';
+    }
+};
+
+const bayar = ref('');
+const kembali = ref(null);
+const computedBayarValue = computed(() => bayar.value);
+console.log('computedBayarValue:', computedBayarValue.value);
+
+const hitungKembali = () => {
+    const bayarValue = computedBayarValue.value;
+    kembali.value = bayarValue - grandTotal.value;
+    console.log('Kembali:', kembali.value);
+};
+
+const isFormValid = computed(() => {
+    return bayar.value >= grandTotal.value;
+});
+
+const onSubmit = async () => {
+    if (!isFormValid.value) return;
+
+    isLoading.value = true;
+    try {
+        const response = await axios.post('/pos/carts/store-transaction', {
+            transaction_code: transactionCode.value,
+            payment_method: selectedPayment.value,
+            total_payment: bayar.value,
+            customer_id: selectedCustomer.value ? selectedCustomer.value.id : null,
+        });
+
+        if (response.data) {
+            fetchCart();
+            useSpeak('Transaksi berhasil');
+
+            Toast.fire({
+                icon: "success",
+                title: 'Transaksi berhasil',
+                position: 'bottom-right',
+            });
+
+            if (selectedPayment.value === 'cash') {
+                isChangeModalOpen.value = true;
+                useSpeak('Kembali, ' + useTerbilang(kembali.value));
+            }
+
+            bayar.value = '';
+            computedBayarValue.value = '';
+            selectedPayment.value = null;
+        }
+
+        isPaymentModalOpen.value = false;
+    } catch (error) {
+        console.error('Payment processing failed', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
+</script>
+
+<style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
+
+<style scoped>
+tr:focus {
+    outline: 2px solid #4299e1;
+    outline-offset: -2px;
+    background-color: #b9defd;
+}
+
+tr:hover {
+    outline: 2px solid #4299e1;
+    outline-offset: -2px;
+}
+</style>

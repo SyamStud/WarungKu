@@ -32,7 +32,7 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -41,6 +41,23 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        $settings = [
+            'sound_product_not_found' => true,
+            'sound_payment_method' => false,
+            'sound_alert_qris_payment' => true,
+            'sound_change' => true,
+            'sound_cancel_transaction' => true,
+            'sound_success_transaction' => true,
+        ];
+
+        foreach ($settings as $key => $value) {
+            $user->settings()->create([
+                'key' => $key,
+                'value' => $value,
+            ]);
+        }
+
 
         event(new Registered($user));
 
