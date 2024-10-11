@@ -7,6 +7,7 @@
                     <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Variasi</th>
                     <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Harga</th>
                     <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Kuantitas</th>
+                    <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Diskon</th>
                     <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Subtotal</th>
                     <th class="py-2 px-4 text-sm text-left whitespace-nowrap">Aksi</th>
                 </tr>
@@ -35,14 +36,17 @@
                         <input type="number" v-model.number="item.quantity"
                             @keyup.enter="updateQuantity(item.id, item.quantity)"
                             @blur="updateQuantity(item.id, item.quantity)" @keydown.shift="unfocusInput"
-                            class="w-16 px-2 py-1 border rounded"  />
+                            class="w-16 px-2 py-1 border rounded" />
                     </td>
-                    <td class="py-2 px-4 text-sm whitespace-nowrap">{{ formatRupiah(item.price * item.quantity) }}</td>
+                    <td class="py-2 px-4 text-sm whitespace-nowrap">{{ formatRupiah(item.discount) }}</td>
+                    <td class="py-2 px-4 text-sm whitespace-nowrap">{{ item.discounted_price > 0 ?
+                        formatRupiah(item.discounted_price * item.quantity) : formatRupiah(item.price * item.quantity)
+                        }}</td>
                     <td class="py-2 px-4 text-sm whitespace-nowrap">
                         <Button @click="() => openDeleteModal(item.id)" :class="{
-                                'flex gap-1 bg-red-500 text-white hover:bg-red-600 hover:ring-4 ring-red-300 focus-visible:ring-4 focus-visible:ring-red-300 focus-visible:ring-offset-0 focus-visible:bg-red-800': true,
-                                'ring-4 ring-red-300': isPseudoFocused(index)
-                            }" @blur="blurRemoveButton(index)">
+                            'flex gap-1 bg-red-500 text-white hover:bg-red-600 hover:ring-4 ring-red-300 focus-visible:ring-4 focus-visible:ring-red-300 focus-visible:ring-offset-0 focus-visible:bg-red-800': true,
+                            'ring-4 ring-red-300': isPseudoFocused(index)
+                        }" @blur="blurRemoveButton(index)">
                             <img width="20" height="20"
                                 src="https://img.icons8.com/?size=100&id=78581&format=png&color=ffffff" alt="gear" />
                             Hapus

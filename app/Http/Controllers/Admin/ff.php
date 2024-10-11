@@ -8,13 +8,10 @@ use App\Models\Product;
 use App\Models\CartItem;
 use App\Models\Customer;
 use App\Models\DebtItem;
-use App\Models\Discount;
 use Mike42\Escpos\Printer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Models\DiscountProduct;
-use App\Models\Setting;
 use Illuminate\Support\Facades\Auth;
 use Mike42\Escpos\CapabilityProfile;
 use Illuminate\Support\Facades\Cache;
@@ -183,10 +180,7 @@ class CartController extends Controller
                     'sku' => $product->sku,
                     'name' => $product->name,
                     'variant_id' => (string) $cartItem->product_variant_id,
-                    'product_variants' => $variants,
-                    'discounted_price' => $cartItem->discounted_price,
-                    'discount' => $cartItem->discount,
-                    'discounted_total_price' => $cartItem->discounted_total_price,
+                    'product_variants' => $variants
                 ];
             });
 
@@ -194,9 +188,8 @@ class CartController extends Controller
             'message' => 'Cart items retrieved successfully',
             'status' => 'success',
             'data' => $cartItems,
-            'grand_total' => $cart->grand_total,
+            'total_price' => $cart->total_price,
             'transaction_code' => $cart->transaction_code,
-            'cart' => $cart,
         ]);
     }
 
@@ -254,63 +247,18 @@ class CartController extends Controller
             ], 404);
         }
 
-        $productDiscount = $this->getProductDiscount($cartItem->product_variant_id, $request->quantity);
-
-
-        $cartItem->discounted_price = $productDiscount
-            ? $this->calculateProductDiscount($cartItem->price, $productDiscount)
-            : $cartItem->price;
-        $cartItem->save();
-
         $cartItem->update([
             'quantity' => $request->quantity,
             'total_price' => $cartItem->price * $request->quantity,
-            'discounted_total_price' => $cartItem->discounted_price * $request->quantity,
         ]);
 
-        $productDiscountAmount = 0;
-        if ($productDiscount) {
-            if ($productDiscount['discount']['amount_type'] == 'percentage') {
-                $productDiscountAmount = $cartItem->total_price * ($productDiscount['discount']['amount'] / 100);
-            } else {
-                $productDiscountAmount =  $productDiscount['discount']['amount'] * $cartItem->quantity;
-            }
-        }
-
-        $cartItem->discount = $productDiscount ? $productDiscountAmount : 0;
-        $cartItem->save();
-
         $cart = Cart::find($cartItem->cart_id);
-
         $totalPrice = $cart->cartItems()->sum('total_price');
-        $totalDiscount = $cart->cartItems()->sum('discount');
-
-        $orderDiscount = $this->getOrderDiscount(($totalPrice - $totalDiscount));
-
-        $orderDiscountAmount = 0;
-        if ($orderDiscount) {
-            $orderDiscountAmount = $orderDiscount['amount_type'] == 'percentage'
-                ? ($totalPrice * ($orderDiscount['amount'] / 100))
-                : $orderDiscount['amount'];
-
-            $totalDiscount += $orderDiscountAmount;
-        }
-
-        $grandTotal = $totalPrice - $totalDiscount;
-        $grandTotal += $this->calculateTax($grandTotal);
-
-        $cart->total_price = $totalPrice;
-        $cart->discount = $totalDiscount;
-        $cart->grand_total = $grandTotal;
-        $cart->tax = $this->calculateTax($totalPrice - $totalDiscount);
-        $cart->save();
+        $cart->update(['total_price' => $totalPrice]);
 
         return response()->json([
             'message' => 'Product quantity updated successfully',
             'status' => 'success',
-            'grand_total' => $cart->grand_total,
-            'data' => $this->getUserCart(),
-            'cart' => $cart,
         ]);
     }
 
@@ -397,71 +345,24 @@ class CartController extends Controller
             ->first();
 
         if ($existingItem) {
-            $existingItem->quantity += $cartItem->quantity;
-            
-            $productDiscount = $this->getProductDiscount($request->variant_id, $existingItem->quantity);
-            $productDiscountAmount = 0;
-
-            if ($productDiscount) {
-                if ($productDiscount['discount']['amount_type'] == 'percentage') {
-                    $productDiscountAmount = ($newVariant->price * $cartItem->quantity) * ($productDiscount['discount']['amount'] / 100);
-                } else {
-                    $productDiscountAmount =  $existingItem->quantity * $productDiscount['discount']['amount'];
-                }
-            }
-
-            $existingItem->total_price = $existingItem->quantity * $newVariant->price;
-            $existingItem->discount = $productDiscount ? $productDiscountAmount : 0;
-            $existingItem->discounted_price = $productDiscount ? $this->calculateProductDiscount($newVariant->price, $productDiscount) : $newVariant->price;
-            $existingItem->discounted_total_price = $productDiscount ? $existingItem->quantity * $this->calculateProductDiscount($newVariant->price, $productDiscount) : $existingItem->quantity * $newVariant->price;
-            $existingItem->save();
-
+            // If exists, update the quantity and delete the original item
+            $existingItem->update([
+                'quantity' => $existingItem->quantity + $cartItem->quantity,
+                'total_price' => ($existingItem->quantity + $cartItem->quantity) * $newVariant->price,
+            ]);
             $cartItem->delete();
         } else {
-            $productDiscount = $this->getProductDiscount($request->variant_id, $cartItem->quantity);
-            $productDiscountAmount = 0;
-
-            if ($productDiscount) {
-                if ($productDiscount['discount']['amount_type'] == 'percentage') {
-                    $productDiscountAmount = ($newVariant->price * $cartItem->quantity) * ($productDiscount['discount']['amount'] / 100);
-                } else {
-                    $productDiscountAmount =  $cartItem->quantity * $productDiscount['discount']['amount'];
-                }
-            }
-
-            $cartItem->product_variant_id = $request->variant_id;
-            $cartItem->price = $newVariant->price;
-            $cartItem->total_price = $newVariant->price * $cartItem->quantity;
-            $cartItem->discount = $productDiscount ? $productDiscountAmount : 0;
-            $cartItem->discounted_price = $productDiscount ? $this->calculateProductDiscount($newVariant->price, $productDiscount) : $newVariant->price;
-            $cartItem->discounted_total_price = $productDiscount ? $cartItem->quantity * $this->calculateProductDiscount($newVariant->price, $productDiscount) : $cartItem->quantity * $newVariant->price;
-            $cartItem->save();
+            // If not exists, update the current item
+            $cartItem->update([
+                'product_variant_id' => $request->variant_id,
+                'price' => $newVariant->price,
+                'total_price' => $newVariant->price * $cartItem->quantity,
+            ]);
         }
 
         $cart = Cart::find($cartItem->cart_id);
         $totalPrice = $cart->cartItems()->sum('total_price');
-        $discount = $cart->cartItems()->sum('discount');
-
-        $orderDiscount = $this->getOrderDiscount(($totalPrice - $discount));
-
-        $orderDiscountAmount = 0;
-        if ($orderDiscount) {
-            $orderDiscountAmount = $orderDiscount['amount_type'] == 'percentage'
-                ? ($totalPrice * ($orderDiscount['amount'] / 100))
-                : $orderDiscount['amount'];
-
-            $discount += $orderDiscountAmount;
-        }
-
-        $grandTotal = $totalPrice - $discount;
-        $grandTotal += $this->calculateTax($grandTotal);
-
-        $cart->update([
-            'total_price' => $totalPrice,
-            'discount' => $discount,
-            'grand_total' => $grandTotal,
-            'tax' => $this->calculateTax($totalPrice - $discount),
-        ]);
+        $cart->update(['total_price' => $totalPrice]);
 
         $transformedCartItems = $cart->cartItems->map(function ($cartItem) {
             return [
@@ -471,10 +372,7 @@ class CartController extends Controller
                 'name' => $cartItem->product->name,
                 'quantity' => $cartItem->quantity,
                 'price' => $cartItem->price,
-                'discount' => $cartItem->discount,
-                'discounted_price' => $cartItem->discounted_price,
                 'total_price' => $cartItem->total_price,
-                'discounted_total_price' => $cartItem->discounted_total_price,
                 'variant_id' => (string) $cartItem->product_variant_id,
                 'product_variants' => $cartItem->productVariant->product->productVariants->map(function ($productVariant) {
                     return [
@@ -490,8 +388,6 @@ class CartController extends Controller
             'message' => 'Product variant updated successfully',
             'status' => 'success',
             'data' => $transformedCartItems,
-            'grand_total' => $cart->grand_total,
-            'cart' => $cart,
         ]);
     }
 
@@ -510,6 +406,8 @@ class CartController extends Controller
             ], 400);
         }
 
+        Debugbar::info('variant_id: ' . $request->variant_id);
+        // Generate cache key
         $cacheKey = 'product_' . md5($request->identifier);
 
         // Try to get product from cache
@@ -523,6 +421,8 @@ class CartController extends Controller
         });
 
         if (!$product) {
+            Debugbar::info('Product not found by SKU, searching by name');
+            // If product not found by SKU, search by name
             $products = Cache::remember($cacheKey . '_name', now()->addHours(24), function () use ($request) {
                 return DB::table('products')
                     ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
@@ -570,9 +470,6 @@ class CartController extends Controller
                     'user_id' => Auth::id(),
                     'transaction_code' => $request->transaction_code,
                     'total_price' => 0,
-                    'discount' => 0,
-                    'tax' => 0,
-                    'grand_total' => 0,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -593,94 +490,26 @@ class CartController extends Controller
                         'total_price' => DB::raw('price * (quantity)'),
                         'updated_at' => now(),
                     ]);
-
-                $cartItem = CartItem::where('cart_id', $cartId)
-                    ->where('product_variant_id', $product->variant_id)
-                    ->first();
-
-                $productDiscount = $this->getProductDiscount($product->variant_id, $cartItem->quantity);
-
-                if ($productDiscount) {
-                    $cartItem->discounted_price = $this->calculateProductDiscount($product->price, $productDiscount);
-                    $cartItem->discounted_total_price = $cartItem->discounted_price * $cartItem->quantity;
-
-                    if ($productDiscount['discount']['amount_type'] == 'percentage') {
-                        $cartItem->discount = $cartItem->total_price * ($productDiscount['discount']['amount'] / 100);
-                    } else {
-                        $cartItem->discount =  $productDiscount['discount']['amount'] * $cartItem->quantity;
-                    }
-
-                    $cartItem->save();
-                } else {
-                    $cartItem->discounted_price = null;
-                    $cartItem->discounted_total_price = null;
-                    $cartItem->discount = 0;
-                    $cartItem->save();
-                }
             } else {
-                $productDiscount = $this->getProductDiscount($product->variant_id, 1);
-
-                $discounted_price = $productDiscount
-                    ? $this->calculateProductDiscount($product->price, $productDiscount)
-                    : null;
-
-                $productDiscountAmount = 0;
-
-                if ($productDiscount) {
-                    if ($productDiscount['discount']['amount_type'] == 'percentage') {
-                        $productDiscountAmount = $product->price * ($productDiscount['discount']['amount'] / 100);
-                    } else {
-                        $productDiscountAmount =  $productDiscount['discount']['amount'];
-                    }
-                }
-
-                $cartItem = CartItem::create([
+                DB::table('cart_items')->insert([
                     'cart_id' => $cartId,
                     'product_id' => $product->id,
                     'product_variant_id' => $product->variant_id,
                     'quantity' => 1,
                     'price' => $product->price,
-                    'discount' => $productDiscount ? $productDiscountAmount : 0,
-                    'discounted_price' => $discounted_price ? $discounted_price : $product->price,
                     'total_price' => $product->price,
-                    'discounted_total_price' => $discounted_price ? $discounted_price : $product->price,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
             }
 
-
             $totalPrice = DB::table('cart_items')
                 ->where('cart_id', $cartId)
                 ->sum('total_price');
 
-            $totalDiscount = DB::table('cart_items')
-                ->where('cart_id', $cartId)
-                ->sum('discount');
-
-            $orderDiscount = $this->getOrderDiscount(($totalPrice - $totalDiscount));
-
-            $orderDiscountAmount = 0;
-            if ($orderDiscount) {
-                $orderDiscountAmount = $orderDiscount['amount_type'] == 'percentage'
-                    ? ($totalPrice * ($orderDiscount['amount'] / 100))
-                    : $orderDiscount['amount'];
-
-                $totalDiscount += $orderDiscountAmount;
-            }
-
-            $grandTotal = $totalPrice - $totalDiscount;
-            $grandTotal += $this->calculateTax($grandTotal);
-
             DB::table('carts')
                 ->where('id', $cartId)
-                ->update([
-                    'total_price' => $totalPrice,
-                    'discount' => $totalDiscount,
-                    'grand_total' => $grandTotal,
-                    'tax' => $this->calculateTax($totalPrice - $totalDiscount),
-                    'updated_at' => now()
-                ]);
+                ->update(['total_price' => $totalPrice, 'updated_at' => now()]);
 
             return $this->getUserCart();
         });
@@ -714,18 +543,15 @@ class CartController extends Controller
             ], 400);
         }
 
-        $this->print($cart, $cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
+        $this->print($cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
 
         return DB::transaction(function () use ($cart, $cartItems, $request) {
             $transaction = DB::table('transactions')->insertGetId([
                 'user_id' => Auth::id(),
                 'transaction_code' => $cart->transaction_code,
                 'total_price' => $cart->total_price,
-                'discount' => $cart->discount,
-                'tax' => 0,
-                'grand_total' => $cart->grand_total,
                 'total_payment' => $request->total_payment,
-                'total_change' => $request->total_payment - ($cart->total_price - $cart->discount),
+                'total_change' => $request->total_payment - $cart->total_price,
                 'payment_method' => $request->payment_method,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -738,10 +564,7 @@ class CartController extends Controller
                     'product_variant_id' => $cartItem->product_variant_id,
                     'quantity' => $cartItem->quantity,
                     'price' => $cartItem->price,
-                    'discount' => $cartItem->discount,
-                    'discounted_price' => $cartItem->discounted_price,
                     'total_price' => $cartItem->total_price,
-                    'discounted_total_price' => $cartItem->discounted_total_price,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -750,11 +573,11 @@ class CartController extends Controller
                     DebtItem::create([
                         'customer_id' => $request->customer_id,
                         'transaction_item_id' => $transactionItem,
-                        'total_amount' => $cartItem->discounted_total_price,
-                        'remaining_amount' => $cartItem->discounted_total_price,
+                        'total_amount' => $cartItem->total_price,
+                        'remaining_amount' => $cartItem->total_price,
                     ]);
 
-                    Customer::find($request->customer_id)->increment('total_debt', $cartItem->discounted_total_price);
+                    Customer::find($request->customer_id)->increment('total_debt', $cartItem->total_price);
                 }
             }
 
@@ -767,7 +590,7 @@ class CartController extends Controller
         });
     }
 
-    public function print($cart, $items, $transactionCode, $payment, $method)
+    public function print($items, $transactionCode, $payment, $method)
     {
         // Menghubungkan ke printer dengan nama printer
         $profile = CapabilityProfile::load('simple');
@@ -823,132 +646,23 @@ class CartController extends Controller
         $printer->text(str_repeat("-", 47) . "\n");
 
         // Total
-        $printer->text(str_pad("Total", 30) . str_pad(number_format($cart->total_price, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
-        $printer->text(str_pad("Diskon", 30) . str_pad('- ' . number_format($cart->discount, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
-        $printer->text(str_pad("PPN", 30) . str_pad(number_format($cart->tax, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
-        $printer->text(str_repeat("-", 47) . "\n\n");
         $printer->setEmphasis(true);
-        $printer->text(str_pad("Total Belanja", 30) . str_pad(number_format($cart->grand_total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
+        $printer->text(str_pad("Total", 30) . str_pad(number_format($total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         $printer->setEmphasis(false);
         $printer->feed();
         $printer->text(str_pad($method, 30) . str_pad(number_format($payment, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         if ($method == 'cash') {
-            $printer->text(str_pad("Kembali", 30) . str_pad(number_format($payment - $cart->grand_total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
+            $printer->text(str_pad("Kembali", 30) . str_pad(number_format($payment - $total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         }
         $printer->text(str_repeat("-", 47) . "\n\n");
 
         // Ucapan terima kasih
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->text("Terima Kasih Atas Kunjungan Anda!\n");
-        // $printer->text("Barang yang sudah dibeli tidak dapat\n");
-        // $printer->text("dikembalikan.\n");
-        $printer->feed();
-        $printer->text("CSR By PT. SUCOFINDO CILACAP\n");
-        $printer->text("--- SUCOFINDO untuk UMKM ---\n");
+        $printer->text("Barang yang sudah dibeli tidak dapat\n");
+        $printer->text("dikembalikan.\n");
         $printer->feed(3); // Jarak sebelum potong kertas
         $printer->cut();
         $printer->close();
-    }
-
-
-
-    public function applyDiscounts($cartItems, $totalPrice)
-    {
-        // 1. Cek diskon untuk setiap produk (jika ada)
-        foreach ($cartItems as $item) {
-            $productDiscount = $this->getProductDiscount($item->product_id, $item->quantity);
-
-            if ($productDiscount) {
-                $item->discounted_price = $this->calculateProductDiscount($item->price, $productDiscount);
-            } else {
-                $item->discounted_price = $item->price;
-            }
-        }
-
-        // 2. Cek diskon total pesanan (general order discount)
-        $orderDiscount = $this->getOrderDiscount($totalPrice);
-        $totalDiscountAmount = 0; // Total diskon untuk pesanan
-        if ($orderDiscount) {
-            $totalDiscountAmount = $orderDiscount['amount_type'] == 'percentage'
-                ? ($totalPrice * ($orderDiscount['amount'] / 100))
-                : $orderDiscount['amount'];
-
-            $totalPrice -= $totalDiscountAmount;
-        }
-
-        return [
-            'cartItems' => $cartItems,
-            'totalPrice' => $totalPrice,
-            'totalDiscount' => $totalDiscountAmount,
-        ];
-    }
-
-    /**
-     * Mendapatkan diskon per produk berdasarkan ID produk.
-     *
-     * @param int $productId
-     * @return array|null
-     */
-    protected function getProductDiscount($productId, $quantity)
-    {
-        return DiscountProduct::where('product_variant_id', $productId)
-            ->whereHas('discount', function ($query) use ($quantity) {
-                $query->where('threshold', '<=', $quantity);
-            })
-            ->with(['discount' => function ($query) {
-                $query->orderBy('threshold', 'desc');
-            }])
-            ->first();
-    }
-
-    /**
-     * Menghitung diskon untuk satu produk.
-     *
-     * @param float $price
-     * @param array $discount
-     * @return float
-     */
-    protected function calculateProductDiscount($price, $discount)
-    {
-        if ($discount['discount']['amount_type'] == 'percentage') {
-            return $price - ($price * ($discount['discount']['amount'] / 100));
-        } else {
-            return $price - $discount['amount'];
-        }
-    }
-
-    protected function calculateProductDiscountTotal($total_price, $discount, $quantity)
-    {
-        if ($discount['discount']['amount_type'] == 'percentage') {
-            return ($total_price - ($total_price * ($discount['discount']['amount'] / 100)));
-        } else {
-            return ($total_price - $discount['amount']) * $quantity;
-        }
-    }
-
-    /**
-     * Mendapatkan diskon total pesanan berdasarkan jumlah belanja.
-     *
-     * @param float $totalPrice
-     * @return array|null
-     */
-    protected function getOrderDiscount($totalPrice)
-    {
-        return Discount::where('type', 'order')
-            ->where('threshold', '<=', $totalPrice)->first();
-    }
-
-    public function calculateTax($totalPrice)
-    {
-        $is_tax = Setting::where('key', 'is_tax')->first();
-
-        if ($is_tax->value == '1') {
-            $tax = Setting::where('key', 'tax_percentage')->first();
-            $taxAmount = $totalPrice * ($tax->value / 100);
-        } else {
-            $taxAmount = 0;
-        }
-
-        return $taxAmount;
     }
 }

@@ -3,7 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Product;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Category;
+use Illuminate\Support\Str;
+use App\Models\ProductVariant;
+use App\Models\Setting;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,9 +18,42 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        Setting::create([
+            'key' => 'is_tax',
+            'value' => false,
+        ]);
+
+        Setting::create([
+            'key' => 'tax_percentage',
+            'value' => 0,
+        ]);
+
+        $categoryNames = [
+            'Electronics',
+            'Clothing',
+            'Home & Kitchen',
+            'Books',
+            'Health & Beauty'
+        ];
+
+        foreach ($categoryNames as $item) {
+            Category::create([
+                'name' => $item,
+                'slug' => Str::slug($item),
+            ]);
+        }
+
         $this->call(RoleSeeder::class);
-        \App\Models\Category::factory(10)->create();
         $this->call(UnitSeeder::class);
+
+        Product::factory()->count(10)->create();
+
+        // Setiap produk akan memiliki 3 varian
+        Product::all()->each(function ($product) {
+            ProductVariant::factory()->count(1)->create([
+                'product_id' => $product->id,
+            ]);
+        });
 
         $user = User::create([
             'nik' => '1234567890',

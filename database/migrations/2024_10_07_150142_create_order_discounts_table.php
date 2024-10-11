@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('carts', function (Blueprint $table) {
+        Schema::create('order_discounts', function (Blueprint $table) {
             $table->id();
-            $table->string('transaction_code')->unique();
-            $table->double('total_price');
-            $table->double('discount')->nullable();
-            $table->double('tax')->nullable();
-            $table->double('grand_total');
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('transaction_id')->constrained('transactions')->onDelete('cascade');
+            $table->foreignId('discount_id')->constrained('discounts')->onDelete('cascade');
+            $table->decimal('amount', 10, 2);
             $table->timestamps();
         });
     }
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('carts');
+        Schema::dropIfExists('order_discounts');
     }
 };

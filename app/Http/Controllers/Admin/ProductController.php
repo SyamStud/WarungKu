@@ -304,7 +304,7 @@ class ProductController extends Controller
         }
 
         // Handle pagination
-        $perPage = $request->input('per_page', 10);
+        $perPage = $request->input('per_page');
         $products = $query->paginate($perPage);
 
 

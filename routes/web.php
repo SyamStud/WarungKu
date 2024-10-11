@@ -20,12 +20,14 @@ use App\Http\Controllers\Admin\CartItemController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DebtItemController;
+use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Pos\DebtPaymentController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\StockMovementController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\Admin\DiscountProductController;
 use App\Http\Controllers\Admin\TransactionItemController;
 use App\Http\Controllers\Admin\DebtPaymentHistoryController;
 
@@ -83,8 +85,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('/admin/stock-movements', StockMovementController::class);
     Route::resource('/admin/carts', CartController::class);
     Route::resource('/admin/cart-items', CartItemController::class);
+    Route::resource('/admin/discount-products', DiscountProductController::class);
 
     Route::resource('/admin/transactions', TransactionController::class);
+
+    Route::resource('/admin/discounts', DiscountController::class);
 
     Route::resource('/admin/transaction-items', TransactionItemController::class);
     Route::resource('/admin/customers', CustomerController::class);
@@ -122,6 +127,7 @@ Route::middleware('auth')->group(function () {
 
     //
     Route::resource('/userSettings', UserSettingController::class);
+    Route::resource('/globalSettings', SettingController::class);
     Route::get('/settings/getSettings', [SettingController::class, 'getSettings']);
     Route::post('/settings/updateSettings', [SettingController::class, 'updateSettings']);
     Route::resource('/settings', SettingController::class);

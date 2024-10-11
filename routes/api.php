@@ -7,18 +7,20 @@ use App\Http\Controllers\Admin\CartController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\StockController;
+use App\Http\Controllers\RestockListController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CartItemController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DebtItemController;
+use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\StockMovementController;
 use App\Http\Controllers\Admin\TransactionItemController;
 use App\Http\Controllers\Admin\DebtPaymentHistoryController;
-use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\RestockListController;
+use App\Http\Controllers\Admin\DiscountProductController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -59,3 +61,6 @@ Route::get('/debt-payment-history', [DebtPaymentHistoryController::class, 'getDe
 
 Route::get('/transactions/{year}/{month}', [ReportController::class, 'getMonthlytransaction']);
 Route::get('/purchases/{year}/{month}', [ReportController::class, 'getMonthlypurchase']);
+
+Route::get('/discounts', [DiscountController::class, 'discountData']);
+Route::get('/discount-products', [DiscountProductController::class, 'discountProductData']);

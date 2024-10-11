@@ -16,10 +16,24 @@ class ProductFactory extends Factory
      */
     public function definition(): array
     {
+        // Daftar nama produk yang akan digunakan
+        $productNames = [
+            'Laptop',
+            'Smartphone',
+            'Tablet',
+            'Headphones',
+            'Smartwatch',
+            'Camera',
+            'Printer',
+            'Monitor',
+            'Keyboard',
+            'Mouse'
+        ];
+
         return [
-            'sku' => $this->faker->unique()->word,
-            'name' => $this->faker->name,
-            'category_id' => 1,
+            'sku' => strtoupper($this->faker->unique()->bothify('???###')), // Format SKU yang lebih baik
+            'name' => $this->faker->unique()->randomElement($productNames), // Mengambil dari daftar nama yang didefinisikan
+            'category_id' => $this->faker->numberBetween(1, 5), // Asumsikan ada 5 kategori
         ];
     }
 }

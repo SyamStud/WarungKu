@@ -18,7 +18,7 @@ function handleImageError() {
     document.getElementById('background')?.classList.add('!hidden');
 }
 
-import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
+import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
 import VueMultiselect, { Multiselect } from 'vue-multiselect';
 import ProductTable from '@/Components/ProductTable.vue';
 import OrderSummary from '@/Components/OrderSummary.vue';
@@ -78,6 +78,13 @@ import { FormField } from '@/Components/ui/form';
 import FormItem from '@/Components/ui/form/FormItem.vue';
 import FormLabel from '@/Components/ui/form/FormLabel.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
+import Select from '@/Components/ui/select/Select.vue';
+import FormControl from '@/Components/ui/form/FormControl.vue';
+import SelectTrigger from '@/Components/ui/select/SelectTrigger.vue';
+import SelectValue from '@/Components/ui/select/SelectValue.vue';
+import SelectContent from '@/Components/ui/select/SelectContent.vue';
+import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
+import SelectItem from '@/Components/ui/select/SelectItem.vue';
 // import useTerbilang from '@/Composables/useTerbilang';
 
 const isAddModalOpen = ref(false);
@@ -107,11 +114,9 @@ const isPaymentModalOpen = ref(false);
 
 const searchingProduct = ref(null);
 
-const isLogoutModalOpen = ref(false);
+const isLimitTransaction = ref(false);
 
-const openLogoutModal = () => {
-    isLogoutModalOpen.value = true;
-};
+
 
 const openRevokeModal = () => {
     isRevokeModalOpen.value = true;
@@ -120,11 +125,13 @@ const openRevokeModal = () => {
 const isChangeModalOpen = ref(false);
 
 onMounted(() => {
+    isLoading.value = true;
     timer = setInterval(updateDateTime, 1000);
     window.addEventListener('keydown', handleGlobalKeydown);
 
     fetchCart();
     fetchCustomer();
+    fetchSettings();
 });
 
 onUnmounted(() => {
@@ -159,12 +166,16 @@ const revokeTransaction = () => {
 
 };
 
+const grandTotal = ref(0);
+const cart = ref([]);
+
 const fetchCart = async () => {
     try {
         isLoading.value = true;
         const response = await axios.get('/pos/carts/getUserCart');
         cartItems.value = response.data.data;
-        console.log('cartItems', cartItems.value);
+        grandTotal.value = response.data.grand_total > 0 ? response.data.grand_total : 0;
+        cart.value = response.data.cart;
 
         if (cartItems.value.length > 0) {
             transactionCode.value = response.data.transaction_code;
@@ -221,62 +232,8 @@ const errorAudio = new Audio('/error.mp3');
 successAudio.load();
 errorAudio.load();
 
-const productQueue = reactive([]);
-const isProcessingQueue = ref(false);
-const productCache = new Map();
-let debounceTimer;
-
-const getProduct = async (sku) => {
-    if (productCache.has(sku)) {
-        return productCache.get(sku);
-    }
-
-    isLoading.value = true;
-    try {
-        const response = await axios.post('/products/get', { sku });
-        productCache.set(sku, response.data.product);
-        return response.data.product;
-    } catch (error) {
-        console.error('Error fetching product:', error);
-        throw error;
-    } finally {
-        isLoading.value = false;
-    }
-};
-
-const processQueue = async () => {
-    if (productQueue.length === 0) {
-        isProcessingQueue.value = false;
-        return;
-    }
-
-    isProcessingQueue.value = true;
-    const product = productQueue.shift();
-
-    try {
-        await axios.post('/pos/carts/addProduct', {
-            product: product,
-            variant_id: product.product_variants[0].id,
-            quantity: 1,
-            transaction_code: transactionCode.value
-        });
-    } catch (error) {
-        console.error('Error adding product to cart:', error);
-        // Handle error (e.g., revert optimistic update, show error message)
-    }
-
-    // Process next item in queue
-    processQueue();
-};
-
 const updateVariant = (itemId, variantId) => {
-
-    console.log('itemId', itemId);
-    console.log('variantId', variantId);
-
     const item = cartItems.value.find(item => item.id === itemId);
-
-    console.log('item', item);
 
     if (item) {
         const variant = item.product_variants.find(variant => variant.id === parseInt(variantId));
@@ -318,6 +275,8 @@ const updateVariant = (itemId, variantId) => {
     }).then(response => {
         if (response.data && response.data.data) {
             cartItems.value = response.data.data;
+            grandTotal.value = response.data.grand_total;
+            cart.value = response.data.cart;
 
             console.log('cartItems', cartItems.value);
         }
@@ -348,9 +307,10 @@ const updateQuantity = (id, quantity) => {
             quantity: quantity,
             transaction_code: transactionCode.value
         }).then(response => {
-            if (response.data && response.data.data) {
-                cartItems.value = response.data.data;
-            }
+            grandTotal.value = response.data.grand_total;
+            cartItems.value = response.data.data.original.data;
+            cart.value = response.data.cart;
+            console.log('cartItems', cartItems.value);
         }).catch(error => {
             console.error('Error updating quantity:', error);
             // Revert the optimistic update
@@ -381,28 +341,6 @@ const removeItem = (id) => {
         console.error('Error removing item:', error);
         // You might want to show an error message to the user here
     });
-};
-
-const total = computed(() => {
-    return cartItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0);
-});
-
-const tax = computed(() => total.value * 0);
-const grandTotal = computed(() => total.value + tax.value);
-
-const processPayment = async () => {
-    try {
-        const order = {
-            items: cartItems.value,
-            total: total.value,
-            tax: tax.value,
-            grandTotal: grandTotal.value
-        };
-        const response = await axios.post('/api/orders', order);
-        cartItems.value = [];
-    } catch (error) {
-        console.error('Error processing payment:', error);
-    }
 };
 
 const handleGlobalKeydown = (event) => {
@@ -478,7 +416,11 @@ const handleSelect = (product) => {
 
 const addProduct = async () => {
     if (identifierInput.value) {
-        // debouncedGetProduct(identifierInput.value);
+        if (grandTotal.value >= 5000000000) {
+            isLimitTransaction.value = true;
+            return;
+        }
+
         addToCart(identifierInput.value);
 
         identifierInput.value = '';
@@ -503,6 +445,8 @@ const addToCart = async (identifier, variant_id = 0) => {
             console.log('response', response.data.data);
 
             cartItems.value = response.data.data;
+            grandTotal.value = response.data.grand_total;
+            cart.value = response.data.cart;
         } else if (response.data && response.data.product.length > 0) {
             console.log('response', response.data.product);
             searchingProduct.value = response.data.product;
@@ -524,46 +468,6 @@ const addToCart = async (identifier, variant_id = 0) => {
     }
 };
 
-const getProductByIdentifier = async (identifier) => {
-    isLoading.value = true;
-
-    try {
-        // Try to get by SKU first
-        let response = await axios.post('/products/getBySku', { sku: identifier });
-
-        // If not found by SKU, try by name
-        if (!response.data.product) {
-            console.log('Searching by name');
-            response = await axios.post('/products/getVariantByName', { name: identifier });
-        }
-
-        if (response.data.product || response.data.products) {
-            // searchingProduct.value = response.data.product || response.data.products;
-            return response.data || response.data;
-        }
-
-        return null;
-    } catch (error) {
-        console.error('Error fetching product:', error);
-        throw error;
-    } finally {
-        isLoading.value = false;
-    }
-};
-
-// Function to clear expired cache
-const clearExpiredProductCache = () => {
-    const now = new Date();
-    Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('product_')) {
-            const cachedData = JSON.parse(localStorage.getItem(key));
-            if (new Date(cachedData.expires_at) <= now) {
-                localStorage.removeItem(key);
-            }
-        }
-    });
-};
-
 function formatRupiah(value) {
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -573,10 +477,15 @@ function formatRupiah(value) {
 }
 
 const openPaymentModal = () => {
-    isPaymentModalOpen.value = true;
-    console.log('Grand Total:', grandTotal.value);
 
-    useTerbilang(grandTotal.value);
+    if (grandTotal.value < 5000000000) {
+        isPaymentModalOpen.value = true;
+        console.log('Grand Total:', grandTotal.value);
+
+        useTerbilang(grandTotal.value);
+    } else {
+        isLimitTransaction.value = true;
+    }
 };
 
 const currentDay = ref('')
@@ -607,8 +516,6 @@ const updateDateTime = () => {
 }
 
 let timer
-
-const selectedPaymentMethod = ref('');
 
 const selectedPayment = ref(null);
 
@@ -676,6 +583,49 @@ const onSubmit = async () => {
         isLoading.value = false;
     }
 };
+
+const isDiscountModalOpen = ref(false);
+
+const openDiscountModal = () => {
+    isDiscountModalOpen.value = true;
+};
+
+const globalSettings = ref({});
+const isShopConfig = ref(false);
+
+const fetchSettings = async () => {
+    try {
+        const response = await axios.get('/settings/getSettings');
+
+        globalSettings.value = response.data.global_settings.reduce((acc, setting) => {
+            if (setting.value === "1") {
+                acc[setting.key] = true;
+            } else if (setting.value === "0") {
+                acc[setting.key] = false;
+            } else {
+                acc[setting.key] = setting.value;
+            }
+            return acc;
+        }, {});
+
+        console.log('globalSettings', globalSettings.value);
+
+        if (!globalSettings.value.shop_name || !globalSettings.value.shop_address) {
+            isShopConfig.value = true;
+        }
+
+    } catch (error) {
+        console.error('Error fetching settings:', error);
+    }
+};
+
+watch(cart, (value) => {
+    if (value) {
+        if (grandTotal.value >= 5000000000) {
+            isLimitTransaction.value = true;
+        }
+    }
+});
 </script>
 
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
@@ -698,9 +648,9 @@ tr:hover {
     <Head title="Welcome" />
 
     <PosLayout>
-        <div @keydown="handleGlobalKeydown">
+        <div v-if="!isLoading" @keydown="handleGlobalKeydown">
             <div class="flex justify-between items-center p-6 shadow-inner bg-white fixed top-10 z-10 w-full">
-                <div class="w-full space-y-2">
+                <div class="w-[40%] space-y-2">
                     <div class="flex items-center space-x-2">
                         <span class="text-gray-600 font-semibold">Kode Transaksi:</span>
                         <h3 class="text-2xl font-bold text-gray-900">{{ transactionCode }}</h3>
@@ -709,18 +659,59 @@ tr:hover {
                 </div>
 
 
-                <div class="w-full">
-                    <div class="bg-blue-100 p-5 rounded-lg shadow-inner border border-gray-300 text-end">
-                        <h2 class="text-5xl font-extrabold">{{ formatRupiah(grandTotal) }}</h2>
-                        <p class="text-sm text-gray-600 mt-2">
-                            <span v-if="grandTotal > 0" class="text-md text-gray-500 font-medium">{{
-                                useTerbilang(parseFloat(grandTotal)) }}</span>
-                        </p>
+                <div class="w-[60%]">
+                    <div
+                        :class="['flex p-5 rounded-lg shadow-inner border border-gray-300 text-end bg-blue-100', cart ? ' justify-between' : 'justify-end']">
+                        <!-- Bagian Rincian (Kiri) -->
+                        <div v-if="cart" class="text-left flex items-center gap-8 w-[40%]">
+                            <div class="grid grid-cols-1 gap-1">
+                                <!-- Total -->
+                                <span class="text-[0.8rem] text-gray-500 font-medium">Total :</span>
+                                <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold">{{
+                                    formatRupiah(cart.total_price) }}</span>
+
+                                <!-- Diskon -->
+                                <span class="text-[0.8rem] text-gray-500 font-medium">Diskon :</span>
+                                <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold">- {{
+                                    formatRupiah(cart.discount)
+                                    }}</span>
+
+                                <!-- Garis Bawah Diskon -->
+                                <div class="col-span-2 border border-b border-gray-300 my-1"></div>
+                                <!-- Tambahan garis horizontal -->
+
+                                <!-- Pajak -->
+                                <span class="text-[0.8rem] text-gray-500 font-medium">Total :</span>
+                                <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold">{{
+                                    formatRupiah(cart.total_price
+                                        - cart.discount)
+                                }}</span>
+                                <span class="text-[0.8rem] text-gray-500 font-medium">Pajak :</span>
+                                <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold">+ {{ formatRupiah(cart.tax)
+                                    }}</span>
+                            </div>
+
+                            <div class="h-24 border-l-2 border-gray-300"></div>
+
+                            <div class="h-full mt-2">
+                                <span class="text-sm text-gray-500 font-medium">Total Akhir :</span>
+                            </div>
+                        </div>
+
+                        <!-- Bagian Total (Kanan) -->
+                        <div class="flex flex-col justify-center w-[60%] items-end">
+                            <h2 class="text-5xl font-extrabold text-right">{{ formatRupiah(grandTotal) }}</h2>
+                            <p class="text-sm text-gray-600 mt-2 w-2/3">
+                                <span v-if="grandTotal > 0" class="text-md text-gray-500 font-medium">
+                                    {{ useTerbilang(parseFloat(grandTotal)) }}
+                                </span>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="flex gap-10 bg-gray-100 w-full fixed p-6 z-10 top-52">
+            <div class="flex gap-10 bg-gray-100 w-full fixed p-6 z-10 top-[14.5rem]">
                 <div class="w-1/3 flex gap-5 items-center">
                     <Input autofocus ref="identifierInputRef" v-model="identifierInput" @keyup.enter="addProduct"
                         placeholder="Scan atau cari nama produk"
@@ -745,6 +736,13 @@ tr:hover {
                         Batalkan Transaksi
                     </Button>
                     <Separator orientation="vertical" class="h-5 w-[2px] bg-gray-300" />
+                    <Button v-if="cartItems.length > 0" @click="openDiscountModal"
+                        class="bg-[#149278] hover:bg-[#149278] flex gap-2">
+                        <img width="20" height="20"
+                            src="https://img.icons8.com/?size=100&id=aCQOxGQWgNlJ&format=png&color=000000" alt="gear" />
+                        Tambah Diskon
+                    </Button>
+                    <Separator orientation="vertical" class="h-5 w-[2px] bg-gray-300" />
                     <Button v-if="grandTotal" @click="openPaymentModal"
                         class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-300 flex gap-2">
                         <img width="20" height="20"
@@ -754,7 +752,7 @@ tr:hover {
                 </div>
             </div>
 
-            <div class="w-full pt-52">
+            <div class="w-full pt-[14.5rem]">
                 <div class="mt-16 p-6">
                     <product-table ref="productTableRef" :items="cartItems" @update-variant="updateVariant"
                         :newly-added-item-id="newlyAddedItemId" @update-quantity="updateQuantity"
@@ -815,6 +813,74 @@ tr:hover {
         </AlertDialogContent>
     </AlertDialog>
 
+
+    <AlertDialog v-model:open="isLimitTransaction">
+        <AlertDialogContent>
+            <AlertDialogHeader class="text-center space-y-2">
+                <div class="text-center space-y-4">
+                    <div class="flex justify-center items-center space-x-3">
+                        <img width="48" height="48" src="https://img.icons8.com/color/48/spam.png" alt="spam" />
+                        <h2 class="text-2xl font-bold text-red-500">Total Belanja Melebihi Limit</h2>
+                    </div>
+
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-700">
+                            <strong>Limit per transaksi :</strong>
+                            <span class="text-gray-900 font-medium ml-1">Rp 5.000.000.000</span>
+                        </p>
+                    </div>
+
+                    <p class="text-sm text-gray-600">
+                        Silakan <span class="font-semibold text-red-500">kurangi item pembelian</span>
+                        untuk
+                        dapat melanjutkan ke pembayaran.
+                    </p>
+                </div>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+                <AlertDialogAction class="bg-red-500 hover:bg-red-600" @click="kembali = null">Tutup</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
+
+    <AlertDialog v-model:open="isShopConfig">
+        <AlertDialogContent>
+            <AlertDialogHeader class="text-center space-y-2">
+                <div class="text-center space-y-4">
+                    <div class="flex justify-center items-center space-x-3">
+                        <img width="48" height="48" src="https://img.icons8.com/color/48/spam.png" alt="spam" />
+                        <h2 class="text-2xl font-bold text-red-500">Pengaturan Toko Diperlukan</h2>
+                    </div>
+
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <div class="w-max mx-auto text-start">
+                            <ul class="list-disc list-inside">
+                                <li class="text-gray-700 font-semibold">Nama Toko</li>
+                                <li class="text-gray-700 font-semibold">Alamat Toko</li>
+                            </ul>
+                        </div>
+                    </div>
+
+
+                    <p class="text-sm text-gray-600">
+                        Silakan <span class="font-semibold text-red-500">lengkapi pengaturan toko</span>
+                        untuk
+                        dapat melanjutkan transaksi.
+                    </p>
+                </div>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+                <Link href="/settings">
+                <AlertDialogAction class="bg-red-500 hover:bg-red-600" @click="">Lengkapi</AlertDialogAction>
+                </Link>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
+
     <!-- Revoke Modal -->
     <DialogWrapper v-model:open="isRevokeModalOpen" title="Batalkan Transaksi" desc="Batalkan transaksi">
         <DialogFooter>
@@ -830,6 +896,48 @@ tr:hover {
                 {{ isLoading ? 'Memproses...' : 'Batalkan Transaksi' }}
             </Button>
         </DialogFooter>
+    </DialogWrapper>
+
+    <!-- Discount Modal -->
+    <DialogWrapper v-model:open="isDiscountModalOpen" title="Tambah Diskon" desc="Tambah Diskon Khusus Transaksi Ini">
+        <form @submit.prevent="onSubmit" enctype="multipart/form-data" class="space-y-4">
+
+            <div class="flex gap-4 item-center">
+                <div class="flex gap-1 item-center w-full">
+                    <FormInput name="amount" label="Jumlah Diskon" type="number" />
+                    <div class="w-full mt-8">
+                        <FormField v-slot="{ componentField }" name="amount_type">
+                            <FormItem>
+                                <Select v-bind="componentField">
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih Tipe" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectItem value="percentage">
+                                                Persen
+                                            </SelectItem>
+                                            <SelectItem value="fixed">
+                                                Rupiah
+                                            </SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        </FormField>
+                    </div>
+                </div>
+            </div>
+
+            <DialogFooter>
+                <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">
+                    {{ isLoading ? 'Mohon tunggu ...' : 'Tambah Diskon' }}
+                </Button>
+            </DialogFooter>
+        </form>
     </DialogWrapper>
 
     <!-- Payment Modal -->

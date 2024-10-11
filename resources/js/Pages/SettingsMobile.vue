@@ -18,6 +18,8 @@ import PosLayoutMobile from '@/Layouts/PosLayoutMobile.vue';
 import Button from '@/components/ui/button/Button.vue';
 import { useToast } from '@/Composables/useToast';
 import Spinner from '@/Components/Spinner.vue';
+import Input from '@/Components/ui/input/Input.vue';
+import Label from '@/components/ui/label/Label.vue';
 
 const Toast = useToast();
 
@@ -52,7 +54,11 @@ const form = useForm({
     },
 });
 
+const { props } = usePage();
+
 onMounted(async () => {
+    console.log('userSettings', props.userSettings); // Data user settings
+    console.log('user', props.auth); // Data user yang login
     isLoading.value = true;
     await fetchData();
 
@@ -114,12 +120,47 @@ const changeUserSettings = async (key, value) => {
     };
 };
 
+const changeTaxSettings = async (key, value) => {
+    try {
+        globalSettings.value[key] = value;
+
+        const response = await axios.post('/globalSettings', { key, value });
+
+        if (response.data.status === 'success') {
+            if (value) {
+                Toast.fire({
+                    icon: "success",
+                    title: 'Pajak berhasil diaktifkan',
+                });
+            } else {
+                Toast.fire({
+                    icon: "success",
+                    title: 'Pajak berhasil dinonaktifkan',
+                });
+            }
+        } else {
+            Toast.fire({
+                icon: "error",
+                title: 'Pajak dinonaktifkan',
+            });
+        }
+    } catch (error) {
+        console.error('Error updating global settings:', error);
+    };
+};
+
 const fetchData = async () => {
     try {
         const response = await axios.get('/settings/getSettings');
 
         globalSettings.value = response.data.global_settings.reduce((acc, setting) => {
-            acc[setting.key] = setting.value;
+            if (setting.value === "1") {
+                acc[setting.key] = true;
+            } else if (setting.value === "0") {
+                acc[setting.key] = false;
+            } else {
+                acc[setting.key] = setting.value;
+            }
             return acc;
         }, {});
 
@@ -183,7 +224,39 @@ const fetchData = async () => {
                 </div>
             </div>
 
-            <div class="pb-12">
+            <div>
+                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 text-gray-900">
+                            <div class="flex justify-between">
+                                <div>
+                                    <h2 class="text-lg font-medium text-gray-900">Pengaturan Pajak</h2>
+
+                                    <p class="mt-1 text-sm text-gray-600">
+                                        Ubah informasi pajak
+                                    </p>
+                                </div>
+
+                                <Switch :checked="globalSettings.is_tax" :modelValue="globalSettings.is_tax"
+                                    @update:checked="changeTaxSettings('is_tax', $event)" />
+                            </div>
+
+                            <div v-if="globalSettings.is_tax" class="mt-5">
+                                <Label class="mt-4" for="tax_percentage">Persentase Pajak</Label>
+                                <Input v-model="globalSettings.tax_percentage" class="mt-2" name="tax" type="number" />
+
+                                <Button class="w-full mt-5"
+                                    @click="changeTaxSettings('tax_percentage', globalSettings.tax_percentage)"
+                                    :disabled="isLoading">
+                                    {{ isLoading ? 'Saving...' : 'Simpan Pengaturan' }}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pb-12 mt-5">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6 text-gray-900">

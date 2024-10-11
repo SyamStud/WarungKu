@@ -105,7 +105,8 @@
                         <div v-show="activeMobileTab === tab.name && isMenuOpen" class="bg-gray-300 p-2">
                             <ul class="space-y-5">
                                 <li v-for="tool in tab.tools" :key="tool.name" class="py-1">
-                                    <Link :href="tool.link" class="text-gray-700 hover:text-gray-900 ps-12 text-sm flex items-center gap-2">
+                                    <Link :href="tool.link"
+                                        class="text-gray-700 hover:text-gray-900 ps-12 text-sm flex items-center gap-2">
                                     <template v-if="tool.imageSrc">
                                         <img :src="tool.imageSrc" :alt="tool.name"
                                             class="h-5 w-5 group-hover:opacity-80" />
@@ -225,6 +226,9 @@ const tabs = [
             { link: '/admin/products', name: 'Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
             { link: '/admin/stocks', name: 'Stok', imageSrc: 'https://img.icons8.com/?size=100&id=VWrzCw0rvxVx&format=png&color=000000' },
             { link: '/admin/stock-movements', name: 'Riwayat Stok', imageSrc: 'https://img.icons8.com/?size=100&id=18971&format=png&color=000000' },
+            { link: '/admin/discounts', name: 'Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=63761&format=png&color=000000' },
+            { link: '/admin/discount-products', name: 'Produk Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=yasXRs9W9T8i&format=png&color=000000' },
+            { link: '/admin/order-discounts', name: 'Riwayat Penggunaan Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=PPCBrFJZ7zWb&format=png&color=000000' },
         ]
     },
     {

@@ -18,7 +18,10 @@ return new class extends Migration
             $table->foreignId('product_variant_id')->constrained()->onDelete('cascade');
             $table->integer('quantity');
             $table->double('price');
+            $table->double('discount')->nullable();
+            $table->double('discounted_price')->nullable();
             $table->double('total_price');
+            $table->double('discounted_total_price')->nullable();
             $table->timestamps();
         });
     }

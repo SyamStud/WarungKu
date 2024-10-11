@@ -1,4 +1,5 @@
 <template>
+
     <Head title="Welcome" />
 
     <PosLayoutMobile>
@@ -273,6 +274,7 @@
 </template>
 
 <script setup>
+import PosLayout from '@/Layouts/PosLayout.vue';
 import { Head } from '@inertiajs/vue3';
 
 defineProps({
@@ -284,25 +286,83 @@ defineProps({
     }
 });
 
+function handleImageError() {
+    document.getElementById('screenshot-container')?.classList.add('!hidden');
+    document.getElementById('docs-card')?.classList.add('!row-span-1');
+    document.getElementById('docs-card-content')?.classList.add('!flex-row');
+    document.getElementById('background')?.classList.add('!hidden');
+}
+
 import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
+import VueMultiselect, { Multiselect } from 'vue-multiselect';
+import ProductTable from '@/Components/ProductTable.vue';
+import OrderSummary from '@/Components/OrderSummary.vue';
 import axios from 'axios';
 import Input from '@/Components/ui/input/Input.vue';
+import { Label } from '@/components/ui/label'
+import {
+    Sheet,
+    SheetClose,
+    SheetContent,
+    SheetDescription,
+    SheetFooter,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from '@/Components/ui/sheet'
+import Button from '@/Components/ui/button/Button.vue';
+import Separator from '@/Components/ui/separator/Separator.vue';
 import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import DialogFooter from '@/Components/ui/dialog/DialogFooter.vue';
 import useSpeak from '@/Composables/useSpeak';
 import { useToast } from '@/Composables/useToast';
+import { add } from 'lodash';
+import { get } from '@vueuse/core';
 import useTerbilang from '@/Composables/useTerbilang';
 import FormInput from '@/Components/ui/form/FormInput.vue';
-import PosLayoutMobile from '@/Layouts/PosLayoutMobile.vue';
-import ProductTableMobile from '@/Components/ProductTableMobile.vue';
-import Button from '@/components/ui/button/Button.vue';
+import {
+    Menubar,
+    MenubarContent,
+    MenubarItem,
+    MenubarMenu,
+    MenubarSeparator,
+    MenubarShortcut,
+    MenubarTrigger,
+} from '@/Components/ui/menubar'
 import {
     AlertDialog,
     AlertDialogAction,
+    AlertDialogCancel,
     AlertDialogContent,
+    AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-} from '@/Components/ui/alert-dialog';
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/Components/ui/alert-dialog'
+
+import { Link } from '@inertiajs/vue3';
+import NavigationMenu from '@/Components/ui/navigation-menu/NavigationMenu.vue';
+import NavigationMenuList from '@/Components/ui/navigation-menu/NavigationMenuList.vue';
+import NavigationMenuItem from '@/Components/ui/navigation-menu/NavigationMenuItem.vue';
+import NavigationMenuTrigger from '@/Components/ui/navigation-menu/NavigationMenuTrigger.vue';
+import NavigationMenuContent from '@/Components/ui/navigation-menu/NavigationMenuContent.vue';
+import NavigationMenuLink from '@/Components/ui/navigation-menu/NavigationMenuLink.vue';
+import { navigationMenuTriggerStyle } from '@/Components/ui/navigation-menu';
+import { FormField } from '@/Components/ui/form';
+import FormItem from '@/Components/ui/form/FormItem.vue';
+import FormLabel from '@/Components/ui/form/FormLabel.vue';
+import FormMessage from '@/Components/ui/form/FormMessage.vue';
+import Select from '@/Components/ui/select/Select.vue';
+import FormControl from '@/Components/ui/form/FormControl.vue';
+import SelectTrigger from '@/Components/ui/select/SelectTrigger.vue';
+import SelectValue from '@/Components/ui/select/SelectValue.vue';
+import SelectContent from '@/Components/ui/select/SelectContent.vue';
+import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
+import SelectItem from '@/Components/ui/select/SelectItem.vue';
+import PosLayoutMobile from '@/Layouts/PosLayoutMobile.vue';
+import ProductTableMobile from '@/Components/ProductTableMobile.vue';
+// import useTerbilang from '@/Composables/useTerbilang';
 
 const isAddModalOpen = ref(false);
 
@@ -313,8 +373,10 @@ const cancelButton = ref(null);
 
 const identifierInput = ref('');
 const selectedProduct = ref(null);
+const products = ref([]);
 const cartItems = ref([]);
 const transactionCode = ref('');
+
 
 const identifierInputRef = ref(null);
 const productSelectRef = ref(null);
@@ -329,21 +391,16 @@ const isPaymentModalOpen = ref(false);
 
 const searchingProduct = ref(null);
 
-const isLogoutModalOpen = ref(false);
-
-const openLogoutModal = () => {
-    isLogoutModalOpen.value = true;
-};
-
 const openRevokeModal = () => {
     isRevokeModalOpen.value = true;
 };
 
 const isChangeModalOpen = ref(false);
 
-
 onMounted(() => {
+    isLoading.value = true;
     timer = setInterval(updateDateTime, 1000);
+    window.addEventListener('keydown', handleGlobalKeydown);
 
     fetchCart();
     fetchCustomer();
@@ -353,6 +410,10 @@ onUnmounted(() => {
     window.removeEventListener('keydown', handleGlobalKeydown);
     clearInterval(timer);
 });
+
+const speakTotal = () => {
+    useSpeak('Total belanja, ' + formatRupiah(grandTotal.value));
+};
 
 const revokeTransaction = () => {
     isLoading.value = true;
@@ -374,14 +435,19 @@ const revokeTransaction = () => {
     }).catch(error => {
         console.error('Error revoking transaction:', error);
     });
+
 };
+
+const grandTotal = ref(0);
+const cart = ref([]);
 
 const fetchCart = async () => {
     try {
         isLoading.value = true;
         const response = await axios.get('/pos/carts/getUserCart');
         cartItems.value = response.data.data;
-        console.log('cartItems', cartItems.value);
+        grandTotal.value = response.data.grand_total > 0 ? response.data.grand_total : 0;
+        cart.value = response.data.cart;
 
         if (cartItems.value.length > 0) {
             transactionCode.value = response.data.transaction_code;
@@ -413,6 +479,8 @@ const fetchCustomer = async () => {
 
 const updateIdCustomer = (value) => {
     selectedCustomer.value = value;
+
+    console.log('selectedCustomer', selectedCustomer.value);
 };
 
 const generateTransactionCode = () => {
@@ -442,6 +510,8 @@ const updateVariant = (itemId, variantId) => {
     if (item) {
         const variant = item.product_variants.find(variant => variant.id === parseInt(variantId));
 
+        console.log('variant', variant);
+
         if (variant) {
             // Optimistic update
             const existingItem = cartItems.value.find(
@@ -449,6 +519,10 @@ const updateVariant = (itemId, variantId) => {
                     i.product_variant_id === parseInt(variantId) &&
                     i.id !== itemId
             );
+
+            console.log('cartItems', cartItems.value);
+
+            console.log('existingItem', existingItem);
 
             if (existingItem) {
                 existingItem.quantity += item.quantity;
@@ -473,12 +547,15 @@ const updateVariant = (itemId, variantId) => {
     }).then(response => {
         if (response.data && response.data.data) {
             cartItems.value = response.data.data;
+            grandTotal.value = response.data.grand_total;
+            cart.value = response.data.cart;
 
             console.log('cartItems', cartItems.value);
         }
     }).catch(error => {
         console.error('Error updating variant:', error);
         fetchCartItems();
+        // You might want to show an error message to the user here
     }).finally(() => {
         updatingItemId.value = null;
     });
@@ -502,12 +579,15 @@ const updateQuantity = (id, quantity) => {
             quantity: quantity,
             transaction_code: transactionCode.value
         }).then(response => {
-            if (response.data && response.data.data) {
-                cartItems.value = response.data.data;
-            }
+            grandTotal.value = response.data.grand_total;
+            cartItems.value = response.data.data.original.data;
+            cart.value = response.data.cart;
+            console.log('cartItems', cartItems.value);
         }).catch(error => {
             console.error('Error updating quantity:', error);
+            // Revert the optimistic update
             item.quantity = item.quantity - quantity;
+            // You might want to show an error message to the user here
         }).finally(() => {
             updatingItemId.value = null;
         });
@@ -531,15 +611,9 @@ const removeItem = (id) => {
         }
     }).catch(error => {
         console.error('Error removing item:', error);
+        // You might want to show an error message to the user here
     });
 };
-
-const total = computed(() => {
-    return cartItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0);
-});
-
-const tax = computed(() => total.value * 0);
-const grandTotal = computed(() => total.value + tax.value);
 
 const handleGlobalKeydown = (event) => {
     const isFocusedOnInput = () => {
@@ -638,15 +712,15 @@ const addToCart = async (identifier, variant_id = 0) => {
             console.log('response', response.data.data);
 
             cartItems.value = response.data.data;
+            grandTotal.value = response.data.grand_total;
+            cart.value = response.data.cart;
         } else if (response.data && response.data.product.length > 0) {
             console.log('response', response.data.product);
             searchingProduct.value = response.data.product;
             isAddModalOpen.value = true;
         } else {
             errorAudio.play();
-            setTimeout(() => {
-                useSpeak('Produk tidak ditemukan');
-            }, 500);
+            useSpeak('Produk tidak ditemukan');
 
             Toast.fire({
                 icon: "error",
@@ -770,6 +844,12 @@ const onSubmit = async () => {
     } finally {
         isLoading.value = false;
     }
+};
+
+const isDiscountModalOpen = ref(false);
+
+const openDiscountModal = () => {
+    isDiscountModalOpen.value = true;
 };
 </script>
 

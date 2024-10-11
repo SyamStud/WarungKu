@@ -35,30 +35,22 @@ class SettingController extends Controller
      */
     public function store(Request $request)
     {
-        $validation = Validator::make(
-            $request->all(),
-            [
-                'shop_name' => 'required',
-                'shop_address' => 'required',
-            ]
-        );
+        if ($request->has('shop_name') || $request->has('shop_address')) {
+            Setting::updateOrCreate(
+                ['key' => 'shop_name'],
+                ['value' => $request->shop_name]
+            );
 
-        if ($validation->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $validation->errors()->first()
-            ]);
+            Setting::updateOrCreate(
+                ['key' => 'shop_address'],
+                ['value' => $request->shop_address]
+            );
+        } else {
+            Setting::updateOrCreate(
+                ['key' => $request->key],
+                ['value' => $request->value]
+            );
         }
-
-        Setting::updateOrCreate(
-            ['key' => 'shop_name'],
-            ['value' => $request->shop_name]
-        );
-
-        Setting::updateOrCreate(
-            ['key' => 'shop_address'],
-            ['value' => $request->shop_address]
-        );
 
         return response()->json([
             'status' => 'success',

@@ -8,6 +8,7 @@
                     <th class="py-2 px-4 text-left whitespace-nowrap">Variasi</th>
                     <th class="py-2 px-4 text-left whitespace-nowrap">Harga</th>
                     <th class="py-2 px-4 text-left whitespace-nowrap">Kuantitas</th>
+                    <th class="py-2 px-4 text-left whitespace-nowrap">Diskon</th>
                     <th class="py-2 px-4 text-left whitespace-nowrap">Subtotal</th>
                     <th class="py-2 px-4 text-left whitespace-nowrap">Aksi</th>
                 </tr>
@@ -41,7 +42,8 @@
                             @keydown.up.prevent="focusPreviousQuantityInput()" min="1"
                             class="w-16 px-2 py-1 border rounded" :ref="el => { if (el) quantityInputs[index] = el }" />
                     </td>
-                    <td class="py-2 px-4 whitespace-nowrap">{{ formatRupiah(item.price * item.quantity) }}</td>
+                    <td class="py-2 px-4 whitespace-nowrap">{{ formatRupiah(item.discount) }}</td>
+                    <td class="py-2 px-4 whitespace-nowrap">{{ item.discounted_price > 0 ? formatRupiah(item.discounted_price * item.quantity) : formatRupiah(item.price * item.quantity) }}</td>
                     <td class="py-2 px-4 whitespace-nowrap">
                         <Button @click="() => openDeleteModal(item.id)"
                             @keydown.down.prevent="focusNextRemoveButton(index)"
