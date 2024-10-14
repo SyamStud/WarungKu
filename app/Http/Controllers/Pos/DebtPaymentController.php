@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Pos;
 use App\Models\Debt;
 use Inertia\Inertia;
 use App\Models\Customer;
-use App\Models\DebtItem;
 use Mike42\Escpos\Printer;
 use App\Models\DebtPayment;
 use Illuminate\Http\Request;
@@ -65,11 +64,6 @@ class DebtPaymentController extends Controller
         $payment->user_id = Auth::user()->id;
         $payment->save();
 
-        // $debtItems = DebtItem::where('customer_id', $request->customer_id)
-        //     ->where('status', '!=', 'paid')
-        //     ->orderBy('created_at', 'asc')
-        //     ->get();
-
         $debts = Debt::where('customer_id', $request->customer_id)
             ->where('status', '!=', 'paid')
             ->with('debtItems')
@@ -79,7 +73,6 @@ class DebtPaymentController extends Controller
         // $remainingDebt = $customer->total_debt - $payment->amount;
 
         // $this->printDebtReceipt($request->payment_code, $debtItems, $request->payment_amount, $remainingDebt, $customer->name);
-
 
         $remainingPayment = $payment->amount;
 

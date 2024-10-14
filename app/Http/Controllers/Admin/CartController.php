@@ -6,10 +6,8 @@ use App\Models\Cart;
 use App\Models\Debt;
 use Inertia\Inertia;
 use App\Models\Stock;
-use App\Models\Product;
 use App\Models\Setting;
 use App\Models\CartItem;
-use App\Models\Customer;
 use App\Models\DebtItem;
 use App\Models\Discount;
 use Mike42\Escpos\Printer;
@@ -21,9 +19,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Mike42\Escpos\CapabilityProfile;
 use Illuminate\Support\Facades\Cache;
-use Barryvdh\Debugbar\Facades\Debugbar;
 use Illuminate\Support\Facades\Validator;
-use Barryvdh\Debugbar\Twig\Extension\Debug;
 use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 
 class CartController extends Controller
@@ -34,46 +30,6 @@ class CartController extends Controller
     public function index()
     {
         return Inertia::render('Admin/Cart');
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Cart $cart)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Cart $cart)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Cart $cart)
-    {
-        //
     }
 
     /**
@@ -201,43 +157,6 @@ class CartController extends Controller
             'transaction_code' => $cart->transaction_code,
             'cart' => $cart,
         ]);
-    }
-
-    /**
-     * Add products to cart.
-     */
-    public function addProduct(Request $request)
-    {
-        $request->validate([
-            'product' => 'required|array',
-            'transaction_code' => 'required|string',
-        ]);
-
-        return DB::transaction(function () use ($request) {
-            $cart = Cart::firstOrCreate(
-                ['user_id' => Auth::id(), 'transaction_code' => $request->transaction_code],
-                ['total_price' => 0]
-            );
-
-            $cartItem = $cart->cartItems()->updateOrCreate(
-                [
-                    'product_variant_id' => $request->variant_id,
-                ],
-                [
-                    'product_id' => $request->product['id'],
-                    'quantity' => DB::raw('quantity + 1'),
-                    'price' => $request->product['product_variants'][0]['price'],
-                    'total_price' => DB::raw('price * (quantity)'),
-                ]
-            );
-
-            $cart->update(['total_price' => $cart->cartItems()->sum('total_price')]);
-
-            return response()->json([
-                'message' => 'Product added to cart successfully',
-                'status' => 'success',
-            ]);
-        });
     }
 
     public function updateProduct(Request $request)
@@ -497,7 +416,6 @@ class CartController extends Controller
             'cart' => $cart,
         ]);
     }
-
 
     public function addItem(Request $request)
     {
@@ -894,39 +812,6 @@ class CartController extends Controller
         $printer->close();
     }
 
-
-
-    public function applyDiscounts($cartItems, $totalPrice)
-    {
-        // 1. Cek diskon untuk setiap produk (jika ada)
-        foreach ($cartItems as $item) {
-            $productDiscount = $this->getProductDiscount($item->product_id, $item->quantity);
-
-            if ($productDiscount) {
-                $item->discounted_price = $this->calculateProductDiscount($item->price, $productDiscount);
-            } else {
-                $item->discounted_price = $item->price;
-            }
-        }
-
-        // 2. Cek diskon total pesanan (general order discount)
-        $orderDiscount = $this->getOrderDiscount($totalPrice);
-        $totalDiscountAmount = 0; // Total diskon untuk pesanan
-        if ($orderDiscount) {
-            $totalDiscountAmount = $orderDiscount['amount_type'] == 'percentage'
-                ? ($totalPrice * ($orderDiscount['amount'] / 100))
-                : $orderDiscount['amount'];
-
-            $totalPrice -= $totalDiscountAmount;
-        }
-
-        return [
-            'cartItems' => $cartItems,
-            'totalPrice' => $totalPrice,
-            'totalDiscount' => $totalDiscountAmount,
-        ];
-    }
-
     /**
      * Mendapatkan diskon per produk berdasarkan ID produk.
      *
@@ -960,15 +845,6 @@ class CartController extends Controller
             return $price - $discount['discount']['amount'];
         }
     }
-
-    // protected function calculateProductDiscountTotal($total_price, $discount, $quantity)
-    // {
-    //     if ($discount['discount']['amount_type'] == 'percentage') {
-    //         return ($total_price - ($total_price * ($discount['discount']['amount'] / 100)));
-    //     } else {
-    //         return ($total_price - $discount['amount']) * $quantity;
-    //     }
-    // }
 
     /**
      * Mendapatkan diskon total pesanan berdasarkan jumlah belanja.

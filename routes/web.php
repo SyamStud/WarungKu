@@ -69,7 +69,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard/dashboardSummary', [DashboardController::class, 'dashboardSummary']);
 
         // Product Routes
-        Route::get('/products/add', [ProductController::class, 'add'])->name('products.add');
         Route::get('/products/add-variant', [ProductController::class, 'addVariant'])->name('products.add.variant');
         Route::post('/products/add-variant', [ProductController::class, 'storeVariant'])->name('products.store.variant');
         Route::resource('/products', ProductController::class);

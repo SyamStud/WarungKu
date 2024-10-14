@@ -23,12 +23,9 @@ class ProductController extends Controller
         return Inertia::render('Admin/Products');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        return Inertia::render('Admin/ProductsAdd');
     }
 
     /**
@@ -138,22 +135,6 @@ class ProductController extends Controller
             'product' => $product,
             'status' => 'success',
         ]);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Product $product)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Product $product)
-    {
-        //
     }
 
     /**
@@ -363,17 +344,10 @@ class ProductController extends Controller
         ]);
     }
 
-    public function add()
-    {
-        return Inertia::render('Admin/ProductsAdd');
-    }
-
     public function addVariant()
     {
         return Inertia::render('Admin/ProductsAddVariant');
     }
-
-
 
     public function getProduct(Request $request)
     {

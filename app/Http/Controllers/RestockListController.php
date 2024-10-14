@@ -22,14 +22,6 @@ class RestockListController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -79,22 +71,6 @@ class RestockListController extends Controller
             'status' => 'success',
             'message' => $message,
         ]);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(RestockList $restockList)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(RestockList $restockList)
-    {
-        //
     }
 
     /**

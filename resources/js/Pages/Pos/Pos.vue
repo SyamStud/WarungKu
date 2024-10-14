@@ -21,7 +21,6 @@ function handleImageError() {
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
 import VueMultiselect, { Multiselect } from 'vue-multiselect';
 import ProductTable from '@/Components/ProductTable.vue';
-import OrderSummary from '@/Components/OrderSummary.vue';
 import axios from 'axios';
 import Input from '@/Components/ui/input/Input.vue';
 import { Label } from '@/components/ui/label'

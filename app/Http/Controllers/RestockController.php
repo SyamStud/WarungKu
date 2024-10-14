@@ -67,22 +67,6 @@ class RestockController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Restock $restock)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Restock $restock)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, Restock $restock)
@@ -180,8 +164,6 @@ class RestockController extends Controller
             ],
         ]);
     }
-
-    
 
     public function getRestockChartData(Request $request)
     {

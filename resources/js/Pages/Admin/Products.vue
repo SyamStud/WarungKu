@@ -301,7 +301,7 @@ const generateSKU = async () => {
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Produk</h1>
         <div class="flex flex-col md:flex-row justify-between">
             <div class="flex gap-2">
-                <Link :href="route('products.add')">
+                <Link :href="route('products.create')">
                 <Button class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah Produk</Button>
                 </Link>
 

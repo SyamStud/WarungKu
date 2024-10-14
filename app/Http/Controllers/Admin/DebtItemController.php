@@ -15,61 +15,12 @@ class DebtItemController extends Controller
         return Inertia::render('Admin/Debts');
     }
 
-
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         return Inertia::render('Admin/DebtItems');
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(DebtItem $debtItem)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(DebtItem $debtItem)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, DebtItem $debtItem)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(DebtItem $debtItem)
-    {
-        //
     }
 
     /**
