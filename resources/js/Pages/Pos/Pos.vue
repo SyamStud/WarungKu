@@ -721,16 +721,14 @@ tr:hover {
                             src="https://img.icons8.com/?size=100&id=107439&format=png&color=000000" alt="gear" />
                     </div>
                 </div>
-                <div class="flex items-center w-full justify-end gap-4">
-                    <Button v-if="cartItems.length > 0" @click="speakTotal"
-                        class="bg-violet-600 hover:bg-violet-700 flex gap-2">
+                <div v-if="cartItems.length > 0" class="flex items-center w-full justify-end gap-4">
+                    <Button @click="speakTotal" class="bg-violet-600 hover:bg-violet-700 flex gap-2">
                         <img width="20" height="20"
                             src="https://img.icons8.com/?size=100&id=xOxAdcl6DVo2&format=png&color=000000" alt="gear" />
                         Sebut Nominal Total
                     </Button>
                     <Separator orientation="vertical" class="h-5 w-[2px] bg-gray-300" />
-                    <Button v-if="cartItems.length > 0" @click="openRevokeModal"
-                        class="bg-red-500 hover:bg-red-700 flex gap-1">
+                    <Button @click="openRevokeModal" class="bg-red-500 hover:bg-red-700 flex gap-1">
                         <img width="20" height="20"
                             src="https://img.icons8.com/?size=100&id=S7l4pxBr45nJ&format=png&color=000000" alt="gear" />
                         Batalkan Transaksi

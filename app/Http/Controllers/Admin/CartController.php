@@ -718,7 +718,7 @@ class CartController extends Controller
 
         $stockMovement = $this->decreaseStock($cartItems);
 
-        $this->print($cart, $cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
+        // $this->print($cart, $cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
 
         return DB::transaction(function () use ($cart, $cartItems, $request) {
             $transaction = DB::table('transactions')->insertGetId([
@@ -815,7 +815,7 @@ class CartController extends Controller
 
         // Menghubungkan ke printer dengan nama printer
         $profile = CapabilityProfile::load('simple');
-        $connector = new WindowsPrintConnector("TP806");
+        $connector = new WindowsPrintConnector($globalSettings['printer_name']->value);
         $printer = new Printer($connector, $profile);
 
         // Nama dan informasi toko

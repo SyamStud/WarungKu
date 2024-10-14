@@ -46,6 +46,18 @@ class SettingController extends Controller
                 ['value' => $request->shop_address]
             );
         } else {
+            $validator = Validator::make($request->all(), [
+                'key' => 'required',
+                'value' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $validator->errors()->first()
+                ]);
+            }
+
             Setting::updateOrCreate(
                 ['key' => $request->key],
                 ['value' => $request->value]

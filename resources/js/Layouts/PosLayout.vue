@@ -1,5 +1,5 @@
 <template>
-    <div class="h-screen bg-gray-100">
+    <div class="min-h-screen bg-gray-100">
         <div>
             <div class="w-full overflow-auto bg-white fixed top-0 z-10">
                 <div class="w-full flex justify-between">
@@ -50,7 +50,7 @@
                     </nav>
 
                     <div class="flex gap-4 items-center text-sm text-gray-500 font-medium">
-                        <p>Petunjuk Keyboard? Tekan [B]</p>
+                        <!-- <p>Petunjuk Keyboard? Tekan [B]</p> -->
                         <Button @click="openLogoutModal" type="button"
                             class="bg-transparent hover:bg-transparent text-sm text-black flex gap-1">
                             <img width="20" height="20"

@@ -42,7 +42,8 @@ const fetchData = async () => {
     summary.value.totalhighestTransaction = summaryData.data.highest_transaction;
     summary.value.topOneProduct = summaryData.data.top_one;
     summary.value.topProducts = summaryData.data.top_products;
-    console.log('summary', summary.value);
+    summary.value.needRestock = summaryData.data.need_restock;
+    console.log('summary', summary.value.needRestock);
 };
 
 onMounted(() => {
@@ -67,17 +68,20 @@ onMounted(() => {
                         alt="external-graph-economy-kmg-design-outline-color-kmg-design" />
                 </div>
                 <div class="flex-grow sm:text-left text-center mt-6 sm:mt-0">
-                    <h1 class="text-black text-xl md:text-3xl title-font font-bold mb-4">Ringkasan Informasi Hari Ini</h1>
+                    <h1 class="text-black text-xl md:text-3xl title-font font-bold mb-4">Ringkasan Informasi Hari Ini
+                    </h1>
 
                     <div class="md:flex md:gap-3 font-bold text-gray-800">
                         <!-- Penjualan & Pembelian Section -->
                         <div class="w-full md:w-1/2 flex md:flex-row flex-col md:space-x-3 mb-2 md:mb-0">
-                            <div class="w-full md:w-1/2 bg-gradient-to-br from-green-100 to-green-200 p-4 rounded-lg shadow-sm">
+                            <div
+                                class="w-full md:w-1/2 bg-gradient-to-br from-green-100 to-green-200 p-4 rounded-lg shadow-sm">
                                 <h2 class="text-green-800 text-sm font-semibold">Penjualan</h2>
                                 <p class="text-xl">{{ formatRupiah(summary.totalTransaction) }}</p>
                             </div>
 
-                            <div class="w-full mt-2 md:mt-0 md:w-1/2 bg-gradient-to-br from-red-100 to-red-200 p-4 rounded-lg shadow-sm">
+                            <div
+                                class="w-full mt-2 md:mt-0 md:w-1/2 bg-gradient-to-br from-red-100 to-red-200 p-4 rounded-lg shadow-sm">
                                 <h2 class="text-red-800 text-sm font-semibold">Pembelian</h2>
                                 <p class="text-xl">{{ formatRupiah(summary.totalPurchase) }}</p>
                             </div>
@@ -85,12 +89,14 @@ onMounted(() => {
 
                         <!-- Barang Terlaris & Transaksi Tertinggi Section -->
                         <div class="w-full md:w-1/2 flex md:flex-row flex-col md:space-x-3 mb-4 md:mb-0">
-                            <div class="w-full md:w-1/2 bg-gradient-to-br from-violet-100 to-violet-200 p-4 rounded-lg shadow-sm">
+                            <div
+                                class="w-full md:w-1/2 bg-gradient-to-br from-violet-100 to-violet-200 p-4 rounded-lg shadow-sm">
                                 <h2 class="text-violet-800 text-sm font-semibold">Penjualan Tertinggi</h2>
                                 <p class="text-xl">{{ formatRupiah(summary.totalhighestTransaction) }}</p>
                             </div>
 
-                            <div class="w-full mt-2 md:mt-0 md:w-1/2 bg-gradient-to-br from-blue-100 to-blue-200 p-4 rounded-lg shadow-sm">
+                            <div
+                                class="w-full mt-2 md:mt-0 md:w-1/2 bg-gradient-to-br from-blue-100 to-blue-200 p-4 rounded-lg shadow-sm">
                                 <h2 class="text-blue-800 text-sm font-semibold">Barang Terlaris</h2>
                                 <p class="text-xl">{{ summary.topOneProduct }}</p>
                             </div>
@@ -119,7 +125,8 @@ onMounted(() => {
                                     <td class="py-3 px-6 text-left font-medium text-gray-900">{{ product.product.name }}
                                     </td>
                                     <td class="py-3 px-6 text-center">{{ product.total_quantity }}</td>
-                                    <td class="py-3 px-6 text-center text-green-500">{{ formatRupiah(product.total_quantity * product.total_price) }}
+                                    <td class="py-3 px-6 text-center text-green-500">{{
+                                        formatRupiah(product.total_quantity * product.total_price) }}
                                     </td>
                                 </tr>
                             </tbody>
@@ -139,11 +146,12 @@ onMounted(() => {
                                 </tr>
                             </thead>
                             <tbody class="text-gray-600 text-sm font-light">
-                                <tr v-for="(product, index) in topProducts" :key="product.id"
+                                <tr v-for="(product, index) in summary.needRestock" :key="product.id"
                                     class="border-b border-gray-200 hover:bg-gray-50">
                                     <td class="py-3 px-6 text-left">{{ index + 1 }}</td>
-                                    <td class="py-3 px-6 text-left font-medium text-gray-900">{{ product.name }}</td>
-                                    <td class="py-3 px-6 text-center">{{ product.sold }}</td>
+                                    <td class="py-3 px-6 text-left font-medium text-gray-900">{{
+                                        product.product_variant.product.name }}</td>
+                                    <td class="py-3 px-6 text-center">{{ product.total_quantity }}</td>
                                 </tr>
                             </tbody>
                         </table>

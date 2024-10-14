@@ -120,7 +120,7 @@ const changeUserSettings = async (key, value) => {
     };
 };
 
-const changeTaxSettings = async (key, value) => {
+const changeGlobalSettings = async (key, value) => {
     try {
         globalSettings.value[key] = value;
 
@@ -130,18 +130,18 @@ const changeTaxSettings = async (key, value) => {
             if (value) {
                 Toast.fire({
                     icon: "success",
-                    title: 'Pajak berhasil diaktifkan',
+                    title: 'Pengaturan berhasil diubah',
                 });
             } else {
                 Toast.fire({
                     icon: "success",
-                    title: 'Pajak berhasil dinonaktifkan',
+                    title: 'Pengaturan berhasil diubah',
                 });
             }
         } else {
             Toast.fire({
                 icon: "error",
-                title: 'Pajak dinonaktifkan',
+                title: 'Pengaturan gagal diubah',
             });
         }
     } catch (error) {
@@ -238,7 +238,7 @@ const fetchData = async () => {
                                 </div>
 
                                 <Switch :checked="globalSettings.is_tax" :modelValue="globalSettings.is_tax"
-                                    @update:checked="changeTaxSettings('is_tax', $event)" />
+                                    @update:checked="changeGlobalSettings('is_tax', $event)" />
                             </div>
 
                             <div v-if="globalSettings.is_tax" class="mt-5">
@@ -246,7 +246,7 @@ const fetchData = async () => {
                                 <Input v-model="globalSettings.tax_percentage" class="mt-2" name="tax" type="number" />
 
                                 <Button class="w-full mt-5"
-                                    @click="changeTaxSettings('tax_percentage', globalSettings.tax_percentage)"
+                                    @click="changeGlobalSettings('tax_percentage', globalSettings.tax_percentage)"
                                     :disabled="isLoading">
                                     {{ isLoading ? 'Saving...' : 'Simpan Pengaturan' }}
                                 </Button>
@@ -272,10 +272,10 @@ const fetchData = async () => {
 
                             <div class="mt-5">
                                 <Label class="mt-4" for="printer_name">Nama Printer</Label>
-                                <Input v-model="globalSettings.printer_name" class="mt-2" name="tax" type="number" />
+                                <Input v-model="globalSettings.printer_name" class="mt-2" name="tax" type="text" />
 
                                 <Button class="w-full mt-5"
-                                    @click="changeTaxSettings('printer_name', globalSettings.printer_name)"
+                                    @click="changeGlobalSettings('printer_name', globalSettings.printer_name)"
                                     :disabled="isLoading">
                                     {{ isLoading ? 'Saving...' : 'Simpan Pengaturan' }}
                                 </Button>

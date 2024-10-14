@@ -54,21 +54,16 @@
                                 </thead>
                                 <tbody>
                                     <tr v-for="(item, index) in debtItems" :key="item.id" class="border-t">
-                                        <td class="text-sm py-2 px-4 whitespace-nowrap">{{ item.transaction_code }}</td>
-                                        <td class="text-sm py-2 px-4 whitespace-nowrap">
-                                            {{ new Date(item.created_at).toLocaleDateString('id-ID', {
-                                                day: 'numeric', month:
-                                                    'long', year: 'numeric'
-                                            }) }}
-                                        </td>
-                                        <td class="text-sm py-2 px-4 whitespace-nowrap">{{ item.product.name }}</td>
-                                        <td class="text-sm py-2 px-4 whitespace-nowrap">{{ item.variant }}</td>
-                                        <td class="text-sm py-2 px-4 whitespace-nowrap">{{ formatRupiah(item.price) }}
-                                        </td>
-                                        <td class="text-sm py-2 px-4 whitespace-nowrap">{{ item.quantity }}</td>
-                                        <td class="text-sm py-2 px-4 whitespace-nowrap">{{ formatRupiah(item.price *
-                                            item.quantity) }}
-                                        </td>
+                                        <td class="text-sm py-2 px-4">{{ item.transaction_code }}</td>
+                                        <td class="text-sm py-2 px-4">{{ new Date(item.created_at).toLocaleDateString('id-ID', {
+                                            day:
+                                                'numeric', month: 'long', year: 'numeric'
+                                            }) }}</td>
+                                        <td class="text-sm py-2 px-4">{{ item.product ? item.product.name : 'TAX' }}</td>
+                                        <td class="text-sm py-2 px-4">{{ item.variant ? item.variant : 'TAX' }}</td>
+                                        <td class="text-sm py-2 px-4">{{ formatRupiah(item.price) }}</td>
+                                        <td class="text-sm py-2 px-4">{{ item.quantity }}</td>
+                                        <td class="text-sm py-2 px-4">{{ formatRupiah(item.price * item.quantity) }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -141,7 +136,7 @@
                 <!-- Payment Methods -->
                 <div>
                     <h6 class="text-sm font-semibold mb-3">Metode Pembayaran</h6>
-                    <div class="flex gap-2">
+                    <div class="flex flex-col gap-2">
                         <Button type="button" :class="[
                             'flex items-center space-x-2 py-6 rounded-md w-full',
                             selectedPayment === 'cash' ? 'bg-gray-800' : 'bg-white border border-gray-300 text-gray-900 hover:text-white'
@@ -203,11 +198,11 @@
                     <div class="bg-blue-50 p-6 rounded-lg shadow-inner" style="margin-top: 25px;">
                         <h5 class="text-sm font-semibold text-gray-600 mb-2">Sisa Hutang Setelah Dibayar</h5>
                         <h5
-                            :class="[{ 'font-extrabold text-3xl': debtRemaining > 0, 'font-bold text-3xl': debtRemaining <= 0 }]">
+                            :class="[{ 'font-extrabold text-3xl': debtRemaining > 0, 'font-bold text-2xl': debtRemaining <= 0 }]">
                             <span v-if="debtRemaining > 0">{{ formatRupiah(debtRemaining) }}</span>
                             <span v-else-if="debtRemaining == 0">Uang pas</span>
-                            <span v-else-if="debtRemaining == null">Masukkan nominal pembayaran</span>
-                            <span v-else class="text-red-500">Nominal pembayaran kurang</span>
+                            <span v-else-if="debtRemaining == null">Masukkan nominal bayar</span>
+                            <span v-else class="text-red-500">Nominal bayar melebihi hutang</span>
                         </h5>
                         <p class="text-sm text-gray-600 mt-2">Terbilang :
                             <span v-if="debtRemaining > 0" class="font-bold">{{ useTerbilang(debtRemaining) }}</span>
@@ -266,7 +261,7 @@
                         <td class="p-2 border-b">{{ customer.name }}</td>
                         <td class="p-2 border-b">{{ customer.phone }}</td>
                         <td class="p-2 border-b">{{ customer.address }}</td>
-                        <td class="p-2 border-b">{{ customer.total_debt }}</td>
+                        <td class="p-2 border-b">{{ totalDebt }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -454,22 +449,40 @@ const handleAddDebtor = async () => {
 const handleSelect = (customer) => {
     selectedCustomer.value = customer;
     isCustomerModalOpen.value = false;
-    debtItems.value = customer.debt_items.map(item => {
-        return {
-            ...item.transaction_item.product_variant,
-            quantity: item.transaction_item.quantity,
-            transaction_code: item.transaction_item.transaction.transaction_code,
-            created_at: item.transaction_item.transaction.created_at,
-            variant: `${item.transaction_item.product_variant.quantity}  ${item.transaction_item.product_variant.unit.name}`,
-        };
+    console.log('111:', customer.debts);
+    debtItems.value = customer.debts.flatMap(debt => {
+        return debt.debt_items.map(item => {
+            if (!item.transaction_item) {
+                return {
+                    quantity: 1,
+                    transaction_code: item.transaction_code,
+                    created_at: item.created_at,
+                    variant: `TAX`,
+                    price: item.total_amount,
+                };
+            }
+
+            return {
+                ...item.transaction_item.product_variant,
+                quantity: item.transaction_item.quantity,
+                transaction_code: item.transaction_item.transaction.transaction_code,
+                created_at: item.transaction_item.transaction.created_at,
+                variant: `${item.transaction_item.product_variant.quantity}  ${item.transaction_item.product_variant.unit.name}`,
+            };
+        });
     });
 
-    totalDebt.value = customer.total_debt;
+
+    totalDebt.value = customer.debts.reduce((acc, debt) => {
+        return acc + debt.remaining_amount;
+    }, 0);
+
+
     debtorInput.value = '';
 
     console.log('total_debt', totalDebt.value);
-
     console.log("Selected customer:", selectedCustomer.value)
+
     console.log("Debt items:", debtItems.value)
 };
 

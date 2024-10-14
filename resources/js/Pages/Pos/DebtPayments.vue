@@ -192,8 +192,8 @@
                             :class="[{ 'font-extrabold text-3xl': debtRemaining > 0, 'font-bold text-3xl': debtRemaining <= 0 }]">
                             <span v-if="debtRemaining > 0">{{ formatRupiah(debtRemaining) }}</span>
                             <span v-else-if="debtRemaining == 0">Uang pas</span>
-                            <span v-else-if="debtRemaining == null">Masukkan nominal pembayaran</span>
-                            <span v-else class="text-red-500">Nominal pembayaran kurang</span>
+                            <span v-else-if="debtRemaining == null">Masukkan nominal bayar</span>
+                            <span v-else class="text-red-500">Nominal bayar melebihi hutang</span>
                         </h5>
                         <p class="text-sm text-gray-600 mt-2">Terbilang :
                             <span v-if="debtRemaining > 0" class="font-bold">{{ useTerbilang(debtRemaining) }}</span>
@@ -251,6 +251,7 @@
                         <td class="p-2 border-b">{{ customer.name }}</td>
                         <td class="p-2 border-b">{{ customer.phone }}</td>
                         <td class="p-2 border-b">{{ customer.address }}</td>
+                        <td class="p-2 border-b">{{ totalDebt }}</td>
                     </tr>
                 </tbody>
             </table>

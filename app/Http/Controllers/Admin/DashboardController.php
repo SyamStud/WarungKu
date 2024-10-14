@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Models\TransactionItem;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\Stock;
 
 class DashboardController extends Controller
 {
@@ -47,6 +48,13 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        $needRestock = Stock::select('product_variant_id', DB::raw('SUM(quantity) as total_quantity'))
+            ->with('productVariant.product')
+            ->groupBy('product_variant_id')
+            ->havingRaw('SUM(quantity) <= 5')
+            ->orderBy('total_quantity')
+            ->limit(10)
+            ->get();
 
         // Mengembalikan semua data dalam satu respons JSON
         return response()->json([
@@ -54,7 +62,8 @@ class DashboardController extends Controller
             'total_purchase' => $totalPurchaseToday,
             'highest_transaction' => $highestTransactionPrice,
             'top_one' => $topOneProductName,
-            'top_products' => $topProducts
+            'top_products' => $topProducts,
+            'need_restock' => $needRestock,
         ]);
     }
 }

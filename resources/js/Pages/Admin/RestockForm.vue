@@ -126,7 +126,7 @@ const handleSearchProduct = async () => {
 
 const handleSearchSupplier = async () => {
     try {
-        const response = await axios.post(`/suppliers/getByName`, { name: identifierSupplier.value });
+        const response = await axios.post(`/admin/suppliers/getByName`, { name: identifierSupplier.value });
 
         console.log(response.data.data);
         isSupplierModalOpen.value = true;
