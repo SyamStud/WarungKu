@@ -13,11 +13,10 @@ class Customer extends Model
         'name',
         'phone',
         'address',
-        'total_debt',
     ];
 
-    public function debtItems()
+    public function debts()
     {
-        return $this->hasMany(DebtItem::class);
+        return $this->hasMany(Debt::class);
     }
 }

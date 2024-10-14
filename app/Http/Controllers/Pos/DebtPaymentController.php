@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Pos;
 
+use App\Models\Debt;
 use Inertia\Inertia;
 use App\Models\Customer;
 use App\Models\DebtItem;
@@ -56,67 +57,76 @@ class DebtPaymentController extends Controller
         $customer = Customer::find($request->customer_id);
 
         $payment = new DebtPayment();
-        $payment->payment_code = $request->payment_code;
         $payment->customer_id = $request->customer_id;
+        $payment->payment_code = $request->payment_code;
         $payment->amount = $request->payment_amount;
         $payment->paid_at = now();
         $payment->payment_method = $request->payment_method;
         $payment->user_id = Auth::user()->id;
         $payment->save();
 
-        $debtItems = DebtItem::where('customer_id', $request->customer_id)
+        // $debtItems = DebtItem::where('customer_id', $request->customer_id)
+        //     ->where('status', '!=', 'paid')
+        //     ->orderBy('created_at', 'asc')
+        //     ->get();
+
+        $debts = Debt::where('customer_id', $request->customer_id)
             ->where('status', '!=', 'paid')
+            ->with('debtItems')
             ->orderBy('created_at', 'asc')
             ->get();
 
-        $remainingDebt = $customer->total_debt - $payment->amount;
+        // $remainingDebt = $customer->total_debt - $payment->amount;
 
         // $this->printDebtReceipt($request->payment_code, $debtItems, $request->payment_amount, $remainingDebt, $customer->name);
 
 
         $remainingPayment = $payment->amount;
 
-        foreach ($debtItems as $debtItem) {
-            if ($remainingPayment <= 0) {
-                break;
+        foreach ($debts as $debt) {
+            foreach ($debt->debtItems as $debtItem) {
+                if ($remainingPayment <= 0) {
+                    break;
+                }
+
+                $paymentForThisItem = min($remainingPayment, $debtItem->remaining_amount);
+
+                $debtItem->paid_amount += $paymentForThisItem;
+                $debtItem->remaining_amount -= $paymentForThisItem;
+                $remainingPayment -= $paymentForThisItem;
+
+                if ($debtItem->remaining_amount <= 0) {
+                    $debtItem->status = 'paid';
+                    $debtItem->settled_at = now();
+                } elseif ($debtItem->paid_amount > 0) {
+                    $debtItem->status = 'partial';
+                }
+
+                $debtItem->last_payment_at = now();
+                $debtItem->save();
+
+                // Create a new DebtPaymentItem to track this payment
+                $paymentItem = new DebtPaymentItem();
+                $paymentItem->debt_payment_id = $payment->id;
+                $paymentItem->debt_item_id = $debtItem->id;
+                $paymentItem->amount = $paymentForThisItem;
+                $paymentItem->remaining_debt = $debtItem->remaining_amount;
+                $paymentItem->save();
             }
 
-            $paymentForThisItem = min($remainingPayment, $debtItem->remaining_amount);
+            $debt->paid_amount += $payment->amount;
+            $debt->remaining_amount -= $payment->amount;
+            $debt->last_payment_at = now();
 
-            $debtItem->paid_amount += $paymentForThisItem;
-            $debtItem->remaining_amount -= $paymentForThisItem;
-            $remainingPayment -= $paymentForThisItem;
-
-            if ($debtItem->remaining_amount <= 0) {
-                $debtItem->status = 'paid';
-                $debtItem->settled_at = now();
-            } elseif ($debtItem->paid_amount > 0) {
-                $debtItem->status = 'partial';
+            if ($debt->remaining_amount <= 0) {
+                $debt->status = 'paid';
+                $debt->settled_at = now();
+            } elseif ($debt->paid_amount > 0) {
+                $debt->status = 'partial';
             }
 
-            $debtItem->last_payment_at = now();
-            $debtItem->save();
-
-            // Create a new DebtPaymentItem to track this payment
-            $paymentItem = new DebtPaymentItem();
-            $paymentItem->debt_payment_id = $payment->id;
-            $paymentItem->debt_item_id = $debtItem->id;
-            $paymentItem->amount = $paymentForThisItem;
-            $paymentItem->remaining_debt = $debtItem->remaining_amount;
-            $paymentItem->save();
+            $debt->save();
         }
-
-
-        $customer->total_debt = $customer->total_debt - $payment->amount;
-        $customer->save();
-
-        // If there's any remaining payment, we might want to handle it
-        // (e.g., create a credit for the customer or refund)
-        if ($remainingPayment > 0) {
-            // Handle excess payment...
-        }
-
-
 
         return response()->json([
             'status' => 'success',

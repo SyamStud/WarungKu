@@ -14,15 +14,21 @@ import { DialogFooter } from '@/Components/ui/dialog';
 import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
+import { useFormatRupiah } from '@/Composables/useFormatRupiah';
 const Toast = useToast();;
+
+const { formatRupiah } = useFormatRupiah();
 
 /* TABLE */
 const columns = [
     { accessorKey: 'transaction', header: 'Kode Transaksi' },
     { accessorKey: 'product', header: 'Produk' },
+    { accessorKey: 'variant', header: 'Variasi' },
     { accessorKey: 'quantity', header: 'Jumlah' },
     { accessorKey: 'price', header: 'Harga Satuan' },
     { accessorKey: 'total_price', header: 'Total Harga' },
+    { accessorKey: 'discount', header: 'Diskon' },
+    { accessorKey: 'discounted_total_price', header: 'Total Akhir' },
 ];
 
 const data = ref([]);
@@ -118,8 +124,8 @@ const handlePageChange = (newPageIndex) => {
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Item Transaksi</h1>
         <div class="flex flex-col md:flex-row justify-end">
             <div class="flex items-center py-4 w-full md:w-72">
-                <Input placeholder="Cari Item Transaksi..." v-model="globalFilter"
-                    class="w-full max-w-full md:max-w-sm" @input="debouncedFetchData" />
+                <Input placeholder="Cari Item Transaksi..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"
+                    @input="debouncedFetchData" />
             </div>
         </div>
 
@@ -138,7 +144,14 @@ const handlePageChange = (newPageIndex) => {
 
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() }}
+                                <template v-if="cell.column.id === 'price' || cell.column.id === 'total_price' || cell.column.id === 'discount'
+                                    || cell.column.id === 'discounted_total_price'">
+                                    {{ formatRupiah(cell.getValue()) }}
+                                </template>
+
+                                <template v-else>
+                                    {{ cell.getValue() }}
+                                </template>
                             </TableCell>
                         </TableRow>
                     </TableBody>

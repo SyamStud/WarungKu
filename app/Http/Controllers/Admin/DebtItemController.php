@@ -77,7 +77,7 @@ class DebtItemController extends Controller
      */
     public function debtItemData(Request $request)
     {
-        $query = DebtItem::query()->with('customer', 'transactionItem');
+        $query = DebtItem::query()->with('debt', 'transactionItem');
 
         // Handle global search
         if ($request->has('search')) {
@@ -88,8 +88,10 @@ class DebtItemController extends Controller
                     ->orWhere('status', 'like', "%{$searchTerm}%")
                     ->orWhere('last_payment_at', 'like', "%{$searchTerm}%")
                     ->orWhere('settled_at', 'like', "%{$searchTerm}%")
-                    ->orWhereHas('customer', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%{$searchTerm}%");
+                    ->orWhereHas('debt', function ($q) use ($searchTerm) {
+                        $q->whereHas('customer', function ($q) use ($searchTerm) {
+                            $q->where('name', 'like', "%{$searchTerm}%");
+                        });
                     })
                     ->orWhereHas('transactionItem', function ($q) use ($searchTerm) {
                         $q->whereHas('transaction', function ($q) use ($searchTerm) {
@@ -112,19 +114,20 @@ class DebtItemController extends Controller
         $perPage = $request->input('per_page', 10);
         $debtItems = $query->paginate($perPage);
 
+        $firstDebtItem = $query->first();
 
         // Calculate 'from' and 'to'
         $from = ($debtItems->currentPage() - 1) * $debtItems->perPage() + 1;
         $to = min($from + $debtItems->count() - 1, $debtItems->total());
 
-        $transformedDebtItems = $debtItems->map(function ($debtItem) {
+        $transformedDebtItems = $debtItems->map(function ($debtItem) use ($firstDebtItem) {
             return [
                 'id' => $debtItem->id,
-                'customer' => $debtItem->customer->name,
-                'transaction' => $debtItem->transactionItem->transaction->transaction_code,
-                'product' => $debtItem->transactionItem->product->name,
-                'quantity' => $debtItem->transactionItem->quantity,
-                'total_amount' => $debtItem->transactionItem->total_price,
+                'customer' => $debtItem->debt->customer->name,
+                'transaction' => $debtItem->transactionItem ? $debtItem->transactionItem->transaction->transaction_code : $firstDebtItem->transactionItem->transaction->transaction_code,
+                'product' => $debtItem->transactionItem ? $debtItem->transactionItem->product->name : 'TAX',
+                'quantity' => $debtItem->transactionItem ? $debtItem->transactionItem->quantity : 1,
+                'total_amount' => $debtItem->transactionItem ? $debtItem->transactionItem->discounted_total_price : $debtItem->total_amount,
                 'paid_amount' => $debtItem->paid_amount,
                 'remaining_amount' => $debtItem->remaining_amount,
                 'status' => $debtItem->status,

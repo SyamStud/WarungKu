@@ -103,7 +103,13 @@ class TransactionController extends Controller
                 'id' => $transaction->id,
                 'transaction_code' => $transaction->transaction_code,
                 'total_price' => $transaction->total_price,
-                'transaction' => $transaction->transaction_id ? $transaction->transaction->name : '-',
+                'discount' => $transaction->discount,
+                'tax' => $transaction->tax,
+                'grand_total' => $transaction->grand_total,
+                'total_payment' => $transaction->total_payment,
+                'total_change' => $transaction->total_change,
+                'payment_method' => $transaction->payment_method,
+                'user' => $transaction->user->name,
                 'created_at' => $transaction->created_at->format('d F Y H:i'),
             ];
         });
@@ -121,7 +127,7 @@ class TransactionController extends Controller
         ]);
     }
 
-    
+
 
     public function getTransactionChartData(Request $request)
     {

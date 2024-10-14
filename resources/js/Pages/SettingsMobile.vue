@@ -256,6 +256,35 @@ const fetchData = async () => {
                 </div>
             </div>
 
+            <div>
+                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-5">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 text-gray-900">
+                            <div class="flex justify-between">
+                                <div>
+                                    <h2 class="text-lg font-medium text-gray-900">Pengaturan Printer</h2>
+
+                                    <p class="mt-1 text-sm text-gray-600">
+                                        Ubah informasi printer
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-5">
+                                <Label class="mt-4" for="printer_name">Nama Printer</Label>
+                                <Input v-model="globalSettings.printer_name" class="mt-2" name="tax" type="number" />
+
+                                <Button class="w-full mt-5"
+                                    @click="changeTaxSettings('printer_name', globalSettings.printer_name)"
+                                    :disabled="isLoading">
+                                    {{ isLoading ? 'Saving...' : 'Simpan Pengaturan' }}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="pb-12 mt-5">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">

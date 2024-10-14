@@ -10,7 +10,7 @@ class DebtItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'customer_id',
+        'debt_id',
         'transaction_item_id',
         'total_amount',
         'paid_amount',
@@ -20,9 +20,8 @@ class DebtItem extends Model
         'settled_at',
     ];
 
-    public function customer()
-    {
-        return $this->belongsTo(Customer::class);
+    public function debt(){
+        return $this->belongsTo(Debt::class);
     }
 
     public function transactionItem()

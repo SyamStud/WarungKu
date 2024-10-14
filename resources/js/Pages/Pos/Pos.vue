@@ -735,13 +735,13 @@ tr:hover {
                             src="https://img.icons8.com/?size=100&id=S7l4pxBr45nJ&format=png&color=000000" alt="gear" />
                         Batalkan Transaksi
                     </Button>
-                    <Separator orientation="vertical" class="h-5 w-[2px] bg-gray-300" />
+                    <!-- <Separator orientation="vertical" class="h-5 w-[2px] bg-gray-300" />
                     <Button v-if="cartItems.length > 0" @click="openDiscountModal"
                         class="bg-[#149278] hover:bg-[#149278] flex gap-2">
                         <img width="20" height="20"
                             src="https://img.icons8.com/?size=100&id=aCQOxGQWgNlJ&format=png&color=000000" alt="gear" />
                         Tambah Diskon
-                    </Button>
+                    </Button> -->
                     <Separator orientation="vertical" class="h-5 w-[2px] bg-gray-300" />
                     <Button v-if="grandTotal" @click="openPaymentModal"
                         class="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-300 flex gap-2">

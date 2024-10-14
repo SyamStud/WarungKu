@@ -79,9 +79,12 @@
                     <tbody>
                         <tr v-for="(item, index) in debtItems" :key="item.id" class="border-t">
                             <td class="py-2 px-4">{{ item.transaction_code }}</td>
-                            <td class="py-2 px-4">{{ new Date(item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) }}</td>
-                            <td class="py-2 px-4">{{ item.product.name }}</td>
-                            <td class="py-2 px-4">{{ item.variant }}</td>
+                            <td class="py-2 px-4">{{ new Date(item.created_at).toLocaleDateString('id-ID', {
+                                day:
+                                    'numeric', month: 'long', year: 'numeric'
+                            }) }}</td>
+                            <td class="py-2 px-4">{{ item.product ? item.product.name : 'TAX'}}</td>
+                            <td class="py-2 px-4">{{ item.variant ? item.variant : 'TAX'}}</td>
                             <td class="py-2 px-4">{{ formatRupiah(item.price) }}</td>
                             <td class="py-2 px-4">{{ item.quantity }}</td>
                             <td class="py-2 px-4">{{ formatRupiah(item.price * item.quantity) }}</td>
@@ -248,7 +251,6 @@
                         <td class="p-2 border-b">{{ customer.name }}</td>
                         <td class="p-2 border-b">{{ customer.phone }}</td>
                         <td class="p-2 border-b">{{ customer.address }}</td>
-                        <td class="p-2 border-b">{{ customer.total_debt }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -427,22 +429,40 @@ const handleAddDebtor = async () => {
 const handleSelect = (customer) => {
     selectedCustomer.value = customer;
     isCustomerModalOpen.value = false;
-    debtItems.value = customer.debt_items.map(item => {
-        return {
-            ...item.transaction_item.product_variant,
-            quantity: item.transaction_item.quantity,
-            transaction_code: item.transaction_item.transaction.transaction_code,
-            created_at: item.transaction_item.transaction.created_at,
-            variant: `${item.transaction_item.product_variant.quantity}  ${item.transaction_item.product_variant.unit.name}`,
-        };
+    console.log('111:', customer.debts);
+    debtItems.value = customer.debts.flatMap(debt => {
+        return debt.debt_items.map(item => {
+            if (!item.transaction_item) {
+                return {
+                    quantity: 1,
+                    transaction_code: item.transaction_code,
+                    created_at: item.created_at,  
+                    variant: `TAX`,
+                    price: item.total_amount,
+                };
+            }
+
+            return {
+                ...item.transaction_item.product_variant,
+                quantity: item.transaction_item.quantity,
+                transaction_code: item.transaction_item.transaction.transaction_code,
+                created_at: item.transaction_item.transaction.created_at,
+                variant: `${item.transaction_item.product_variant.quantity}  ${item.transaction_item.product_variant.unit.name}`,
+            };
+        });
     });
 
-    totalDebt.value = customer.total_debt;
+
+    totalDebt.value = customer.debts.reduce((acc, debt) => {
+        return acc + debt.remaining_amount;
+    }, 0);
+
+
     debtorInput.value = '';
 
     console.log('total_debt', totalDebt.value);
-
     console.log("Selected customer:", selectedCustomer.value)
+
     console.log("Debt items:", debtItems.value)
 };
 

@@ -19,7 +19,7 @@
 
                         <form @submit.prevent="addProduct" class="mt-5">
                             <Input autofocus ref="identifierInputRef" v-model="identifierInput"
-                                @keyup.enter="addProduct" @keyup="handleKeyUp" @blur="handleBlur"
+                                @keyup.enter="addProduct"
                                 placeholder="Scan atau cari nama produk"
                                 class="w-full px-4 h-16 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </form>
@@ -33,15 +33,42 @@
                 </div>
             </div>
 
-            <div class="bg-gray-100 w-full fixed z-10 bottom-0 left-0 pt-5 px-5">
-                <div class="w-full space-y-2 mt-30">
+            <div v-if="cart" class="bg-gray-100 w-full fixed z-10 bottom-0 left-0 pt-5 px-5">
+                <div class="w-full space-y-2 mt-20">
+                    <div class="grid grid-cols-1 gap-1 mb-5">
+                        <!-- Total -->
+                        <span class="text-[0.8rem] text-gray-500 font-medium">Total :</span>
+                        <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold text-right">{{
+                            formatRupiah(cart.total_price) }}</span>
+
+                        <!-- Diskon -->
+                        <span class="text-[0.8rem] text-gray-500 font-medium">Diskon :</span>
+                        <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold text-right">- {{
+                            formatRupiah(cart.discount)
+                        }}</span>
+
+                        <!-- Garis Bawah Diskon -->
+                        <div class="col-span-2 border border-b border-gray-300 my-1"></div>
+                        <!-- Tambahan garis horizontal -->
+
+                        <!-- Pajak -->
+                        <span class="text-[0.8rem] text-gray-500 font-medium">Total :</span>
+                        <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold text-right">{{
+                            formatRupiah(cart.total_price
+                                - cart.discount)
+                        }}</span>
+                        <span class="text-[0.8rem] text-gray-500 font-medium">Pajak :</span>
+                        <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold text-right">+ {{ formatRupiah(cart.tax)
+                            }}</span>
+                    </div>
+                    
                     <div class="flex items-center space-x-2 justify-center text-center mb-5">
-                        <span class="text-gray-600 font-semibold text-sm">Total:</span>
-                        <h3 class="text-lg font-bold text-gray-900">{{ formatRupiah(grandTotal) }}</h3>
+                        <span class="text-gray-600 font-semibold text-sm">Total Akhir :</span>
+                        <h3 class="text-lg font-bold text-gray-900 text-right">{{ formatRupiah(grandTotal) }}</h3>
                     </div>
                 </div>
 
-                <div class="flex gap-2 item-center mb-5">
+                <div class="flex gap-2 item-center mb-5 mt-5">
                     <Button v-if="grandTotal" @click="openRevokeModal" class="w-1/2 h-14 bg-red-500 hover:bg-red-600">
                         Batalkan
                     </Button>
@@ -62,7 +89,6 @@
                 </div>
             </div>
         </div>
-
     </PosLayoutMobile>
 
     <!-- Add Modal -->
@@ -468,7 +494,6 @@ const fetchCustomer = async () => {
     try {
         isLoading.value = true;
         const response = await axios.get('/api/customers');
-        console.log('response', response.data);
         customer.value = response.data.data;
     } catch (error) {
         console.error('Error fetching customer:', error);
@@ -479,8 +504,6 @@ const fetchCustomer = async () => {
 
 const updateIdCustomer = (value) => {
     selectedCustomer.value = value;
-
-    console.log('selectedCustomer', selectedCustomer.value);
 };
 
 const generateTransactionCode = () => {
@@ -510,8 +533,6 @@ const updateVariant = (itemId, variantId) => {
     if (item) {
         const variant = item.product_variants.find(variant => variant.id === parseInt(variantId));
 
-        console.log('variant', variant);
-
         if (variant) {
             // Optimistic update
             const existingItem = cartItems.value.find(
@@ -519,10 +540,6 @@ const updateVariant = (itemId, variantId) => {
                     i.product_variant_id === parseInt(variantId) &&
                     i.id !== itemId
             );
-
-            console.log('cartItems', cartItems.value);
-
-            console.log('existingItem', existingItem);
 
             if (existingItem) {
                 existingItem.quantity += item.quantity;
@@ -549,8 +566,6 @@ const updateVariant = (itemId, variantId) => {
             cartItems.value = response.data.data;
             grandTotal.value = response.data.grand_total;
             cart.value = response.data.cart;
-
-            console.log('cartItems', cartItems.value);
         }
     }).catch(error => {
         console.error('Error updating variant:', error);
@@ -582,7 +597,6 @@ const updateQuantity = (id, quantity) => {
             grandTotal.value = response.data.grand_total;
             cartItems.value = response.data.data.original.data;
             cart.value = response.data.cart;
-            console.log('cartItems', cartItems.value);
         }).catch(error => {
             console.error('Error updating quantity:', error);
             // Revert the optimistic update
@@ -697,7 +711,6 @@ const addProduct = async () => {
 const newlyAddedItemId = ref(null);
 
 const addToCart = async (identifier, variant_id = 0) => {
-    console.log('cartItems', cartItems.value);
     const item = cartItems.value.find(item => item.name === identifier && item.product_variant_id === variant_id || item.sku === identifier && item.product_variant_id === variant_id);
 
     try {
@@ -709,13 +722,10 @@ const addToCart = async (identifier, variant_id = 0) => {
         });
 
         if (response.data && response.data.data) {
-            console.log('response', response.data.data);
-
             cartItems.value = response.data.data;
             grandTotal.value = response.data.grand_total;
             cart.value = response.data.cart;
         } else if (response.data && response.data.product.length > 0) {
-            console.log('response', response.data.product);
             searchingProduct.value = response.data.product;
             isAddModalOpen.value = true;
         } else {
@@ -745,7 +755,6 @@ function formatRupiah(value) {
 
 const openPaymentModal = () => {
     isPaymentModalOpen.value = true;
-    console.log('Grand Total:', grandTotal.value);
 
     useTerbilang(grandTotal.value);
 };
@@ -794,12 +803,10 @@ const selectPaymentMethod = (method) => {
 const bayar = ref('');
 const kembali = ref(null);
 const computedBayarValue = computed(() => bayar.value);
-console.log('computedBayarValue:', computedBayarValue.value);
 
 const hitungKembali = () => {
     const bayarValue = computedBayarValue.value;
     kembali.value = bayarValue - grandTotal.value;
-    console.log('Kembali:', kembali.value);
 };
 
 const isFormValid = computed(() => {

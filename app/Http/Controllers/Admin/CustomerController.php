@@ -97,7 +97,7 @@ class CustomerController extends Controller
      */
     public function customerData(Request $request)
     {
-        $query = Customer::query()->with('debtItems');
+        $query = Customer::query()->with('debts');
 
         // Handle global search
         if ($request->has('search')) {
@@ -130,9 +130,9 @@ class CustomerController extends Controller
                 'name' => $customer->name,
                 'phone' => $customer->phone,
                 'address' => $customer->address,
-                'total_debt' => $customer->debtItems->sum('total_amount'),
-                'paid_amount' => $customer->debtItems->sum('paid_amount'),
-                'remaining_debt' => $customer->debtItems->sum('remaining_amount'),
+                'total_debt' => $customer->debts->sum('total_amount'),
+                'paid_amount' => $customer->debts->sum('paid_amount'),
+                'remaining_debt' => $customer->debts->sum('remaining_amount'),
             ];
         });
 
@@ -164,14 +164,14 @@ class CustomerController extends Controller
 
         $customer = Customer::where('name', $request->name)
             ->with([
-            'debtItems' => function ($query) {
-                $query->where('status', '!=', 'paid')
-                ->with([
-                    'transactionItem.productVariant.product',
-                    'transactionItem.productVariant.unit',
-                    'transactionItem.transaction'
-                ]);
-            }
+                'debts.debtItems' => function ($query) {
+                    $query->where('status', '!=', 'paid')
+                        ->with([
+                            'transactionItem.productVariant.product',
+                            'transactionItem.productVariant.unit',
+                            'transactionItem.transaction'
+                        ]);
+                }
             ])
             ->get();
 

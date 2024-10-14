@@ -3,18 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Cart;
+use App\Models\Debt;
 use Inertia\Inertia;
+use App\Models\Stock;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Models\CartItem;
 use App\Models\Customer;
 use App\Models\DebtItem;
 use App\Models\Discount;
 use Mike42\Escpos\Printer;
 use Illuminate\Http\Request;
+use App\Models\StockMovement;
+use App\Models\DiscountProduct;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Models\DiscountProduct;
-use App\Models\Setting;
 use Illuminate\Support\Facades\Auth;
 use Mike42\Escpos\CapabilityProfile;
 use Illuminate\Support\Facades\Cache;
@@ -398,7 +401,7 @@ class CartController extends Controller
 
         if ($existingItem) {
             $existingItem->quantity += $cartItem->quantity;
-            
+
             $productDiscount = $this->getProductDiscount($request->variant_id, $existingItem->quantity);
             $productDiscountAmount = 0;
 
@@ -649,7 +652,6 @@ class CartController extends Controller
                 ]);
             }
 
-
             $totalPrice = DB::table('cart_items')
                 ->where('cart_id', $cartId)
                 ->sum('total_price');
@@ -714,6 +716,8 @@ class CartController extends Controller
             ], 400);
         }
 
+        $stockMovement = $this->decreaseStock($cartItems);
+
         $this->print($cart, $cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
 
         return DB::transaction(function () use ($cart, $cartItems, $request) {
@@ -722,10 +726,10 @@ class CartController extends Controller
                 'transaction_code' => $cart->transaction_code,
                 'total_price' => $cart->total_price,
                 'discount' => $cart->discount,
-                'tax' => 0,
+                'tax' => $cart->tax,
                 'grand_total' => $cart->grand_total,
                 'total_payment' => $request->total_payment,
-                'total_change' => $request->total_payment - ($cart->total_price - $cart->discount),
+                'total_change' => $request->total_payment - ($cart->grand_total),
                 'payment_method' => $request->payment_method,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -747,14 +751,31 @@ class CartController extends Controller
                 ]);
 
                 if ($request->payment_method == 'debt') {
-                    DebtItem::create([
+                    $debt = Debt::create([
                         'customer_id' => $request->customer_id,
+                        'transaction_id' => $transaction,
+                        'total_amount' => $cart->grand_total,
+                        'remaining_amount' => $cart->grand_total,
+                    ]);
+
+                    DebtItem::create([
+                        'debt_id' => $debt->id,
                         'transaction_item_id' => $transactionItem,
                         'total_amount' => $cartItem->discounted_total_price,
                         'remaining_amount' => $cartItem->discounted_total_price,
                     ]);
+                }
+            }
 
-                    Customer::find($request->customer_id)->increment('total_debt', $cartItem->discounted_total_price);
+            if ($request->payment_method == 'debt') {
+                if ($cart->tax > 0) {
+                    $debt = Debt::where('transaction_id', $transaction)->first();
+
+                    DebtItem::create([
+                        'debt_id' => $debt->id,
+                        'total_amount' => $cart->tax,
+                        'remaining_amount' => $cart->tax,
+                    ]);
                 }
             }
 
@@ -767,16 +788,39 @@ class CartController extends Controller
         });
     }
 
+    public function decreaseStock($cartItems)
+    {
+        foreach ($cartItems as $cartItem) {
+            $stock = Stock::where('product_variant_id', $cartItem->product_variant_id)->first();
+
+            if ($stock) {
+                $stock->quantity -= $cartItem->quantity;
+                $stock->save();
+
+                $stockMovement = StockMovement::create([
+                    'product_variant_id' => $cartItem->product_variant_id,
+                    'quantity' => $cartItem->quantity,
+                    'type' => 'out',
+                    'reference' => 'transaction',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+    }
+
     public function print($cart, $items, $transactionCode, $payment, $method)
     {
+        $globalSettings = Setting::all()->keyBy('key');
+
         // Menghubungkan ke printer dengan nama printer
         $profile = CapabilityProfile::load('simple');
         $connector = new WindowsPrintConnector("TP806");
         $printer = new Printer($connector, $profile);
 
         // Nama dan informasi toko
-        $tokoName = "WARUNG AFIQ";
-        $tokoAddress = "Jl. Raya No.123, Jakarta\n";
+        $tokoName = $globalSettings['shop_name']->value . "\n";
+        $tokoAddress = $globalSettings['shop_address']->value . "\n";
 
         // Informasi struk
         $kasir = "Kasir: " . Auth::user()->name;
@@ -824,14 +868,14 @@ class CartController extends Controller
 
         // Total
         $printer->text(str_pad("Total", 30) . str_pad(number_format($cart->total_price, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
-        $printer->text(str_pad("Diskon", 30) . str_pad('- ' . number_format($cart->discount, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
+        $printer->text(str_pad("Diskon", 30) . str_pad($cart->discount > 0 ? '- ' : '' . number_format($cart->discount, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         $printer->text(str_pad("PPN", 30) . str_pad(number_format($cart->tax, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
-        $printer->text(str_repeat("-", 47) . "\n\n");
+        $printer->text(str_repeat("-", 47) . "\n");
         $printer->setEmphasis(true);
         $printer->text(str_pad("Total Belanja", 30) . str_pad(number_format($cart->grand_total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         $printer->setEmphasis(false);
         $printer->feed();
-        $printer->text(str_pad($method, 30) . str_pad(number_format($payment, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
+        $printer->text(str_pad($method == 'debt' ? 'Catat Hutang' : $method, 30) . str_pad(number_format($payment, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         if ($method == 'cash') {
             $printer->text(str_pad("Kembali", 30) . str_pad(number_format($payment - $cart->grand_total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         }
@@ -913,18 +957,18 @@ class CartController extends Controller
         if ($discount['discount']['amount_type'] == 'percentage') {
             return $price - ($price * ($discount['discount']['amount'] / 100));
         } else {
-            return $price - $discount['amount'];
+            return $price - $discount['discount']['amount'];
         }
     }
 
-    protected function calculateProductDiscountTotal($total_price, $discount, $quantity)
-    {
-        if ($discount['discount']['amount_type'] == 'percentage') {
-            return ($total_price - ($total_price * ($discount['discount']['amount'] / 100)));
-        } else {
-            return ($total_price - $discount['amount']) * $quantity;
-        }
-    }
+    // protected function calculateProductDiscountTotal($total_price, $discount, $quantity)
+    // {
+    //     if ($discount['discount']['amount_type'] == 'percentage') {
+    //         return ($total_price - ($total_price * ($discount['discount']['amount'] / 100)));
+    //     } else {
+    //         return ($total_price - $discount['amount']) * $quantity;
+    //     }
+    // }
 
     /**
      * Mendapatkan diskon total pesanan berdasarkan jumlah belanja.

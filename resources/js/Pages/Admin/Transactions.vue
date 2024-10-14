@@ -13,11 +13,20 @@ import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
 
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
+import { useFormatRupiah } from '@/Composables/useFormatRupiah';
+
+const { formatRupiah } = useFormatRupiah();
 
 /* TABLE */
 const columns = [
     { accessorKey: 'transaction_code', header: 'Kode Transaksi' },
     { accessorKey: 'total_price', header: 'Total Belanja' },
+    { accessorKey: 'discount', header: 'Diskon' },
+    { accessorKey: 'tax', header: 'Pajak' },
+    { accessorKey: 'grand_total', header: 'Total Akhir' },
+    { accessorKey: 'total_payment', header: 'Total Bayar' },
+    { accessorKey: 'total_change', header: 'Kembalian' },
+    { accessorKey: 'created_at', header: 'Tanggal Transaksi' },
     { accessorKey: 'user', header: 'Kasir' },
 ];
 
@@ -114,8 +123,8 @@ const handlePageChange = (newPageIndex) => {
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Transaksi</h1>
         <div class="flex flex-col md:flex-row justify-end">
             <div class="flex items-center py-4 w-full md:w-72">
-                <Input placeholder="Cari Transaksi..." v-model="globalFilter"
-                    class="w-full max-w-full md:max-w-sm" @input="debouncedFetchData" />
+                <Input placeholder="Cari Transaksi..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"
+                    @input="debouncedFetchData" />
             </div>
         </div>
 
@@ -134,7 +143,14 @@ const handlePageChange = (newPageIndex) => {
 
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() }}
+                                <template
+                                    v-if="cell.column.id === 'transaction_code' || cell.column.id === 'created_at' || cell.column.id === 'user'">
+                                    {{ cell.getValue() }}
+                                </template>
+
+                                <template v-else>
+                                    {{ formatRupiah(cell.getValue()) }}
+                                </template>
                             </TableCell>
                         </TableRow>
                     </TableBody>

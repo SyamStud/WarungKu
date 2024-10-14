@@ -97,7 +97,6 @@ class TransactionItemController extends Controller
         $perPage = $request->input('per_page', 10);
         $transactionItems = $query->paginate($perPage);
 
-
         // Calculate 'from' and 'to'
         $from = ($transactionItems->currentPage() - 1) * $transactionItems->perPage() + 1;
         $to = min($from + $transactionItems->count() - 1, $transactionItems->total());
@@ -107,9 +106,12 @@ class TransactionItemController extends Controller
                 'id' => $transactionItem->id,
                 'transaction' => $transactionItem->transaction->transaction_code,
                 'product' => $transactionItem->product->name,
+                'variant' => $transactionItem->productVariant ? ($transactionItem->productVariant->quantity == 1 ? $transactionItem->productVariant->unit->name : $transactionItem->productVariant->quantity . ' - ' . $transactionItem->productVariant->unit->name) : '',
                 'quantity' => $transactionItem->quantity,
                 'price' => $transactionItem->price,
+                'discount' => $transactionItem->discount,
                 'total_price' => $transactionItem->total_price,
+                'discounted_total_price' => $transactionItem->discounted_total_price,
             ];
         });
 

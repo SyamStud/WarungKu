@@ -24,17 +24,18 @@ class DebtPaymentHistoryController extends Controller
             $searchTerm = $request->search;
             $query->where(function ($q) use ($searchTerm) {
                 $q->whereHas('debtItem', function ($q) use ($searchTerm) {
-                    $q->whereHas('customer', function ($q) use ($searchTerm) {
-                        $q->where('name', 'like', "%$searchTerm%");
-                    })
-                    ->orWhereHas('transactionItem', function ($q) use ($searchTerm) {
+                    $q->WhereHas('transactionItem', function ($q) use ($searchTerm) {
                         $q->whereHas('product', function ($q) use ($searchTerm) {
+                            $q->where('name', 'like', "%$searchTerm%");
+                        });
+                    })->orWhereHas('debt', function ($q) use ($searchTerm) {
+                        $q->whereHas('customer', function ($q) use ($searchTerm) {
                             $q->where('name', 'like', "%$searchTerm%");
                         });
                     });
                 })->orWhereHas('debtPayment', function ($q) use ($searchTerm) {
                     $q->where('paid_at', 'like', "%$searchTerm%")
-                    ->orWhere('payment_code', 'like', "%$searchTerm%");
+                        ->orWhere('payment_code', 'like', "%$searchTerm%");
                 });
             });
         }
@@ -59,12 +60,12 @@ class DebtPaymentHistoryController extends Controller
             return [
                 'id' => $debtPayment->id,
                 'payment_code' => $debtPayment->debtPayment->payment_code,
-                'customer' => $debtPayment->debtItem->customer->name,
-                'product' => $debtPayment->debtItem->transactionItem->product->name,
-                'quantity' => $debtPayment->debtItem->transactionItem->quantity,
+                'customer' => $debtPayment->debtItem->debt->customer->name,
+                'product' => $debtPayment->debtItem->transactionItem ? $debtPayment->debtItem->transactionItem->product->name : "TAX",
+                'quantity' => $debtPayment->debtItem->transactionItem ? $debtPayment->debtItem->transactionItem->quantity : 1,
                 'total_debt' => $debtPayment->debtItem->total_amount,
                 'debt_remaining' => $debtPayment->remaining_debt,
-                'paid_amount' => $debtPayment->debtPayment->amount,
+                'paid_amount' => $debtPayment->amount,
                 'payment_method' => $debtPayment->debtPayment->payment_method,
                 'paid_at' => $debtPayment->debtPayment->paid_at,
                 'user' => $debtPayment->debtPayment->user->name,
