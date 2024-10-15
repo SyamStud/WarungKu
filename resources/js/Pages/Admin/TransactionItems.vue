@@ -2,24 +2,24 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
-import { DialogFooter } from '@/Components/ui/dialog';
-import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
 import { useFormatRupiah } from '@/Composables/useFormatRupiah';
-const Toast = useToast();;
 
+// Menggunakan composable useToast untuk menampilkan notifikasi
+const Toast = useToast();
+
+// Menggunakan composable useFormatRupiah untuk format mata uang Rupiah
 const { formatRupiah } = useFormatRupiah();
 
-/* TABLE */
+/* TABEL */
+// Mendefinisikan kolom-kolom tabel
 const columns = [
     { accessorKey: 'transaction', header: 'Kode Transaksi' },
     { accessorKey: 'product', header: 'Produk' },
@@ -31,8 +31,11 @@ const columns = [
     { accessorKey: 'discounted_total_price', header: 'Total Akhir' },
 ];
 
+// Data transaksi
 const data = ref([]);
+// Filter global untuk pencarian
 const globalFilter = ref('');
+// Konfigurasi pagination
 const pagination = ref({
     pageIndex: 0,
     pageSize: 10,
@@ -40,8 +43,10 @@ const pagination = ref({
     total: 0,
 });
 
+// Konfigurasi sorting
 const sorting = ref({ field: 'id', direction: 'asc' });
 
+// Menggunakan composable useVueTable untuk mengelola tabel
 const table = useVueTable({
     get data() { return data.value; },
     columns,
@@ -66,6 +71,7 @@ const table = useVueTable({
     }
 });
 
+// Fungsi untuk mengambil data dari API
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/transaction-items', {
@@ -90,8 +96,10 @@ const fetchData = async () => {
     }
 };
 
+// Fungsi untuk mengambil data dengan debounce
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Fungsi untuk mengatur sorting
 const sortBy = (field) => {
     if (sorting.value.field === field) {
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
@@ -102,12 +110,15 @@ const sortBy = (field) => {
     fetchData();
 };
 
+// Mengambil data saat komponen dimount
 onMounted(() => {
     fetchData();
 })
 
+// Menonton perubahan pada pagination
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Fungsi untuk mengubah halaman pada pagination
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
     fetchData();

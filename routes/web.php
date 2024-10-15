@@ -30,6 +30,7 @@ use App\Http\Controllers\{
     Admin\TransactionItemController,
     Admin\DebtPaymentHistoryController
 };
+use App\Http\Controllers\Admin\UnitController;
 
 // Email Verification Routes
 Route::get('/email/verify', fn() => view('auth.verify-email'))
@@ -91,6 +92,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('/transaction-items', TransactionItemController::class);
         Route::resource('/customers', CustomerController::class);
         Route::resource('/debt-items', DebtItemController::class);
+        Route::resource('/units', UnitController::class);
 
         // Supplier Routes
         Route::post('/suppliers/getByName', [SupplierController::class, 'getByName']);

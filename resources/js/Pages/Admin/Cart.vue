@@ -2,11 +2,9 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
@@ -14,33 +12,41 @@ import { DialogFooter } from '@/Components/ui/dialog';
 import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
+import Button from '@/components/ui/button/Button.vue';
+
+// Inisialisasi Toast untuk notifikasi
 const Toast = useToast();
 
 /* MODAL */
 const isDeleteModalOpen = ref(false);
 const selectedCart = ref(null);
 
+// Fungsi untuk membuka modal hapus dengan data transaksi yang dipilih
 const openDeleteModal = (cart) => {
     selectedCart.value = cart;
     isDeleteModalOpen.value = true;
 };
 
+// Fungsi untuk menghapus transaksi
 const deleteCart = async () => {
     if (selectedCart.value) {
         try {
             const response = await axios.post(`/admin/carts/${selectedCart.value.id}?_method=DELETE`);
             if (response.data.status === 'error') {
+                // Menampilkan pesan error jika gagal
                 return Toast.fire({
                     icon: "error",
                     title: response.data.message,
                 });
             } else {
+                // Menampilkan pesan sukses jika berhasil
                 Toast.fire({
                     icon: "success",
                     title: response.data.message,
                 });
             }
 
+            // Menutup modal setelah menghapus dan refresh data
             isDeleteModalOpen.value = false;
             fetchData();
         } catch (error) {
@@ -56,8 +62,11 @@ const columns = [
     { accessorKey: 'user', header: 'Kasir' },
 ];
 
+// State untuk menyimpan data transaksi
 const data = ref([]);
+// State untuk filter pencarian global
 const globalFilter = ref('');
+// State untuk pagination (index halaman, jumlah per halaman, total halaman, total data)
 const pagination = ref({
     pageIndex: 0,
     pageSize: 10,
@@ -65,8 +74,10 @@ const pagination = ref({
     total: 0,
 });
 
+// State untuk menyimpan sorting (kolom yang diurutkan dan arah urutan)
 const sorting = ref({ field: 'id', direction: 'asc' });
 
+// Konfigurasi table menggunakan TanStack Vue Table
 const table = useVueTable({
     get data() { return data.value; },
     columns,
@@ -80,6 +91,7 @@ const table = useVueTable({
     },
     manualPagination: true,
     pageCount: computed(() => pagination.value.pageCount),
+    // Ketika pagination berubah, refresh data
     onPaginationChange: (updater) => {
         if (typeof updater === 'function') {
             const newPagination = updater(pagination.value);
@@ -91,6 +103,7 @@ const table = useVueTable({
     }
 });
 
+// Fungsi untuk mengambil data dari API
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/carts', {
@@ -103,6 +116,7 @@ const fetchData = async () => {
             }
         });
 
+        // Menyimpan data dan meta data pagination
         data.value = response.data.data;
         pagination.value = {
             pageIndex: response.data.meta.current_page - 1,
@@ -115,8 +129,10 @@ const fetchData = async () => {
     }
 };
 
+// Membuat fungsi debounce untuk optimasi pencarian
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Fungsi untuk sorting berdasarkan kolom yang dipilih
 const sortBy = (field) => {
     if (sorting.value.field === field) {
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
@@ -127,12 +143,15 @@ const sortBy = (field) => {
     fetchData();
 };
 
+// Fetch data pertama kali saat komponen dimuat
 onMounted(() => {
     fetchData();
 })
 
+// Watcher untuk memantau perubahan pagination
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Fungsi untuk mengubah halaman
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
     fetchData();
@@ -143,10 +162,14 @@ const handlePageChange = (newPageIndex) => {
 
 <template>
 
+    <!-- Mengatur judul halaman -->
     <Head title="Daftar Transaksi Sementara" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Transaksi Sementara</h1>
+
+        <!-- Input Pencarian -->
         <div class="flex flex-col md:flex-row justify-end">
             <div class="flex items-center py-4 w-full md:w-72">
                 <Input placeholder="Cari Transaksi Sementara..." v-model="globalFilter"
@@ -154,25 +177,28 @@ const handlePageChange = (newPageIndex) => {
             </div>
         </div>
 
+        <!-- Tabel Data Transaksi -->
         <div>
-            <!-- Table  -->
             <div class="rounded-md border">
                 <Table>
+                    <!-- Header Tabel dengan opsi sorting -->
                     <TableHeaderWrapper :columns="columns" :sorting="sorting" @sort="sortBy" />
 
+                    <!-- Body Tabel -->
                     <TableBody>
+                        <!-- Looping untuk setiap baris data -->
                         <TableRow v-for="(row, index) in table.getRowModel().rows" :key="row.id">
                             <!-- Kolom pertama untuk nomor urut -->
                             <TableCell>
                                 {{ (pagination.pageIndex) * 10 + index + 1 }}
                             </TableCell>
 
-                            <!-- Kolom-kolom lainnya -->
+                            <!-- Kolom data lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
                                 {{ cell.getValue() }}
                             </TableCell>
 
-                            <!-- Kolom untuk aksi -->
+                            <!-- Kolom aksi hapus -->
                             <TableCell>
                                 <div class="flex gap-2">
                                     <Button @click="() => openDeleteModal(row.original)">Hapus</Button>
@@ -187,7 +213,8 @@ const handlePageChange = (newPageIndex) => {
             <PaginationWrapper :pagination="pagination" :onPageChange="handlePageChange" />
 
             <!-- Delete Modal -->
-            <DialogWrapper v-model:open="isDeleteModalOpen" title="Hapus Transaksi Sementara" desc="Hapus transaksi Sementara">
+            <DialogWrapper v-model:open="isDeleteModalOpen" title="Hapus Transaksi Sementara"
+                desc="Hapus transaksi Sementara">
                 <DialogFooter>
                     <Button @click="isDeleteModalOpen = false" variant="outline">Batal</Button>
                     <Button @click="deleteCart" variant="destructive">Hapus</Button>

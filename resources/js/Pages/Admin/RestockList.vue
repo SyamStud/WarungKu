@@ -1,21 +1,10 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import * as z from 'zod';
-import { useForm } from 'vee-validate';
-import { toTypedSchema } from '@vee-validate/zod';
 import { Head } from '@inertiajs/vue3';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
-import FormInput from '@/Components/ui/form/FormInput.vue';
-import Spinner from '@/Components/Spinner.vue';
-import FormMessage from '@/Components/ui/form/FormMessage.vue';
-import { FormField } from '@/Components/ui/form';
-import FormItem from '@/Components/ui/form/FormItem.vue';
-import FormLabel from '@/Components/ui/form/FormLabel.vue';
-import FormControl from '@/Components/ui/form/FormControl.vue';
 import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import Textarea from '@/Components/ui/textarea/Textarea.vue';
 import Button from '@/components/ui/button/Button.vue';
@@ -37,6 +26,7 @@ const isProductModalOpen = ref(false);
 const searchingProduct = ref([]);
 const selectedProduct = ref(null);
 
+// Fungsi untuk mencari produk berdasarkan nama
 const handleSearchProduct = async () => {
     try {
         const response = await axios.post(`/products/getByName`, { name: identifier.value });
@@ -50,6 +40,7 @@ const handleSearchProduct = async () => {
     }
 };
 
+// Fungsi untuk memilih produk dari hasil pencarian
 const handleSelect = (product) => {
     selectedProduct.value = product;
     isProductModalOpen.value = false;
@@ -57,6 +48,7 @@ const handleSelect = (product) => {
     addToList(product);
 };
 
+// Fungsi untuk menambahkan produk ke daftar restock
 const addToList = async (product) => {
     try {
         const response = await axios.post('/admin/restock-lists', {
@@ -77,7 +69,7 @@ const addToList = async (product) => {
 
             identifier.value = '';
             selectedProduct.value = null;
-            fetchItems(); // Refresh the list after adding a new item
+            fetchItems(); // Refresh daftar setelah menambahkan item baru
         }
     } catch (error) {
         console.error('Error submitting form:', error);
@@ -94,6 +86,7 @@ const restockItems = ref([]);
 const updatingItemId = ref(null);
 const newlyAddedItemId = ref(null);
 
+// Fungsi untuk mengambil daftar restock dari server
 const fetchItems = async () => {
     try {
         const response = await axios.get('/api/restock-lists');
@@ -108,6 +101,7 @@ const fetchItems = async () => {
 const variants = ref([]);
 const selectedVariant = ref(null);
 
+// Fungsi untuk mengambil daftar varian produk dari server
 const fetchVariants = async (productId) => {
     try {
         const response = await axios.get(`/api/units`);
@@ -119,6 +113,7 @@ const fetchVariants = async (productId) => {
     }
 };
 
+// Fungsi untuk memperbarui kuantitas produk dalam daftar restock
 const updateQuantity = async (id, quantity) => {
     updatingItemId.value = id;
 
@@ -153,6 +148,7 @@ const updateQuantity = async (id, quantity) => {
     }
 };
 
+// Fungsi untuk memperbarui catatan produk dalam daftar restock
 const updateNote = (id, note) => {
     const index = restockItems.value.findIndex(item => item.id === id);
     if (index !== -1) {
@@ -181,6 +177,7 @@ const updateNote = (id, note) => {
     });
 };
 
+// Fungsi untuk memperbarui varian produk dalam daftar restock
 const updateVariant = (itemId, variantId) => {
 
     console.log('itemId', itemId);
@@ -209,6 +206,7 @@ const updateVariant = (itemId, variantId) => {
     });
 };
 
+// Fungsi untuk menghapus produk dari daftar restock
 const removeItem = async (id) => {
     try {
         await axios.delete(`/admin/restock-lists/${id}`);
@@ -228,11 +226,13 @@ const removeItem = async (id) => {
 
 const removeButtons = ref([]);
 
+// Fungsi untuk memfokuskan tombol hapus berikutnya
 const focusNextRemoveButton = (currentIndex) => {
     const nextIndex = (currentIndex + 1) % removeButtons.value.length;
     focusRemoveButton(nextIndex);
 };
 
+// Fungsi untuk memfokuskan tombol hapus sebelumnya
 const focusPreviousRemoveButton = (currentIndex) => {
     const previousIndex = (currentIndex - 1 + removeButtons.value.length) % removeButtons.value.length;
     focusRemoveButton(previousIndex);
@@ -240,8 +240,10 @@ const focusPreviousRemoveButton = (currentIndex) => {
 
 const pseudoFocusedIndex = ref(null);
 
+// Fungsi untuk mengecek apakah tombol hapus sedang difokuskan
 const isPseudoFocused = (index) => pseudoFocusedIndex.value === index;
 
+// Fungsi untuk memfokuskan tombol hapus
 const focusRemoveButton = (index) => {
     if (removeButtons.value[index]) {
         removeButtons.value[index].$el.focus();
@@ -249,12 +251,14 @@ const focusRemoveButton = (index) => {
     }
 };
 
+// Fungsi untuk menghilangkan fokus dari tombol hapus
 const blurRemoveButton = (index) => {
     if (pseudoFocusedIndex.value === index) {
         pseudoFocusedIndex.value = null;
     }
 };
 
+// Fungsi untuk mencetak daftar restock
 const print = async () => {
     try {
         const response = await axios.post('/admin/restock-lists/print');
@@ -264,6 +268,7 @@ const print = async () => {
     }
 };
 
+// Fungsi yang dijalankan saat komponen dimuat
 onMounted(() => {
     fetchItems();
     fetchVariants();
@@ -274,11 +279,13 @@ onMounted(() => {
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
 
 <template>
+    <!-- Mengatur judul halaman -->
 
     <Head title="Form Restock" />
 
     <AdminLayout>
         <div class="flex w-full gap-5 items-center">
+            <!-- Judul Halaman -->
             <h1 class="text-2xl font-semibold text-gray-900">Tambah Daftar Belanja</h1>
             <Separator orientation="vertical" class="h-5 w-[2px] bg-gray-300" />
             <Button @click="print">Cetak Daftar Belanja</Button>

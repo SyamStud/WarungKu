@@ -269,46 +269,54 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useToast } from '@/Composables/useToast';
 import useTerbilang from '@/Composables/useTerbilang';
 import Separator from '@/Components/ui/separator/Separator.vue';
-import DebtItems from '../Admin/DebtItems.vue';
 import DialogFooter from '@/Components/ui/dialog/DialogFooter.vue';
-import FormInput from '@/Components/ui/form/FormInput.vue';
 import useSpeak from '@/Composables/useSpeak';
 
+// Inisialisasi variabel reaktif untuk kode pembayaran, input debitur, total hutang, jumlah pembayaran, dan item hutang
 const paymentCode = ref('PH-001')
 const debtorInput = ref('')
 const totalDebt = ref(0)
 const paymentAmount = ref(0)
 const debtItems = ref([])
 
+// Inisialisasi variabel reaktif untuk hari, tanggal, dan waktu saat ini
 const currentDay = ref('')
 const currentDate = ref('')
 const currentTime = ref('')
 
+// Inisialisasi variabel reaktif untuk status modal pelanggan dan pencarian pelanggan
 const isCustomerModalOpen = ref(false)
 const searchingCustomer = ref([])
 const selectedCustomer = ref(null)
 
+// Inisialisasi variabel reaktif untuk status modal pembayaran dan pembatalan
 const isPaymentModalOpen = ref(false)
 const isRevokeModalOpen = ref(false)
 
+// Inisialisasi variabel reaktif untuk metode pembayaran yang dipilih dan status loading
 const selectedPayment = ref(null);
 const isLoading = ref(false)
 
+// Fungsi untuk membuka modal pembayaran
 const openPaymentModal = () => {
     isPaymentModalOpen.value = true;
 }
 
+// Fungsi untuk membuka modal pembatalan
 const openRevokeModal = () => {
     isRevokeModalOpen.value = true;
 }
 
+// Fungsi untuk memilih metode pembayaran
 const selectPaymentMethod = (method) => {
     selectedPayment.value = method;
 };
 
+// Menghitung jumlah pembayaran yang tersisa
 const computedPaymentAmount = computed(() => paymentAmount.value);
 const debtRemaining = ref(null);
 
+// Fungsi untuk menghitung sisa hutang setelah pembayaran
 const countDebtRemaining = () => {
     const paymentAmount = computedPaymentAmount.value;
 
@@ -316,13 +324,9 @@ const countDebtRemaining = () => {
     console.log('DebtRemaining:', debtRemaining.value);
 };
 
+// Fungsi untuk mengirim data pembayaran ke server
 const onSubmit = async () => {
     isLoading.value = true;
-
-    // console.log('paymentCode:', paymentCode.value);
-    // console.log('paymentAmount:', paymentAmount.value);
-    // console.log('selectedPayment:', selectedPayment.value);
-    // console.log('selectedCustomer:', selectedCustomer.value);
 
     try {
         const response = await axios.post('/pos/debt-payments/store-payment', {
@@ -360,8 +364,10 @@ const onSubmit = async () => {
     }
 };
 
+// Inisialisasi Toast untuk notifikasi
 const Toast = useToast();
 
+// Fungsi untuk memperbarui tanggal dan waktu saat ini
 const updateDateTime = () => {
     const now = new Date()
     const options = { timeZone: 'Asia/Jakarta' }
@@ -385,8 +391,10 @@ const updateDateTime = () => {
     currentTime.value = timeString.replace(/\./g, ':');
 }
 
+// Timer untuk memperbarui waktu setiap detik
 let timer
 
+// Fungsi untuk menghasilkan kode pembayaran
 const generateCode = () => {
     const now = () => {
         const date = new Date();
@@ -401,13 +409,13 @@ const generateCode = () => {
     return "PH" + now() + "-" + Math.random().toString(36).substr(2, 5).toUpperCase();
 };
 
+// Preload file audio untuk notifikasi sukses dan error
 const successAudio = new Audio('/success.mp3');
 const errorAudio = new Audio('/error.mp3');
-
-// Preload the audio files
 successAudio.load();
 errorAudio.load();
 
+// Fungsi untuk menambahkan debitur
 const handleAddDebtor = async () => {
     const response = await axios.post('/customers/getCustomer', {
         name: debtorInput.value
@@ -427,6 +435,7 @@ const handleAddDebtor = async () => {
     }
 }
 
+// Fungsi untuk memilih pelanggan dari hasil pencarian
 const handleSelect = (customer) => {
     selectedCustomer.value = customer;
     isCustomerModalOpen.value = false;
@@ -453,25 +462,14 @@ const handleSelect = (customer) => {
         });
     });
 
-
     totalDebt.value = customer.debts.reduce((acc, debt) => {
         return acc + debt.remaining_amount;
     }, 0);
 
-
     debtorInput.value = '';
-
-    console.log('total_debt', totalDebt.value);
-    console.log("Selected customer:", selectedCustomer.value)
-
-    console.log("Debt items:", debtItems.value)
 };
 
-const handlePayment = () => {
-    // Logic to process the debt payment
-    console.log("Processing payment of:", paymentAmount.value)
-}
-
+// Fungsi untuk memformat angka menjadi format Rupiah
 function formatRupiah(value) {
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
@@ -480,11 +478,13 @@ function formatRupiah(value) {
     }).format(value);
 }
 
+// Lifecycle hook untuk menjalankan fungsi saat komponen dimuat
 onMounted(() => {
     timer = setInterval(updateDateTime, 1000);
     paymentCode.value = generateCode()
 })
 
+// Lifecycle hook untuk membersihkan timer saat komponen dihapus
 onUnmounted(() => {
     clearInterval(timer);
 });

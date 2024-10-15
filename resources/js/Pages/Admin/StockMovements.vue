@@ -11,11 +11,13 @@ import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
+
 const Toast = useToast();
 
 let isLoading = ref(false);
 
 /* TABLE */
+// Definisi kolom-kolom tabel
 const columns = [
     { accessorKey: 'reference', header: 'Referensi' },
     { accessorKey: 'product', header: 'Nama Produk' },
@@ -25,30 +27,30 @@ const columns = [
     { accessorKey: 'created_at', header: 'Tanggal' },
 ];
 
-const data = ref([]);
-const globalFilter = ref('');
+const data = ref([]); // Data tabel
+const globalFilter = ref(''); // Filter global untuk pencarian
 const pagination = ref({
-    pageIndex: 0,
-    pageSize: 10,
-    pageCount: 1,
-    total: 0,
+    pageIndex: 0, // Indeks halaman saat ini
+    pageSize: 10, // Jumlah item per halaman
+    pageCount: 1, // Jumlah total halaman
+    total: 0, // Jumlah total item
 });
 
-const sorting = ref({ field: 'id', direction: 'asc' });
+const sorting = ref({ field: 'id', direction: 'asc' }); // Pengurutan data
 
 const table = useVueTable({
-    get data() { return data.value; },
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    get data() { return data.value; }, // Data tabel
+    columns, // Kolom-kolom tabel
+    getCoreRowModel: getCoreRowModel(), // Model baris inti
+    getPaginationRowModel: getPaginationRowModel(), // Model baris paginasi
     state: {
         pagination: computed(() => ({
             pageIndex: pagination.value.pageIndex,
             pageSize: pagination.value.pageSize,
         })),
     },
-    manualPagination: true,
-    pageCount: computed(() => pagination.value.pageCount),
+    manualPagination: true, // Paginasi manual
+    pageCount: computed(() => pagination.value.pageCount), // Jumlah total halaman
     onPaginationChange: (updater) => {
         if (typeof updater === 'function') {
             const newPagination = updater(pagination.value);
@@ -56,23 +58,24 @@ const table = useVueTable({
         } else {
             pagination.value = { ...pagination.value, ...updater };
         }
-        fetchData();
+        fetchData(); // Ambil data baru saat paginasi berubah
     }
 });
 
+// Fungsi untuk mengambil data dari API
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/stock-movements', {
             params: {
-                search: globalFilter.value,
-                page: pagination.value.pageIndex + 1,
-                per_page: pagination.value.pageSize,
-                sort: sorting.value.field,
-                direction: sorting.value.direction,
+                search: globalFilter.value, // Parameter pencarian
+                page: pagination.value.pageIndex + 1, // Halaman saat ini
+                per_page: pagination.value.pageSize, // Jumlah item per halaman
+                sort: sorting.value.field, // Kolom pengurutan
+                direction: sorting.value.direction, // Arah pengurutan
             }
         });
 
-        data.value = response.data.data;
+        data.value = response.data.data; // Set data tabel
         pagination.value = {
             pageIndex: response.data.meta.current_page - 1,
             pageSize: response.data.meta.per_page,
@@ -84,8 +87,9 @@ const fetchData = async () => {
     }
 };
 
-const debouncedFetchData = debounce(fetchData, 300);
+const debouncedFetchData = debounce(fetchData, 300); // Debounce untuk pencarian
 
+// Fungsi untuk mengurutkan data
 const sortBy = (field) => {
     if (sorting.value.field === field) {
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
@@ -93,16 +97,17 @@ const sortBy = (field) => {
         sorting.value.field = field;
         sorting.value.direction = 'asc';
     }
-    fetchData();
+    fetchData(); // Ambil data baru saat pengurutan berubah
 };
 
-onMounted(fetchData);
+onMounted(fetchData); // Ambil data saat komponen dimuat
 
-watch(() => pagination.value, () => { }, { deep: true });
+watch(() => pagination.value, () => { }, { deep: true }); // Watcher untuk paginasi
 
+// Fungsi untuk menangani perubahan halaman
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
-    fetchData();
+    fetchData(); // Ambil data baru saat halaman berubah
 };
 </script>
 

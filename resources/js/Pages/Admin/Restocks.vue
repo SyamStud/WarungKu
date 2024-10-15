@@ -7,9 +7,7 @@ import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Head, Link } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
@@ -24,15 +22,17 @@ import FormLabel from '@/Components/ui/form/FormLabel.vue';
 import FormControl from '@/Components/ui/form/FormControl.vue';
 import Textarea from '@/Components/ui/textarea/Textarea.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
+import Button from '@/components/ui/button/Button.vue';
 
 const Toast = useToast();
 
 /* MODAL */
-const isEditModalOpen = ref(false);
-const isDeleteModalOpen = ref(false);
+const isEditModalOpen = ref(false); 
+const isDeleteModalOpen = ref(false); 
 const selectedRestock = ref(null);
 const isEdit = ref(false);
 
+// Fungsi untuk membuka modal edit dan mengisi form dengan data restock yang dipilih
 const openEditModal = (restock) => {
     isEdit.value = true;
     selectedRestock.value = restock;
@@ -45,24 +45,27 @@ const openEditModal = (restock) => {
     isEditModalOpen.value = true;
 };
 
+// Fungsi untuk membuka modal delete dan menyimpan data restock yang dipilih
 const openDeleteModal = (restock) => {
     selectedRestock.value = restock;
     isDeleteModalOpen.value = true;
 };
 
+// Skema validasi untuk form edit menggunakan zod dan vee-validate
 const editFormSchema = toTypedSchema(z.object({
     quantity: z.any(),
     price: z.any(),
     note: z.any(),
 }));
 
+// Inisialisasi form dengan vee-validate
 const form = useForm({
     validationSchema: computed(() => editFormSchema),
 });
 
-let isLoading = ref(false);
+let isLoading = ref(false); // State untuk loading
 
-// ACTION FORM 
+// Fungsi untuk submit form edit
 const onSubmit = form.handleSubmit(async (values) => {
     try {
         isLoading.value = true;
@@ -92,6 +95,7 @@ const onSubmit = form.handleSubmit(async (values) => {
     }
 });
 
+// Fungsi untuk menghapus restock
 const deleteRestock = async () => {
     if (selectedRestock.value) {
         try {
@@ -127,8 +131,8 @@ const columns = [
     { accessorKey: 'created_by', header: 'Dicatat Oleh' },
 ];
 
-const data = ref([]);
-const globalFilter = ref('');
+const data = ref([]); // Data untuk tabel
+const globalFilter = ref(''); // Filter global untuk pencarian
 const pagination = ref({
     pageIndex: 0,
     pageSize: 10,
@@ -136,8 +140,9 @@ const pagination = ref({
     total: 0,
 });
 
-const sorting = ref({ field: 'id', direction: 'asc' });
+const sorting = ref({ field: 'id', direction: 'asc' }); // State untuk sorting
 
+// Inisialisasi tabel dengan vue-table
 const table = useVueTable({
     get data() { return data.value; },
     columns,
@@ -162,6 +167,7 @@ const table = useVueTable({
     }
 });
 
+// Fungsi untuk mengambil data dari API
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/restocks', {
@@ -186,8 +192,9 @@ const fetchData = async () => {
     }
 };
 
-const debouncedFetchData = debounce(fetchData, 300);
+const debouncedFetchData = debounce(fetchData, 300); // Fungsi untuk debounce pencarian
 
+// Fungsi untuk sorting kolom tabel
 const sortBy = (field) => {
     if (sorting.value.field === field) {
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
@@ -198,10 +205,11 @@ const sortBy = (field) => {
     fetchData();
 };
 
-onMounted(fetchData);
+onMounted(fetchData); // Ambil data saat komponen dimount
 
-watch(() => pagination.value, () => { }, { deep: true });
+watch(() => pagination.value, () => { }, { deep: true }); // Watcher untuk pagination
 
+// Fungsi untuk mengubah halaman
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
     fetchData();

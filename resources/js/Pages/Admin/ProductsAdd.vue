@@ -1,14 +1,11 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
-import debounce from 'lodash/debounce';
 import * as z from 'zod';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
-import { Head, Link } from '@inertiajs/vue3';
-
+import { Head } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import FormInput from '@/Components/ui/form/FormInput.vue';
@@ -28,7 +25,7 @@ import SelectContent from '@/Components/ui/select/SelectContent.vue';
 import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
 import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import Separator from '@/Components/ui/separator/Separator.vue';
-
+import Button from '@/components/ui/button/Button.vue';
 const Toast = useToast();
 
 const sku = ref('');
@@ -41,6 +38,7 @@ const isScan = ref(false);
 const isCost = ref(true);
 const isStock = ref(true);
 
+// Fungsi untuk menangani perubahan status scan barcode
 const handleScan = (value) => {
     isScan.value = value;
     console.log(isScan.value);
@@ -53,19 +51,22 @@ const handleScan = (value) => {
     }
 };
 
+// Fungsi untuk menangani perubahan status harga modal
 const handleCost = (value) => {
     isCost.value = value;
 };
 
+// Fungsi untuk menangani perubahan status stok
 const handleStock = (value) => {
     isStock.value = value;
 };
 
+// Fungsi untuk memperbarui SKU dalam form
 const updateFormSKU = () => {
     form.setFieldValue('sku', sku.value);
 };
 
-// VALIDATION FRONT END FORM
+// VALIDASI FORM FRONT END
 const addFormSchema = toTypedSchema(z.object({
     category_id: z.number(),
     sku: z.string().min(2).max(50),
@@ -96,7 +97,7 @@ const form = useForm({
 
 let isLoading = ref(false);
 
-// ACTION FORM 
+// FUNGSI UNTUK MENGIRIM FORM
 const onSubmit = async () => {
     try {
         isLoading.value = true;
@@ -135,7 +136,7 @@ const onSubmit = async () => {
                 title: response.data.message,
             });
 
-            // Reset the form and clear inputs
+            // Reset form dan bersihkan input
             form.resetForm();
             form.setFieldValue('category_id', selectedCategories._rawValue.id);
 
@@ -163,6 +164,7 @@ const onSubmit = async () => {
     }
 };
 
+// Fungsi untuk menghasilkan SKU unik
 const generateSKU = async () => {
     let uniqueSKU = false;
     let newSKU = '';
@@ -186,14 +188,14 @@ onMounted(async () => {
     await fetchOptions();
 });
 
-// Watch for changes in sku and update form
+// Watch untuk perubahan pada sku dan memperbarui form
 watch(sku, (newValue) => {
     form.setFieldValue('sku', newValue);
 });
 
 const options = ref([])
 
-
+// Fungsi untuk mengambil data kategori dan unit dari API
 const fetchOptions = async () => {
     try {
         const response = await axios.get('/api/categories')
@@ -216,17 +218,20 @@ const fetchOptions = async () => {
     }
 }
 
+// Fungsi untuk memperbarui ID kategori dalam form
 const updateIdCategory = (value) => {
     selectedCategories.value = value;
     form.setFieldValue('category_id', value.id);
 };
 
+// Fungsi untuk menambah input variasi produk
 const addVariantInput = () => {
     const currentVariants = [...form.values.variantInputs];
     currentVariants.push({ quantity: '1', unit_id: '1', price: '', cost: '', stock: '' });
     form.setFieldValue('variantInputs', currentVariants);
 };
 
+// Fungsi untuk menghapus input variasi produk
 const removeVariantInput = (index) => {
     if (form.values.variantInputs && form.values.variantInputs.length > 1) {
         const currentVariants = [...form.values.variantInputs];
@@ -235,6 +240,7 @@ const removeVariantInput = (index) => {
     }
 };
 
+// Fungsi untuk memperbarui input variasi produk
 const updateVariantInput = (index, field, event) => {
     const currentVariants = [...form.values.variantInputs];
     let value;
@@ -259,10 +265,11 @@ const updateVariantInput = (index, field, event) => {
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
 
 <template>
-
+<!-- Mengatur judul halaman -->
     <Head title="Daftar Produk" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Tambah Produk</h1>
         <div class="mt-10 flex items-center gap-4">
             <label class="text-md font-bold text-gray-900">Scan Barcode</label>

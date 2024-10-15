@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Unit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Inertia\Inertia;
 
 class UnitController extends Controller
 {
@@ -13,15 +15,7 @@ class UnitController extends Controller
      */
     public function index()
     {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        return Inertia::render('Admin/Units');
     }
 
     /**
@@ -29,23 +23,22 @@ class UnitController extends Controller
      */
     public function store(Request $request)
     {
-        //
-    }
+        $validation = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+        ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Unit $unit)
-    {
-        //
-    }
+        if ($validation->fails()) {
+            return response()->json($validation->errors(), 422);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Unit $unit)
-    {
-        //
+        Unit::create([
+            'name' => strtoupper($request->input('name')),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Unit berhasil ditambahkan',
+        ]);
     }
 
     /**
@@ -53,7 +46,22 @@ class UnitController extends Controller
      */
     public function update(Request $request, Unit $unit)
     {
-        //
+        $validation = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+        ]);
+
+        if ($validation->fails()) {
+            return response()->json($validation->errors(), 422);
+        }
+
+        $unit->update([
+            'name' => strtoupper($request->input('name')),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Unit berhasil diubah',
+        ]);
     }
 
     /**
@@ -61,7 +69,12 @@ class UnitController extends Controller
      */
     public function destroy(Unit $unit)
     {
-        //
+        $unit->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Unit berhasil dihapus',
+        ]);
     }
 
     /**

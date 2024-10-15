@@ -35,7 +35,8 @@
                             'text-sm px-6 py-3 transition-all duration-150 ease-in-out focus:outline-none hover:bg-gray-200 hover:text-gray-900 flex gap-2 items-center',
                             activeTab === 'pengaturan' ? 'bg-gray-100 !text-black' : 'text-white'
                         ]">
-                            <img width="20" height="20" src="https://img.icons8.com/?size=100&id=12784&format=png&color=000000" alt="print" />
+                            <img width="20" height="20"
+                                src="https://img.icons8.com/?size=100&id=12784&format=png&color=000000" alt="print" />
                             Pengaturan
                         </button>
                         </Link>
@@ -156,7 +157,6 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Save } from 'lucide-vue-next';
 import { Link, usePage } from '@inertiajs/vue3';
 
 const page = usePage();
@@ -237,9 +237,10 @@ const tabs = [
             { link: '/admin/products', name: 'Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
             { link: '/admin/stocks', name: 'Stok', imageSrc: 'https://img.icons8.com/?size=100&id=VWrzCw0rvxVx&format=png&color=000000' },
             { link: '/admin/stock-movements', name: 'Riwayat Stok', imageSrc: 'https://img.icons8.com/?size=100&id=18971&format=png&color=000000' },
+            { link: '/admin/categories', name: 'Kategori', imageSrc: 'https://img.icons8.com/?size=100&id=XnHBz2LnhELw&format=png&color=000000' },
+            { link: '/admin/units', name: 'Unit', imageSrc: 'https://img.icons8.com/?size=100&id=12927&format=png&color=000000' },
             { link: '/admin/discounts', name: 'Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=63761&format=png&color=000000' },
             { link: '/admin/discount-products', name: 'Produk Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=yasXRs9W9T8i&format=png&color=000000' },
-            { link: '/admin/order-discounts', name: 'Riwayat Penggunaan Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=PPCBrFJZ7zWb&format=png&color=000000' },
         ]
     },
     {

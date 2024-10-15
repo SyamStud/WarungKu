@@ -26,21 +26,21 @@ import ReportLineChart from '@/Components/ReportLineChart.vue';
 
 const appContainer = ref(null);
 
-const download = async () => {
-    const element = appContainer.value;
-    const opt = {
-        margin: 10,
-        filename: 'laporan_pendapatan.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+// const download = async () => {
+//     const element = appContainer.value;
+//     const opt = {
+//         margin: 10,
+//         filename: 'laporan_pendapatan.pdf',
+//         image: { type: 'jpeg', quality: 0.98 },
+//         html2canvas: { scale: 2 },
+//         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+//     };
 
-    try {
-        await html2pdf().from(element).set(opt).outputPdf('dataurlnewwindow');
-        console.log('PDF generated successfully');
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-    }
-};
+//     try {
+//         await html2pdf().from(element).set(opt).outputPdf('dataurlnewwindow');
+//         console.log('PDF generated successfully');
+//     } catch (error) {
+//         console.error('Error generating PDF:', error);
+//     }
+// };
 </script>

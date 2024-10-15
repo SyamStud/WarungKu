@@ -7,22 +7,18 @@ import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
 import { DialogFooter } from '@/Components/ui/dialog';
 import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
-import FormInput from '@/Components/ui/form/FormInput.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
 import { FormField } from '@/Components/ui/form';
 import FormItem from '@/Components/ui/form/FormItem.vue';
 import FormLabel from '@/Components/ui/form/FormLabel.vue';
 import FormControl from '@/Components/ui/form/FormControl.vue';
-import Textarea from '@/Components/ui/textarea/Textarea.vue';
 import Select from '@/Components/ui/select/Select.vue';
 import SelectTrigger from '@/Components/ui/select/SelectTrigger.vue';
 import SelectValue from '@/Components/ui/select/SelectValue.vue';
@@ -30,100 +26,108 @@ import SelectContent from '@/Components/ui/select/SelectContent.vue';
 import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
 import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
-import TableHead from '@/Components/ui/table/TableHead.vue';
 import Label from '@/components/ui/label/Label.vue';
 import Multiselect from 'vue-multiselect';
 import { useFormatRupiah } from '@/Composables/useFormatRupiah';
+import Button from '@/components/ui/button/Button.vue';
 
+// Import necessary modules and libraries
 const Toast = useToast();
 const { formatRupiah } = useFormatRupiah();
 
-/* MODAL */
-const isAddModalOpen = ref(false);
-const isEditModalOpen = ref(false);
-const isDeleteModalOpen = ref(false);
-const selectedDiscountProduct = ref(null);
-const isEdit = ref(false);
+/* MODAL STATE MANAGEMENT */
+const isAddModalOpen = ref(false);  // State for Add Modal visibility
+const isEditModalOpen = ref(false);  // State for Edit Modal visibility
+const isDeleteModalOpen = ref(false); // State for Delete Modal visibility
+const selectedDiscountProduct = ref(null); // Currently selected discount product
+const isEdit = ref(false); // Flag to check if it's in edit mode
 
+// Open Add Modal and reset the form
 const openAddModal = () => {
     form.setValues({
         discount_id: null,
         product_variant_id: null,
         is_active: null,
     });
-    isEdit.value = false;
-    isAddModalOpen.value = true;
+    isEdit.value = false; // Set to add mode
+    isAddModalOpen.value = true; // Show Add Modal
 };
 
+// Open Edit Modal and populate the form with selected product data
 const openEditModal = (discountProduct) => {
-    isEdit.value = true;
-    selectedDiscountProduct.value = discountProduct;
-    form.resetForm();
+    isEdit.value = true; // Set to edit mode
+    selectedDiscountProduct.value = discountProduct; // Set the selected discount product
+    form.resetForm(); // Reset the form to clear previous values
     form.setValues({
         discount_id: discountProduct.discount_id,
         product_variant_id: discountProduct.product_variant_id,
         is_active: discountProduct.is_active.toString(),
     });
-    isEditModalOpen.value = true;
+    isEditModalOpen.value = true; // Show Edit Modal
 };
 
+// Open Delete Modal for selected discount product
 const openDeleteModal = (discountProduct) => {
-    selectedDiscountProduct.value = discountProduct;
-    isDeleteModalOpen.value = true;
+    selectedDiscountProduct.value = discountProduct; // Set the selected discount product
+    isDeleteModalOpen.value = true; // Show Delete Modal
 };
 
-
-// VALIDATION FRONT END FORM
+/* VALIDATION SCHEMA */
 const addFormSchema = toTypedSchema(z.object({
-    discount_id: z.any(),
-    product_variant_id: z.any(),
-    is_active: z.any(),
+    discount_id: z.any(), // Validation for discount_id
+    product_variant_id: z.any(), // Validation for product_variant_id
+    is_active: z.any(), // Validation for is_active
 }));
 
 const editFormSchema = toTypedSchema(z.object({
-    discount_id: z.any(),
-    product_variant_id: z.any(),
-    is_active: z.any(),
+    discount_id: z.any(), // Validation for discount_id
+    product_variant_id: z.any(), // Validation for product_variant_id
+    is_active: z.any(), // Validation for is_active
 }));
 
+// Form initialization with dynamic validation schema based on edit state
 const form = useForm({
     validationSchema: computed(() => isEdit.value ? editFormSchema : addFormSchema),
 });
 
+// Loading state for form submission
 let isLoading = ref(false);
 
-// ACTION FORM 
+/* ACTION FORM - SUBMISSION */
 const onSubmit = async () => {
     try {
+        form.setFieldValue('discount_id', selectedDiscountProduct.value.id); // Set discount ID
 
-        form.setFieldValue('discount_id', selectedDiscountProduct.value.id);
-
-        isLoading.value = true;
+        isLoading.value = true; // Set loading state
         let response;
+
+        // Determine whether to update or create based on edit state
         if (isEdit.value) {
             response = await axios.post(`/admin/discount-products/${selectedDiscountProduct.value.id}?_method=PUT`, form.values);
         } else {
             response = await axios.post('/admin/discount-products', form.values);
         }
 
+        // Handle response status
         if (response.data.status === 'error') {
-            isLoading.value = false;
-
+            isLoading.value = false; // Reset loading state
             return Toast.fire({
                 icon: "error",
-                title: response.data.message,
+                title: response.data.message, // Show error message
             });
         } else {
             Toast.fire({
                 icon: "success",
-                title: response.data.message,
+                title: response.data.message, // Show success message
             });
         }
 
+        // Close the appropriate modal based on edit state
         isEdit.value ? (isEditModalOpen.value = false) : (isAddModalOpen.value = false);
-        fetchData();
-        isLoading.value = false;
+        fetchData(); // Refresh data
+        isLoading.value = false; // Reset loading state
 
+        // Reset form and related states
         identifier.value = '';
         selectedProducts.value = [];
         searchingDiscount.value = [];
@@ -131,26 +135,29 @@ const onSubmit = async () => {
         form.resetForm();
     } catch (error) {
         console.error('Error submitting form:', error);
-        isLoading.value = false;
+        isLoading.value = false; // Reset loading state on error
     }
 };
 
+/* ACTION FORM - DELETE DISCOUNT PRODUCT */
 const deleteDiscountProduct = async () => {
     if (selectedDiscountProduct.value) {
         try {
             const response = await axios.post(`/admin/discount-products/${selectedDiscountProduct.value.id}?_method=DELETE`);
+            // Handle response status
             if (response.data.status === 'error') {
                 return Toast.fire({
                     icon: "error",
-                    title: response.data.message,
+                    title: response.data.message, // Show error message
                 });
             } else {
                 Toast.fire({
                     icon: "success",
-                    title: response.data.message,
+                    title: response.data.message, // Show success message
                 });
             }
 
+            // Close Delete Modal and refresh data
             isAddModalOpen.value = false;
             isDeleteModalOpen.value = false;
             fetchData();
@@ -160,7 +167,7 @@ const deleteDiscountProduct = async () => {
     }
 };
 
-/* TABLE */
+/* TABLE SETUP */
 const columns = [
     { accessorKey: 'discount', header: 'Nama Diskon' },
     { accessorKey: 'product', header: 'Nama Produk' },
@@ -173,6 +180,7 @@ const columns = [
     { accessorKey: 'is_active', header: 'Status' },
 ];
 
+// Data management for the table
 const data = ref([]);
 const globalFilter = ref('');
 const pagination = ref({
@@ -182,10 +190,12 @@ const pagination = ref({
     total: 0,
 });
 
+// Sorting state
 const sorting = ref({ field: 'id', direction: 'asc' });
 
+// Table setup using Vue Table
 const table = useVueTable({
-    get data() { return data.value; },
+    get data() { return data.value; }, // Data for the table
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -204,10 +214,11 @@ const table = useVueTable({
         } else {
             pagination.value = { ...pagination.value, ...updater };
         }
-        fetchData();
+        fetchData(); // Fetch data on pagination change
     }
 });
 
+// Fetch data for the table from the API
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/discount-products', {
@@ -220,6 +231,7 @@ const fetchData = async () => {
             }
         });
 
+        // Update table data and pagination state
         data.value = response.data.data;
         pagination.value = {
             pageIndex: response.data.meta.current_page - 1,
@@ -232,21 +244,25 @@ const fetchData = async () => {
     }
 };
 
+// Debounced fetch for searching to reduce API calls
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Sorting function for table columns
 const sortBy = (field) => {
     if (sorting.value.field === field) {
-        sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
+        sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc'; // Toggle sorting direction
     } else {
-        sorting.value.field = field;
-        sorting.value.direction = 'asc';
+        sorting.value.field = field; // Set new sorting field
+        sorting.value.direction = 'asc'; // Reset sorting direction
     }
-    fetchData();
+    fetchData(); // Fetch data after sorting
 };
 
+// Product selection state
 const productOptions = ref([]);
 const selectedProducts = ref([]);
 
+// Fetch product variants for the selection
 const fetchProducts = async () => {
     try {
         const response = await axios.get('/api/productVariants');
@@ -257,33 +273,39 @@ const fetchProducts = async () => {
             id: product.id,
             name: product.name + ' - ' + product.variant,
             value: product.id
-        }))
+        }));
     } catch (error) {
         console.error('Error fetching products:', error);
     }
 };
 
+// Update selected product in the form
 const updateIdProduct = (value) => {
     selectedProducts.value = value;
     form.setFieldValue('product_variant_id', value.id);
 };
 
+// Lifecycle hook for fetching initial data
 onMounted(() => {
     fetchData();
     fetchProducts();
 });
 
+// Watch for changes in pagination (currently no action taken)
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Handle page change event
 const handlePageChange = (newPageIndex) => {
-    pagination.value.pageIndex = newPageIndex;
-    fetchData();
+    pagination.value.pageIndex = newPageIndex; // Update page index
+    fetchData(); // Fetch data for new page
 };
 
+// Search functionality for discounts
 const identifier = ref('');
 const isSearchingModalOpen = ref(false);
 const searchingDiscount = ref([]);
 
+// Fetch discounts based on search input
 const handleSearchDiscount = async () => {
     try {
         const response = await axios.get('/api/discounts', {
@@ -292,29 +314,33 @@ const handleSearchDiscount = async () => {
             }
         });
 
-        searchingDiscount.value = response.data.data;
-        isSearchingModalOpen.value = true;
+        searchingDiscount.value = response.data.data; // Update search results
+        isSearchingModalOpen.value = true; // Show search modal
     } catch (error) {
         console.error('Error fetching data:', error);
     }
 };
 
+// Handle selecting a discount from the search results
 const handleSelect = (discount) => {
-    selectedDiscountProduct.value = discount;
-    isSearchingModalOpen.value = false;
-}
-</script>
+    selectedDiscountProduct.value = discount; // Set the selected discount product
+    isSearchingModalOpen.value = false; // Close search modal
+};
 
+</script>
 
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
 
 
 <template>
+    <!-- Mengatur judul halaman -->
 
     <Head title="Daftar Diskon" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Produk Diskon</h1>
+        <!-- Button Tambah dan Input Pencarian -->
         <div class="flex flex-col md:flex-row justify-between">
             <Button @click="openAddModal()" class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah Produk
                 Diskon</Button>
@@ -385,8 +411,6 @@ const handleSelect = (discount) => {
 
             <!-- Pagination -->
             <PaginationWrapper :pagination="pagination" :onPageChange="handlePageChange" />
-
-
 
             <!-- Add Modal -->
             <DialogWrapper v-model:open="isAddModalOpen" title="Tambah Diskon" customClass="md:w-[50rem]"

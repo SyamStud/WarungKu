@@ -2,20 +2,15 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Input } from '@/Components/ui/input/index.js';
-import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
-import { DialogFooter } from '@/Components/ui/dialog';
-import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
-const Toast = useToast();;
 
-/* TABLE */
+/* Kolom tabel yang menampilkan berbagai informasi terkait pembayaran utang */
 const columns = [
     { accessorKey: 'payment_code', header: 'Kode Pembayaran' },
     { accessorKey: 'customer', header: 'Nama Terhutang' },
@@ -30,6 +25,7 @@ const columns = [
     { accessorKey: 'user', header: 'Kasir' },
 ];
 
+/* State untuk menyimpan data tabel, filter global, pagination, dan sorting */
 const data = ref([]);
 const globalFilter = ref('');
 const pagination = ref({
@@ -39,8 +35,10 @@ const pagination = ref({
     total: 0,
 });
 
+/* Sorting untuk mengatur kolom dan arah sorting */
 const sorting = ref({ field: 'id', direction: 'asc' });
 
+/* Inisialisasi dan konfigurasi tabel */
 const table = useVueTable({
     get data() { return data.value; },
     columns,
@@ -55,6 +53,7 @@ const table = useVueTable({
     manualPagination: true,
     pageCount: computed(() => pagination.value.pageCount),
     onPaginationChange: (updater) => {
+        /* Update pagination dan panggil ulang data */
         if (typeof updater === 'function') {
             const newPagination = updater(pagination.value);
             pagination.value = { ...pagination.value, ...newPagination };
@@ -65,6 +64,7 @@ const table = useVueTable({
     }
 });
 
+/* Fungsi untuk mengambil data dari API berdasarkan filter, pagination, dan sorting */
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/debt-payment-history', {
@@ -77,6 +77,7 @@ const fetchData = async () => {
             }
         });
 
+        /* Update data dan pagination dari response */
         data.value = response.data.data;
         pagination.value = {
             pageIndex: response.data.meta.current_page - 1,
@@ -85,14 +86,15 @@ const fetchData = async () => {
             total: response.data.meta.total,
         };
 
-        console.log(response.data.data);
     } catch (error) {
         console.error('Error fetching data:', error);
     }
 };
 
+/* Debounced fetch untuk mengurangi frekuensi panggilan API */
 const debouncedFetchData = debounce(fetchData, 300);
 
+/* Fungsi untuk mengubah sorting kolom */
 const sortBy = (field) => {
     if (sorting.value.field === field) {
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
@@ -100,33 +102,40 @@ const sortBy = (field) => {
         sorting.value.field = field;
         sorting.value.direction = 'asc';
     }
-    fetchData();
+    fetchData(); // Fetch ulang data
 };
 
+/* Fetch data pertama kali saat komponen di-mount */
 onMounted(() => {
     fetchData();
 })
 
+/* Watch perubahan pagination */
 watch(() => pagination.value, () => { }, { deep: true });
 
+/* Fungsi untuk menangani perubahan halaman */
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
     fetchData();
 };
 </script>
 
+
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
 
 <template>
+    <!-- Mengatur judul halaman -->
 
     <Head title="Daftar Riwayat Pembayaran Hutang" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Riwayat Pembayaran Hutang</h1>
+        <!-- Input Pencarian -->
         <div class="flex flex-col md:flex-row justify-end">
             <div class="flex items-center py-4 w-full md:w-72">
-                <Input placeholder="Cari Riwayat Pembayaran Hutang..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"
-                    @input="debouncedFetchData" />
+                <Input placeholder="Cari Riwayat Pembayaran Hutang..." v-model="globalFilter"
+                    class="w-full max-w-full md:max-w-sm" @input="debouncedFetchData" />
             </div>
         </div>
 

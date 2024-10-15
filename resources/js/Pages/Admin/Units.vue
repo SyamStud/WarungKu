@@ -26,10 +26,10 @@ const Toast = useToast();
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
-const selectedCategory = ref(null);
+const selectedUnit = ref(null);
 const isEdit = ref(false);
 
-// Buka modal tambah kategori
+// Buka modal tambah unit
 const openAddModal = () => {
     form.setValues({
         name: '',
@@ -38,30 +38,30 @@ const openAddModal = () => {
     isAddModalOpen.value = true;
 };
 
-// Buka modal edit kategori
-const openEditModal = (category) => {
+// Buka modal edit unit
+const openEditModal = (unit) => {
     isEdit.value = true;
-    selectedCategory.value = category;
+    selectedUnit.value = unit;
     form.resetForm();
     form.setValues({
-        name: category.name,
+        name: unit.name,
     });
     isEditModalOpen.value = true;
 };
 
-// Buka modal hapus kategori
-const openDeleteModal = (category) => {
-    selectedCategory.value = category;
+// Buka modal hapus unit
+const openDeleteModal = (unit) => {
+    selectedUnit.value = unit;
     isDeleteModalOpen.value = true;
 };
 
 /* -------------- VALIDASI FRONT-END FORM -------------- */
-// Skema validasi untuk tambah kategori
+// Skema validasi untuk tambah unit
 const addFormSchema = toTypedSchema(z.object({
     name: z.string().min(2).max(50),
 }));
 
-// Skema validasi untuk edit kategori
+// Skema validasi untuk edit unit
 const editFormSchema = toTypedSchema(z.object({
     name: z.string().min(2).max(50),
 }));
@@ -79,11 +79,11 @@ const onSubmit = form.handleSubmit(async (values) => {
         isLoading.value = true;
         let response;
         if (isEdit.value) {
-            // Update kategori yang dipilih
-            response = await axios.post(`/admin/categories/${selectedCategory.value.id}?_method=PUT`, values);
+            // Update unit yang dipilih
+            response = await axios.post(`/admin/units/${selectedUnit.value.id}?_method=PUT`, values);
         } else {
-            // Tambah kategori baru
-            response = await axios.post('/admin/categories', values);
+            // Tambah unit baru
+            response = await axios.post('/admin/units', values);
         }
 
         // Notifikasi berdasarkan status respons
@@ -110,11 +110,11 @@ const onSubmit = form.handleSubmit(async (values) => {
     }
 });
 
-/* --------------- ACTION DELETE CATEGORY --------------- */
-const deleteCategory = async () => {
-    if (selectedCategory.value) {
+/* --------------- ACTION DELETE UNIT --------------- */
+const deleteUnit = async () => {
+    if (selectedUnit.value) {
         try {
-            const response = await axios.post(`/admin/categories/${selectedCategory.value.id}?_method=DELETE`);
+            const response = await axios.post(`/admin/units/${selectedUnit.value.id}?_method=DELETE`);
             // Notifikasi berdasarkan status respons
             if (response.data.status === 'error') {
                 return Toast.fire({
@@ -130,9 +130,9 @@ const deleteCategory = async () => {
 
             isAddModalOpen.value = false;
             isDeleteModalOpen.value = false;
-            fetchData(); // Refresh data setelah kategori dihapus
+            fetchData(); // Refresh data setelah unit dihapus
         } catch (error) {
-            console.error('Error deleting category:', error);
+            console.error('Error deleting unit:', error);
         }
     }
 };
@@ -140,8 +140,7 @@ const deleteCategory = async () => {
 /* ----------------- TABLE ----------------- */
 // Konfigurasi kolom tabel
 const columns = [
-    { accessorKey: 'name', header: 'Nama' },
-    { accessorKey: 'slug', header: 'Slug' },
+    { accessorKey: 'name', header: 'Nama Unit' },
 ];
 
 // Inisialisasi state untuk data tabel dan pagination
@@ -185,7 +184,7 @@ const table = useVueTable({
 // Fungsi untuk mengambil data dari API
 const fetchData = async () => {
     try {
-        const response = await axios.get('/api/categories', {
+        const response = await axios.get('/api/units', {
             params: {
                 search: globalFilter.value,
                 page: pagination.value.pageIndex + 1,
@@ -239,18 +238,18 @@ const handlePageChange = (newPageIndex) => {
 
 <template>
     <!-- Mengatur judul halaman -->
-    <Head title="Daftar Kategori" />
+    <Head title="Daftar Unit" />
 
     <AdminLayout>
         <!-- Judul Halaman -->
-        <h1 class="text-2xl font-semibold text-gray-900">Daftar Kategori</h1>
+        <h1 class="text-2xl font-semibold text-gray-900">Daftar Unit</h1>
 
-        <!-- Button Tambah Kategori dan Input Pencarian -->
+        <!-- Button Tambah Unit dan Input Pencarian -->
         <div class="flex flex-col md:flex-row justify-between">
             <Button @click="openAddModal()" class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah
-                Kategori</Button>
+                Unit</Button>
             <div class="flex items-center py-4 w-full md:w-72">
-                <Input placeholder="Cari Kategori..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"
+                <Input placeholder="Cari Unit..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"
                     @input="debouncedFetchData" />
             </div>
         </div>
@@ -289,37 +288,37 @@ const handlePageChange = (newPageIndex) => {
             <PaginationWrapper :pagination="pagination" :onPageChange="handlePageChange" />
 
             <!-- Add Modal -->
-            <DialogWrapper style="width: 70rem;" v-model:open="isAddModalOpen" title="Tambah Kategori"
-                desc="Tambah kategori">
+            <DialogWrapper style="width: 70rem;" v-model:open="isAddModalOpen" title="Tambah Unit"
+                desc="Tambah unit">
                 <form @submit="onSubmit" enctype="multipart/form-data" class="space-y-4">
                     <FormInput name="name" label="Nama" type="text" />
 
                     <DialogFooter>
                         <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">
-                            {{ isLoading ? 'Mohon tunggu ...' : 'Tambah Kategori' }}
+                            {{ isLoading ? 'Mohon tunggu ...' : 'Tambah Unit' }}
                         </Button>
                     </DialogFooter>
                 </form>
             </DialogWrapper>
 
             <!-- Edit Modal -->
-            <DialogWrapper v-model:open="isEditModalOpen" title="Ubah Kategori" desc="Ubah kategori">
+            <DialogWrapper v-model:open="isEditModalOpen" title="Ubah Unit" desc="Ubah unit">
                 <form @submit="onSubmit" enctype="multipart/form-data" class="space-y-4">
                     <FormInput name="name" label="Nama" type="text" />
 
                     <DialogFooter>
                         <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">
-                            {{ isLoading ? 'Mohon tunggu ...' : 'Ubah Kategori' }}
+                            {{ isLoading ? 'Mohon tunggu ...' : 'Ubah Unit' }}
                         </Button>
                     </DialogFooter>
                 </form>
             </DialogWrapper>
 
             <!-- Delete Modal -->
-            <DialogWrapper v-model:open="isDeleteModalOpen" title="Hapus Kategori" desc="Hapus kategori">
+            <DialogWrapper v-model:open="isDeleteModalOpen" title="Hapus Unit" desc="Hapus unit">
                 <DialogFooter>
                     <Button @click="isDeleteModalOpen = false" variant="outline">Batal</Button>
-                    <Button @click="deleteCategory" variant="destructive">Hapus</Button>
+                    <Button @click="deleteUnit" variant="destructive">Hapus</Button>
                 </DialogFooter>
             </DialogWrapper>
         </div>

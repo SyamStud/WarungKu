@@ -285,50 +285,50 @@ import FormInput from '@/Components/ui/form/FormInput.vue';
 import useSpeak from '@/Composables/useSpeak';
 import PosLayoutMobile from '@/Layouts/PosLayoutMobile.vue';
 
-const paymentCode = ref('PH-001')
-const debtorInput = ref('')
-const totalDebt = ref(0)
-const paymentAmount = ref(0)
-const debtItems = ref([])
+const paymentCode = ref('PH-001') // Kode pembayaran default
+const debtorInput = ref('') // Input untuk mencari nama pelanggan
+const totalDebt = ref(0) // Total hutang pelanggan
+const paymentAmount = ref(0) // Jumlah pembayaran yang diinput
+const debtItems = ref([]) // Daftar item hutang
 
-const currentDay = ref('')
-const currentDate = ref('')
-const currentTime = ref('')
+const currentDay = ref('') // Hari saat ini
+const currentDate = ref('') // Tanggal saat ini
+const currentTime = ref('') // Waktu saat ini
 
-const isCustomerModalOpen = ref(false)
-const searchingCustomer = ref([])
-const selectedCustomer = ref(null)
+const isCustomerModalOpen = ref(false) // Status modal pencarian pelanggan
+const searchingCustomer = ref([]) // Daftar pelanggan yang dicari
+const selectedCustomer = ref(null) // Pelanggan yang dipilih
 
-const isPaymentModalOpen = ref(false)
-const isRevokeModalOpen = ref(false)
+const isPaymentModalOpen = ref(false) // Status modal pembayaran
+const isRevokeModalOpen = ref(false) // Status modal pembatalan
 
-const selectedPayment = ref(null);
-const isLoading = ref(false)
+const selectedPayment = ref(null); // Metode pembayaran yang dipilih
+const isLoading = ref(false) // Status loading
 
 const openPaymentModal = () => {
-    isPaymentModalOpen.value = true;
+    isPaymentModalOpen.value = true; // Membuka modal pembayaran
 }
 
 const openRevokeModal = () => {
-    isRevokeModalOpen.value = true;
+    isRevokeModalOpen.value = true; // Membuka modal pembatalan
 }
 
 const selectPaymentMethod = (method) => {
-    selectedPayment.value = method;
+    selectedPayment.value = method; // Memilih metode pembayaran
 };
 
-const computedPaymentAmount = computed(() => paymentAmount.value);
-const debtRemaining = ref(null);
+const computedPaymentAmount = computed(() => paymentAmount.value); // Menghitung jumlah pembayaran
+const debtRemaining = ref(null); // Sisa hutang setelah pembayaran
 
 const countDebtRemaining = () => {
     const paymentAmount = computedPaymentAmount.value;
 
-    debtRemaining.value = totalDebt.value - paymentAmount;
+    debtRemaining.value = totalDebt.value - paymentAmount; // Menghitung sisa hutang
     console.log('DebtRemaining:', debtRemaining.value);
 };
 
 const onSubmit = async () => {
-    isLoading.value = true;
+    isLoading.value = true; // Mengaktifkan status loading
 
     try {
         const response = await axios.post('/pos/debt-payments/store-payment', {
@@ -339,7 +339,7 @@ const onSubmit = async () => {
         });
 
         if (response.data) {
-            useSpeak('Transaksi berhasil');
+            useSpeak('Transaksi berhasil'); // Menggunakan suara untuk notifikasi
 
             Toast.fire({
                 icon: "success",
@@ -347,6 +347,7 @@ const onSubmit = async () => {
                 position: 'bottom-right',
             });
 
+            // Reset nilai setelah pembayaran berhasil
             paymentAmount.value = '';
             computedPaymentAmount.value = '';
             selectedPayment.value = null;
@@ -357,16 +358,17 @@ const onSubmit = async () => {
             totalDebt.value = 0;
         }
 
-        isPaymentModalOpen.value = false;
-        generateCode();
+        isPaymentModalOpen.value = false; // Menutup modal pembayaran
+        generateCode(); // Mengenerate kode pembayaran baru
     } catch (error) {
-        console.error('Payment processing failed', error);
+        console.error('Payment processing failed', error); // Menangani error
     } finally {
-        isLoading.value = false;
+        isLoading.value = false; // Menonaktifkan status loading
     }
 };
 
 const revokeTransaction = () => {
+    // Reset nilai setelah transaksi dibatalkan
     paymentAmount.value = '';
     computedPaymentAmount.value = '';
     selectedPayment.value = null;
@@ -376,22 +378,22 @@ const revokeTransaction = () => {
     debtorInput.value = '';
     totalDebt.value = 0;
 
-    useSpeak('Transaksi dibatalkan');
+    useSpeak('Transaksi dibatalkan'); // Menggunakan suara untuk notifikasi
 }
 
-const Toast = useToast();
+const Toast = useToast(); // Menggunakan toast untuk notifikasi
 
 const updateDateTime = () => {
     const now = new Date()
     const options = { timeZone: 'Asia/Jakarta' }
 
-    currentDay.value = now.toLocaleDateString('id-ID', { ...options, weekday: 'long' })
+    currentDay.value = now.toLocaleDateString('id-ID', { ...options, weekday: 'long' }) // Mengupdate hari
     currentDate.value = now.toLocaleDateString('id-ID', {
         ...options,
         day: 'numeric',
         month: 'long',
         year: 'numeric'
-    })
+    }) // Mengupdate tanggal
     const timeString = now.toLocaleTimeString('id-ID', {
         ...options,
         hour: '2-digit',
@@ -401,7 +403,7 @@ const updateDateTime = () => {
         hourCycle: 'h23'
     });
 
-    currentTime.value = timeString.replace(/\./g, ':');
+    currentTime.value = timeString.replace(/\./g, ':'); // Mengupdate waktu
 }
 
 let timer
@@ -417,11 +419,11 @@ const generateCode = () => {
             date.getMinutes().toString().padStart(2, '0');
     };
 
-    return "PH" + now() + "-" + Math.random().toString(36).substr(2, 5).toUpperCase();
+    return "PH" + now() + "-" + Math.random().toString(36).substr(2, 5).toUpperCase(); // Mengenerate kode pembayaran
 };
 
-const successAudio = new Audio('/success.mp3');
-const errorAudio = new Audio('/error.mp3');
+const successAudio = new Audio('/success.mp3'); // Audio untuk notifikasi sukses
+const errorAudio = new Audio('/error.mp3'); // Audio untuk notifikasi error
 
 // Preload the audio files
 successAudio.load();
@@ -433,10 +435,10 @@ const handleAddDebtor = async () => {
     })
 
     if (response.data.data.length > 0) {
-        isCustomerModalOpen.value = true;
-        searchingCustomer.value = response.data.data;
+        isCustomerModalOpen.value = true; // Membuka modal pencarian pelanggan
+        searchingCustomer.value = response.data.data; // Menampilkan hasil pencarian pelanggan
     } else {
-        errorAudio.play();
+        errorAudio.play(); // Memutar audio error
 
         Toast.fire({
             icon: "error",
@@ -447,8 +449,8 @@ const handleAddDebtor = async () => {
 }
 
 const handleSelect = (customer) => {
-    selectedCustomer.value = customer;
-    isCustomerModalOpen.value = false;
+    selectedCustomer.value = customer; // Memilih pelanggan
+    isCustomerModalOpen.value = false; // Menutup modal pencarian pelanggan
     console.log('111:', customer.debts);
     debtItems.value = customer.debts.flatMap(debt => {
         return debt.debt_items.map(item => {
@@ -472,13 +474,11 @@ const handleSelect = (customer) => {
         });
     });
 
-
     totalDebt.value = customer.debts.reduce((acc, debt) => {
         return acc + debt.remaining_amount;
-    }, 0);
+    }, 0); // Menghitung total hutang
 
-
-    debtorInput.value = '';
+    debtorInput.value = ''; // Reset input pencarian pelanggan
 
     console.log('total_debt', totalDebt.value);
     console.log("Selected customer:", selectedCustomer.value)
@@ -487,7 +487,7 @@ const handleSelect = (customer) => {
 };
 
 const handlePayment = () => {
-    // Logic to process the debt payment
+    // Logika untuk memproses pembayaran hutang
     console.log("Processing payment of:", paymentAmount.value)
 }
 
@@ -496,15 +496,15 @@ function formatRupiah(value) {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0,
-    }).format(value);
+    }).format(value); // Format nilai ke dalam Rupiah
 }
 
 onMounted(() => {
-    timer = setInterval(updateDateTime, 1000);
-    paymentCode.value = generateCode()
+    timer = setInterval(updateDateTime, 1000); // Mengupdate waktu setiap detik
+    paymentCode.value = generateCode() // Mengenerate kode pembayaran saat komponen dimount
 })
 
 onUnmounted(() => {
-    clearInterval(timer);
+    clearInterval(timer); // Menghentikan timer saat komponen diunmount
 });
 </script>

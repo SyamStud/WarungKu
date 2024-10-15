@@ -9,7 +9,6 @@ import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
 
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
@@ -30,18 +29,18 @@ import SelectContent from '@/Components/ui/select/SelectContent.vue';
 import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
 import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
-import TableHead from '@/Components/ui/table/TableHead.vue';
+import Button from '@/components/ui/button/Button.vue';
 
 const Toast = useToast();
 
 /* MODAL */
-const isAddModalOpen = ref(false);
-const isEditModalOpen = ref(false);
-const isDeleteModalOpen = ref(false);
-const isPhotoModalOpen = ref(false);
-const selectedSupplier = ref(null);
-const isEdit = ref(false);
+const isAddModalOpen = ref(false); // State untuk modal tambah supplier
+const isEditModalOpen = ref(false); // State untuk modal edit supplier
+const isDeleteModalOpen = ref(false); // State untuk modal hapus supplier
+const selectedSupplier = ref(null); // State untuk supplier yang dipilih
+const isEdit = ref(false); // State untuk menentukan mode edit atau tambah
 
+// Fungsi untuk membuka modal tambah supplier
 const openAddModal = () => {
     form.setValues({
         name: '',
@@ -53,9 +52,10 @@ const openAddModal = () => {
         contact_position: '',
     });
     isEdit.value = false;
-    isAddModalOpen.value = true;
+    isAddModalOpen.value = true; // Buka modal tambah supplier
 };
 
+// Fungsi untuk membuka modal edit supplier
 const openEditModal = (supplier) => {
     isEdit.value = true;
     selectedSupplier.value = supplier;
@@ -69,20 +69,16 @@ const openEditModal = (supplier) => {
         contact_email: supplier.contact_email,
         contact_position: supplier.contact_position,
     });
-    isEditModalOpen.value = true;
+    isEditModalOpen.value = true; // Buka modal edit supplier
 };
 
+// Fungsi untuk membuka modal hapus supplier
 const openDeleteModal = (supplier) => {
     selectedSupplier.value = supplier;
-    isDeleteModalOpen.value = true;
+    isDeleteModalOpen.value = true; // Buka modal hapus supplier
 };
 
-const openPhotoModal = (supplier) => {
-    selectedSupplier.value = supplier;
-    isPhotoModalOpen.value = true;
-};
-
-// VALIDATION FRONT END FORM
+// VALIDASI FORM FRONT END
 const addFormSchema = toTypedSchema(z.object({
     name: z.string().min(2).max(50),
     status: z.string().min(2).max(50),
@@ -109,7 +105,7 @@ const form = useForm({
 
 let isLoading = ref(false);
 
-// ACTION FORM 
+// AKSI FORM 
 const onSubmit = form.handleSubmit(async (values) => {
     try {
         isLoading.value = true;
@@ -144,6 +140,7 @@ const onSubmit = form.handleSubmit(async (values) => {
     }
 });
 
+// Fungsi untuk menghapus supplier
 const deleteSupplier = async () => {
     if (selectedSupplier.value) {
         try {
@@ -169,7 +166,7 @@ const deleteSupplier = async () => {
     }
 };
 
-/* TABLE */
+/* TABEL */
 const columns = [
     { accessorKey: 'name', header: 'Nama' },
     { accessorKey: 'status', header: 'Status' },
@@ -215,6 +212,7 @@ const table = useVueTable({
     }
 });
 
+// Fungsi untuk mengambil data dari API
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/suppliers', {
@@ -239,8 +237,10 @@ const fetchData = async () => {
     }
 };
 
+// Fungsi untuk mengambil data dengan debounce
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Fungsi untuk mengurutkan data
 const sortBy = (field) => {
     if (sorting.value.field === field) {
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
@@ -251,10 +251,13 @@ const sortBy = (field) => {
     fetchData();
 };
 
+// Memanggil fetchData saat komponen dimuat
 onMounted(fetchData);
 
+// Menonton perubahan pada pagination
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Fungsi untuk menangani perubahan halaman
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
     fetchData();

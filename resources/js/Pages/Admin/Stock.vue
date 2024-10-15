@@ -5,11 +5,9 @@ import debounce from 'lodash/debounce';
 import * as z from 'zod';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
@@ -24,6 +22,7 @@ import FormLabel from '@/Components/ui/form/FormLabel.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
 import Multiselect from 'vue-multiselect';
 import Label from '@/components/ui/label/Label.vue';
+import Button from '@/components/ui/button/Button.vue';
 
 const Toast = useToast();
 
@@ -34,6 +33,7 @@ const isDeleteModalOpen = ref(false);
 const selectedStock = ref(null);
 const isEdit = ref(false);
 
+// Fungsi untuk membuka modal tambah stok
 const openAddModal = () => {
     form.setValues({
         'product_variant_id': '',
@@ -44,6 +44,7 @@ const openAddModal = () => {
     selectedProducts.value = [];
 };
 
+// Fungsi untuk membuka modal edit stok
 const openEditModal = (stock) => {
     isEdit.value = true;
     selectedStock.value = stock;
@@ -59,7 +60,7 @@ const openEditModal = (stock) => {
     isEditModalOpen.value = true;
 };
 
-// VALIDATION FRONT END FORM
+// VALIDASI FORM FRONT END
 const addFormSchema = toTypedSchema(z.object({
     product_variant_id: z.number().min(1),
     quantity: z.number().min(1),
@@ -76,7 +77,7 @@ const form = useForm({
 
 let isLoading = ref(false);
 
-// ACTION FORM 
+// AKSI FORM 
 const onSubmit = form.handleSubmit(async (values) => {
     try {
         isLoading.value = true;
@@ -156,6 +157,7 @@ const table = useVueTable({
     }
 });
 
+// Fungsi untuk mengambil data stok dari server
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/stocks', {
@@ -182,8 +184,10 @@ const fetchData = async () => {
     }
 };
 
+// Fungsi untuk mengambil data dengan debounce
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Fungsi untuk mengurutkan data berdasarkan kolom
 const sortBy = (field) => {
     if (sorting.value.field === field) {
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
@@ -201,15 +205,16 @@ onMounted(() => {
 
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Fungsi untuk menangani perubahan halaman
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
     fetchData();
 };
 
-
 const options = ref([])
 const selectedProducts = ref([])
 
+// Fungsi untuk mengambil opsi produk dari server
 const fetchOptions = async () => {
     try {
         const response = await axios.get('/api/productVariants')
@@ -226,6 +231,7 @@ const fetchOptions = async () => {
     }
 }
 
+// Fungsi untuk memperbarui ID produk yang dipilih
 const updateIdProduct = (value) => {
     selectedProducts.value = value;
     form.setFieldValue('product_variant_id', value.id);

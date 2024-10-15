@@ -7,9 +7,7 @@ import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
@@ -31,10 +29,13 @@ import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
 import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
 import TableHead from '@/Components/ui/table/TableHead.vue';
+import Button from '@/components/ui/button/Button.vue';
 
+// Menggunakan Toast untuk menampilkan notifikasi
 const Toast = useToast();
 
 /* MODAL */
+// State untuk mengatur modal
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
@@ -42,6 +43,7 @@ const isPhotoModalOpen = ref(false);
 const selectedUser = ref(null);
 const isEdit = ref(false);
 
+// Fungsi untuk membuka modal tambah pengguna
 const openAddModal = () => {
     form.setValues({
         name: '',
@@ -57,6 +59,7 @@ const openAddModal = () => {
     isAddModalOpen.value = true;
 };
 
+// Fungsi untuk membuka modal edit pengguna
 const openEditModal = (user) => {
     isEdit.value = true;
     selectedUser.value = user;
@@ -72,17 +75,19 @@ const openEditModal = (user) => {
     isEditModalOpen.value = true;
 };
 
+// Fungsi untuk membuka modal hapus pengguna
 const openDeleteModal = (user) => {
     selectedUser.value = user;
     isDeleteModalOpen.value = true;
 };
 
+// Fungsi untuk membuka modal foto pengguna
 const openPhotoModal = (user) => {
     selectedUser.value = user;
     isPhotoModalOpen.value = true;
 };
 
-// VALIDATION FRONT END FORM
+// VALIDASI FORM FRONT END
 const addFormSchema = toTypedSchema(z.object({
     nik: z.number().optional(),
     name: z.string().min(2).max(50),
@@ -110,7 +115,7 @@ const form = useForm({
 
 let isLoading = ref(false);
 
-// ACTION FORM 
+// AKSI FORM 
 const onSubmit = form.handleSubmit(async (values) => {
     try {
         isLoading.value = true;
@@ -149,6 +154,7 @@ const onSubmit = form.handleSubmit(async (values) => {
     }
 });
 
+// Fungsi untuk menghapus pengguna
 const deleteUser = async () => {
     if (selectedUser.value) {
         try {
@@ -174,7 +180,7 @@ const deleteUser = async () => {
     }
 };
 
-// FILE UPLOAD
+// UPLOAD FILE
 const onFileChange = (event) => {
     const file = event.target.files[0];
     form.setValues({ photo: file });
@@ -182,6 +188,7 @@ const onFileChange = (event) => {
 };
 
 /* TABLE */
+// Kolom-kolom tabel
 const columns = [
     { accessorKey: 'nik', header: 'NIK' },
     { accessorKey: 'name', header: 'Nama' },
@@ -226,6 +233,7 @@ const table = useVueTable({
     }
 });
 
+// Fungsi untuk mengambil data dari API
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/users', {
@@ -250,8 +258,10 @@ const fetchData = async () => {
     }
 };
 
+// Fungsi untuk mengambil data dengan debounce
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Fungsi untuk mengurutkan data
 const sortBy = (field) => {
     if (sorting.value.field === field) {
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
@@ -262,10 +272,13 @@ const sortBy = (field) => {
     fetchData();
 };
 
+// Mengambil data saat komponen dimuat
 onMounted(fetchData);
 
+// Mengamati perubahan pada pagination
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Fungsi untuk mengubah halaman
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
     fetchData();

@@ -7,9 +7,7 @@ import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
@@ -20,9 +18,7 @@ import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
 import { FormField } from '@/Components/ui/form';
 import FormItem from '@/Components/ui/form/FormItem.vue';
-import FormLa from '@/Components/ui/form/FormLabel.vue';
 import FormControl from '@/Components/ui/form/FormControl.vue';
-import Textarea from '@/Components/ui/textarea/Textarea.vue';
 import Select from '@/Components/ui/select/Select.vue';
 import SelectTrigger from '@/Components/ui/select/SelectTrigger.vue';
 import SelectValue from '@/Components/ui/select/SelectValue.vue';
@@ -30,22 +26,27 @@ import SelectContent from '@/Components/ui/select/SelectContent.vue';
 import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
 import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
-import TableHead from '@/Components/ui/table/TableHead.vue';
-import Label from '@/components/ui/label/Label.vue';
 import Multiselect from 'vue-multiselect';
 import { useFormatRupiah } from '@/Composables/useFormatRupiah';
 import FormLabel from '@/Components/ui/form/FormLabel.vue';
+import Button from '@/components/ui/button/Button.vue';
 
+// Menggunakan Toast untuk notifikasi
 const Toast = useToast();
+// Menggunakan fungsi untuk format rupiah
 const { formatRupiah } = useFormatRupiah();
 
 /* MODAL */
+// State untuk membuka modal
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
+// State untuk menyimpan diskon yang dipilih
 const selectedDiscount = ref(null);
+// State untuk menentukan apakah sedang dalam mode edit
 const isEdit = ref(false);
 
+// Fungsi untuk membuka modal tambah diskon
 const openAddModal = () => {
     form.setValues({
         name: '',
@@ -59,15 +60,17 @@ const openAddModal = () => {
         is_active: '1',
         product_id: '',
     });
-    isEdit.value = false;
-    isAddModalOpen.value = true;
+    isEdit.value = false; // Set mode edit ke false
+    isAddModalOpen.value = true; // Buka modal tambah
 };
 
+// Fungsi untuk membuka modal edit diskon
 const openEditModal = (discount) => {
-    console.log(discount);
-    isEdit.value = true;
-    selectedDiscount.value = discount;
-    form.resetForm();
+    console.log(discount); // Log diskon yang dipilih
+    isEdit.value = true; // Set mode edit ke true
+    selectedDiscount.value = discount; // Simpan diskon yang dipilih
+    form.resetForm(); // Reset form
+    // Set nilai form sesuai dengan diskon yang dipilih
     form.setValues({
         name: discount.name,
         description: discount.description,
@@ -79,97 +82,110 @@ const openEditModal = (discount) => {
         end_date: discount.end_date,
         is_active: discount.is_active,
     });
-    isEditModalOpen.value = true;
+    isEditModalOpen.value = true; // Buka modal edit
 };
 
+// Fungsi untuk membuka modal hapus diskon
 const openDeleteModal = (discount) => {
-    selectedDiscount.value = discount;
-    isDeleteModalOpen.value = true;
+    selectedDiscount.value = discount; // Simpan diskon yang dipilih
+    isDeleteModalOpen.value = true; // Buka modal hapus
 };
-
 
 // VALIDATION FRONT END FORM
+// Skema validasi untuk form tambah diskon
 const addFormSchema = toTypedSchema(z.object({
-    name: z.string().max(50),
-    description: z.string().min(2).max(255),
-    type: z.string().min(2).max(50),
-    amount: z.number(),
-    amount_type: z.string().min(2).max(50),
-    threshold: z.number(),
-    start_date: z.string().min(2).max(50),
-    end_date: z.string().min(2).max(50),
-    is_active: z.string(),
-    product_id: z.any(),
+    name: z.string().max(50), // Nama diskon, maksimal 50 karakter
+    description: z.string().min(2).max(255), // Deskripsi diskon, minimal 2 dan maksimal 255 karakter
+    type: z.string().min(2).max(50), // Tipe diskon, minimal 2 dan maksimal 50 karakter
+    amount: z.number(), // Jumlah diskon
+    amount_type: z.string().min(2).max(50), // Tipe jumlah (persentase/nominal)
+    threshold: z.number(), // Ambang batas belanja
+    start_date: z.string().min(2).max(50), // Tanggal mulai
+    end_date: z.string().min(2).max(50), // Tanggal selesai
+    is_active: z.string(), // Status aktif
+    product_id: z.any(), // ID produk
 }));
 
+// Skema validasi untuk form edit diskon
 const editFormSchema = toTypedSchema(z.object({
-    name: z.string().min(2).max(50),
-    description: z.string().min(2).max(255),
-    type: z.string().min(2).max(50),
-    amount: z.number().min(1),
-    amount_type: z.string().min(2).max(50),
-    threshold: z.number().min(1),
-    start_date: z.string().min(2).max(50),
-    end_date: z.string().min(2).max(50),
-    is_active: z.string(),
+    name: z.string().min(2).max(50), // Nama diskon, minimal 2 dan maksimal 50 karakter
+    description: z.string().min(2).max(255), // Deskripsi diskon, minimal 2 dan maksimal 255 karakter
+    type: z.string().min(2).max(50), // Tipe diskon, minimal 2 dan maksimal 50 karakter
+    amount: z.number().min(1), // Jumlah diskon, minimal 1
+    amount_type: z.string().min(2).max(50), // Tipe jumlah (persentase/nominal)
+    threshold: z.number().min(1), // Ambang batas belanja, minimal 1
+    start_date: z.string().min(2).max(50), // Tanggal mulai
+    end_date: z.string().min(2).max(50), // Tanggal selesai
+    is_active: z.string(), // Status aktif
 }));
 
+// Inisialisasi form dengan skema validasi
 const form = useForm({
     validationSchema: computed(() => isEdit.value ? editFormSchema : addFormSchema),
 });
 
+// State untuk loading
 let isLoading = ref(false);
 
 // ACTION FORM 
+// Fungsi untuk mengirimkan form
 const onSubmit = async () => {
     try {
-        isLoading.value = true;
+        isLoading.value = true; // Set loading ke true
         let response;
+        // Cek apakah dalam mode edit atau tambah
         if (isEdit.value) {
+            // Kirim data untuk edit diskon
             response = await axios.post(`/admin/discounts/${selectedDiscount.value.id}?_method=PUT`, form.values);
         } else {
+            // Kirim data untuk tambah diskon
             response = await axios.post('/admin/discounts', form.values);
         }
 
+        // Cek status respons
         if (response.data.status === 'error') {
-            isLoading.value = false;
-
+            isLoading.value = false; // Set loading ke false
             return Toast.fire({
                 icon: "error",
-                title: response.data.message,
+                title: response.data.message, // Tampilkan pesan error
             });
         } else {
             Toast.fire({
                 icon: "success",
-                title: response.data.message,
+                title: response.data.message, // Tampilkan pesan sukses
             });
         }
 
+        // Tutup modal sesuai dengan mode
         isEdit.value ? (isEditModalOpen.value = false) : (isAddModalOpen.value = false);
-        fetchData();
-        isLoading.value = false;
+        fetchData(); // Ambil data terbaru
+        isLoading.value = false; // Set loading ke false
     } catch (error) {
         console.error('Error submitting form:', error);
-        isLoading.value = false;
+        isLoading.value = false; // Set loading ke false saat terjadi error
     }
 };
 
+// Fungsi untuk menghapus diskon
 const deleteDiscount = async () => {
     if (selectedDiscount.value) {
         try {
+            // Kirim permintaan untuk menghapus diskon
             const response = await axios.post(`/admin/discounts/${selectedDiscount.value.id}?_method=DELETE`);
+            // Cek status respons
             if (response.data.status === 'error') {
                 return Toast.fire({
                     icon: "error",
-                    title: response.data.message,
+                    title: response.data.message, // Tampilkan pesan error
                 });
             } else {
                 Toast.fire({
                     icon: "success",
-                    title: response.data.message,
+                    title: response.data.message, // Tampilkan pesan sukses
                 });
             }
 
+            // Tutup modal hapus dan ambil data terbaru
             isAddModalOpen.value = false;
             isDeleteModalOpen.value = false;
             fetchData();
@@ -180,19 +196,22 @@ const deleteDiscount = async () => {
 };
 
 /* TABLE */
+// Definisi kolom untuk tabel
 const columns = [
-    { accessorKey: 'name', header: 'Nama Diskon' },
-    { accessorKey: 'type', header: 'Tipe' },
-    { accessorKey: 'amount', header: 'Jumlah' },
-    { accessorKey: 'threshold', header: 'Min Jumlah / Belanja' },
-    { accessorKey: 'start_date', header: 'Tanggal Mulai' },
-    { accessorKey: 'end_date', header: 'Tanggal Selesai' },
-    // { accessorKey: 'description', header: 'Deskripsi' },
-    { accessorKey: 'is_active', header: 'Aktif' },
+    { accessorKey: 'name', header: 'Nama Diskon' }, // Kolom untuk nama diskon
+    { accessorKey: 'type', header: 'Tipe' }, // Kolom untuk tipe diskon
+    { accessorKey: 'amount', header: 'Jumlah' }, // Kolom untuk jumlah diskon
+    { accessorKey: 'threshold', header: 'Min Jumlah / Belanja' }, // Kolom untuk ambang batas
+    { accessorKey: 'start_date', header: 'Tanggal Mulai' }, // Kolom untuk tanggal mulai
+    { accessorKey: 'end_date', header: 'Tanggal Selesai' }, // Kolom untuk tanggal selesai
+    { accessorKey: 'is_active', header: 'Aktif' }, // Kolom untuk status aktif
 ];
 
+// State untuk data tabel
 const data = ref([]);
+// State untuk filter global
 const globalFilter = ref('');
+// State untuk pagination
 const pagination = ref({
     pageIndex: 0,
     pageSize: 10,
@@ -200,10 +219,12 @@ const pagination = ref({
     total: 0,
 });
 
+// State untuk sorting
 const sorting = ref({ field: 'id', direction: 'asc' });
 
+// Inisialisasi tabel menggunakan Vue Table
 const table = useVueTable({
-    get data() { return data.value; },
+    get data() { return data.value; }, // Ambil data dari state
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -213,31 +234,34 @@ const table = useVueTable({
             pageSize: pagination.value.pageSize,
         })),
     },
-    manualPagination: true,
-    pageCount: computed(() => pagination.value.pageCount),
+    manualPagination: true, // Gunakan pagination manual
+    pageCount: computed(() => pagination.value.pageCount), // Hitung total halaman
     onPaginationChange: (updater) => {
+        // Update pagination
         if (typeof updater === 'function') {
             const newPagination = updater(pagination.value);
             pagination.value = { ...pagination.value, ...newPagination };
         } else {
             pagination.value = { ...pagination.value, ...updater };
         }
-        fetchData();
+        fetchData(); // Ambil data terbaru
     }
 });
 
+// Fungsi untuk mengambil data diskon
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/discounts', {
             params: {
-                search: globalFilter.value,
-                page: pagination.value.pageIndex + 1,
-                per_page: pagination.value.pageSize,
-                sort: sorting.value.field,
-                direction: sorting.value.direction,
+                search: globalFilter.value, // Filter pencarian
+                page: pagination.value.pageIndex + 1, // Halaman saat ini
+                per_page: pagination.value.pageSize, // Jumlah data per halaman
+                sort: sorting.value.field, // Kolom yang digunakan untuk sorting
+                direction: sorting.value.direction, // Arah sorting
             }
         });
 
+        // Update data dan pagination berdasarkan respons
         data.value = response.data.data;
         pagination.value = {
             pageIndex: response.data.meta.current_page - 1,
@@ -250,53 +274,63 @@ const fetchData = async () => {
     }
 };
 
+// Debounce untuk menghindari panggilan fetchData yang terlalu sering
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Fungsi untuk sorting
 const sortBy = (field) => {
     if (sorting.value.field === field) {
+        // Toggle arah sorting jika kolom yang sama
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
     } else {
-        sorting.value.field = field;
-        sorting.value.direction = 'asc';
+        sorting.value.field = field; // Set kolom untuk sorting
+        sorting.value.direction = 'asc'; // Set arah sorting ke asc
     }
-    fetchData();
+    fetchData(); // Ambil data terbaru
 };
 
+// State untuk opsi produk
 const productOptions = ref([]);
+// State untuk produk yang dipilih
 const selectedProducts = ref([]);
 
+// Fungsi untuk mengambil data produk
 const fetchProducts = async () => {
     try {
         const response = await axios.get('/api/productVariants');
 
-        console.log(response.data.data);
-
+        // Map data produk ke format yang diinginkan
         productOptions.value = response.data.data.map((product) => ({
             id: product.id,
             name: product.name + ' - ' + product.variant,
             value: product.id
-        }))
+        }));
     } catch (error) {
         console.error('Error fetching products:', error);
     }
 };
 
+// Fungsi untuk memperbarui ID produk
 const updateIdProduct = (value) => {
-    selectedProducts.value = value;
-    form.setFieldValue('product_id', value.id);
+    selectedProducts.value = value; // Simpan produk yang dipilih
+    form.setFieldValue('product_id', value.id); // Set nilai produk di form
 };
 
+// Lifecycle hook untuk mengambil data saat komponen dimuat
 onMounted(() => {
-    fetchData();
-    fetchProducts();
+    fetchData(); // Ambil data diskon
+    fetchProducts(); // Ambil data produk
 });
 
+// Watcher untuk pagination
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Fungsi untuk mengubah halaman
 const handlePageChange = (newPageIndex) => {
-    pagination.value.pageIndex = newPageIndex;
-    fetchData();
+    pagination.value.pageIndex = newPageIndex; // Update index halaman
+    fetchData(); // Ambil data terbaru
 };
+
 </script>
 
 
@@ -304,11 +338,14 @@ const handlePageChange = (newPageIndex) => {
 
 
 <template>
+    <!-- Mengatur judul halaman -->
 
     <Head title="Daftar Diskon" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Diskon</h1>
+        <!-- Button Tambah dan Input Pencarian -->
         <div class="flex flex-col md:flex-row justify-between">
             <Button @click="openAddModal()" class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah
                 Diskon</Button>
@@ -335,7 +372,7 @@ const handlePageChange = (newPageIndex) => {
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
                                 <template v-if="cell.column.id === 'type'">
                                     {{ cell.getValue() === 'product' ? 'Potongan Harga Produk' :
-                                            cell.getValue() === 'order' ? 'Potongan Harga Belanja' : '-' }}
+                                        cell.getValue() === 'order' ? 'Potongan Harga Belanja' : '-' }}
                                 </template>
 
                                 <template v-else-if="cell.column.id === 'amount'">
@@ -451,7 +488,7 @@ const handlePageChange = (newPageIndex) => {
                     </div>
 
                     <FormInput v-if="form.values.type == 'product'" name="threshold" label="Minimum Jumlah Produk"
-                            type="number" />
+                        type="number" />
 
                     <div class="flex gap-4 item-center">
                         <FormInput name="start_date" label="Tanggal Mulai" type="date" />

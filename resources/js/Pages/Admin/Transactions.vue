@@ -2,22 +2,20 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
-import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
-
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
 import { useFormatRupiah } from '@/Composables/useFormatRupiah';
 
+// Mengimpor fungsi formatRupiah dari composable useFormatRupiah
 const { formatRupiah } = useFormatRupiah();
 
-/* TABLE */
+/* TABEL */
+// Mendefinisikan kolom-kolom tabel
 const columns = [
     { accessorKey: 'transaction_code', header: 'Kode Transaksi' },
     { accessorKey: 'total_price', header: 'Total Belanja' },
@@ -30,8 +28,11 @@ const columns = [
     { accessorKey: 'user', header: 'Kasir' },
 ];
 
+// Mendefinisikan data reaktif untuk menyimpan data transaksi
 const data = ref([]);
+// Mendefinisikan filter global untuk pencarian
 const globalFilter = ref('');
+// Mendefinisikan data reaktif untuk pagination
 const pagination = ref({
     pageIndex: 0,
     pageSize: 10,
@@ -39,8 +40,10 @@ const pagination = ref({
     total: 0,
 });
 
+// Mendefinisikan data reaktif untuk sorting
 const sorting = ref({ field: 'id', direction: 'asc' });
 
+// Menggunakan composable useVueTable untuk mengatur tabel
 const table = useVueTable({
     get data() { return data.value; },
     columns,
@@ -65,6 +68,7 @@ const table = useVueTable({
     }
 });
 
+// Fungsi untuk mengambil data dari API
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/transactions', {
@@ -89,8 +93,10 @@ const fetchData = async () => {
     }
 };
 
+// Fungsi untuk mengambil data dengan debounce
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Fungsi untuk mengatur sorting
 const sortBy = (field) => {
     if (sorting.value.field === field) {
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
@@ -101,12 +107,15 @@ const sortBy = (field) => {
     fetchData();
 };
 
+// Mengambil data saat komponen dimount
 onMounted(() => {
     fetchData();
 })
 
+// Menonton perubahan pada pagination
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Fungsi untuk mengubah halaman
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
     fetchData();

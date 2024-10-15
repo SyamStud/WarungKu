@@ -7,9 +7,7 @@ import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Head, Link } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
@@ -30,31 +28,35 @@ import SelectContent from '@/Components/ui/select/SelectContent.vue';
 import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
 import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
-import TableHead from '@/Components/ui/table/TableHead.vue';
 import Multiselect from 'vue-multiselect';
 import Label from '@/components/ui/label/Label.vue';
+import Button from '@/components/ui/button/Button.vue';
 
 const Toast = useToast();
 
 /* MODAL */
+// State untuk kontrol modal
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const isPhotoModalOpen = ref(false);
-const selectedProduct = ref(null);
-const isEdit = ref(false);
-const sku = ref('');
-const units = ref([]);
+const selectedProduct = ref(null); // Menyimpan produk yang dipilih
+const isEdit = ref(false); // Menyimpan status apakah dalam mode edit
+const sku = ref(''); // Menyimpan SKU produk
+const units = ref([]); // Menyimpan data unit
 
+// Fungsi untuk membuka modal edit
 const openEditModal = (product) => {
-    isEdit.value = true;
-    selectedProduct.value = product;
-    form.resetForm();
-    sku.value = product.sku;
+    isEdit.value = true; // Set status edit
+    selectedProduct.value = product; // Set produk yang dipilih
+    form.resetForm(); // Reset form
+    sku.value = product.sku; // Set SKU produk
 
+    // Cari kategori lama dari produk yang dipilih
     const oldCategory = options.value.find((option) => option.name === product.category);
     selectedCategories.value = options.value.find((option) => option.name === oldCategory.name);
 
+    // Set nilai form berdasarkan produk yang dipilih
     form.setValues({
         sku: product.sku,
         name: product.name,
@@ -65,14 +67,16 @@ const openEditModal = (product) => {
         quantity: product.quantity,
         unit_id: product.unit_id.toString(),
     });
-    isEditModalOpen.value = true;
+    isEditModalOpen.value = true; // Buka modal edit
 };
 
+// Fungsi untuk membuka modal hapus
 const openDeleteModal = (product) => {
-    selectedProduct.value = product;
-    isDeleteModalOpen.value = true;
+    selectedProduct.value = product; // Set produk yang dipilih
+    isDeleteModalOpen.value = true; // Buka modal hapus
 };
 
+// Schema validasi untuk form
 const formSchema = toTypedSchema(z.object({
     sku: z.string().min(2),
     name: z.string().min(2),
@@ -84,26 +88,27 @@ const formSchema = toTypedSchema(z.object({
     unit_id: z.string(),
 }));
 
+// Inisialisasi form dengan schema validasi
 const form = useForm({
     validationSchema: computed(() => formSchema),
 });
 
-let isLoading = ref(false);
+let isLoading = ref(false); // State loading untuk form
 
 // ACTION FORM 
+// Fungsi untuk meng-handle submit form
 const onSubmit = form.handleSubmit(async (values) => {
     try {
-        isLoading.value = true;
+        isLoading.value = true; // Set loading true
 
-        values.quantity = values.quantity.replace(/\s/g, '');
+        values.quantity = values.quantity.replace(/\s/g, ''); // Menghapus spasi dari quantity
 
-        let response;
-        response = await axios.post(`/admin/products/${selectedProduct.value.id}?_method=PUT`, values);
+        // Kirim request untuk menyimpan data produk
+        let response = await axios.post(`/admin/products/${selectedProduct.value.id}?_method=PUT`, values);
 
-
+        // Cek status response
         if (response.data.status === 'error') {
-            isLoading.value = false;
-
+            isLoading.value = false; // Set loading false
             return Toast.fire({
                 icon: "error",
                 title: response.data.message,
@@ -115,15 +120,17 @@ const onSubmit = form.handleSubmit(async (values) => {
             });
         }
 
+        // Tutup modal sesuai dengan status edit
         isEdit.value ? (isEditModalOpen.value = false) : (isAddModalOpen.value = false);
-        fetchData();
-        isLoading.value = false;
+        fetchData(); // Ambil data terbaru
+        isLoading.value = false; // Set loading false
     } catch (error) {
         console.error('Error submitting form:', error);
-        isLoading.value = false;
+        isLoading.value = false; // Set loading false
     }
 });
 
+// Fungsi untuk menghapus produk
 const deleteProduct = async () => {
     if (selectedProduct.value) {
         try {
@@ -140,9 +147,10 @@ const deleteProduct = async () => {
                 });
             }
 
+            // Tutup modal setelah berhasil hapus
             isAddModalOpen.value = false;
             isDeleteModalOpen.value = false;
-            fetchData();
+            fetchData(); // Ambil data terbaru
         } catch (error) {
             console.error('Error deleting product:', error);
         }
@@ -150,6 +158,7 @@ const deleteProduct = async () => {
 };
 
 /* TABLE */
+// Kolom untuk tabel produk
 const columns = [
     { accessorKey: 'sku', header: 'SKU' },
     { accessorKey: 'name', header: 'Nama' },
@@ -160,8 +169,8 @@ const columns = [
     { accessorKey: 'status', header: 'Status' },
 ];
 
-const data = ref([]);
-const globalFilter = ref('');
+const data = ref([]); // Data produk
+const globalFilter = ref(''); // Filter global untuk pencarian
 const pagination = ref({
     pageIndex: 0,
     pageSize: 10,
@@ -169,8 +178,9 @@ const pagination = ref({
     total: 0,
 });
 
-const sorting = ref({ field: 'id', direction: 'asc' });
+const sorting = ref({ field: 'id', direction: 'asc' }); // State untuk sorting
 
+// Inisialisasi table menggunakan useVueTable
 const table = useVueTable({
     get data() { return data.value; },
     columns,
@@ -182,7 +192,7 @@ const table = useVueTable({
             pageSize: pagination.value.pageSize,
         })),
     },
-    manualPagination: true,
+    manualPagination: true, // Mengatur pagination manual
     pageCount: computed(() => pagination.value.pageCount),
     onPaginationChange: (updater) => {
         if (typeof updater === 'function') {
@@ -191,10 +201,11 @@ const table = useVueTable({
         } else {
             pagination.value = { ...pagination.value, ...updater };
         }
-        fetchData();
+        fetchData(); // Ambil data berdasarkan perubahan pagination
     }
 });
 
+// Fungsi untuk mengambil data produk
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/productVariants', {
@@ -207,6 +218,7 @@ const fetchData = async () => {
             }
         });
 
+        // Update data dan pagination berdasarkan response
         data.value = response.data.data;
         pagination.value = {
             pageIndex: response.data.meta.current_page - 1,
@@ -219,86 +231,98 @@ const fetchData = async () => {
     }
 };
 
+// Debounce untuk menghindari panggilan fetchData yang terlalu sering
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Fungsi untuk sorting
 const sortBy = (field) => {
     if (sorting.value.field === field) {
+        // Toggle arah sorting jika kolom yang sama
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
     } else {
-        sorting.value.field = field;
-        sorting.value.direction = 'asc';
+        sorting.value.field = field; // Set kolom untuk sorting
+        sorting.value.direction = 'asc'; // Set arah sorting ke asc
     }
-    fetchData();
+    fetchData(); // Ambil data terbaru
 };
 
+// Lifecycle hook untuk mengambil data saat komponen dimuat
 onMounted(() => {
-    fetchOptions();
-    fetchData();
+    fetchOptions(); // Ambil opsi kategori dan unit
+    fetchData(); // Ambil data produk
 })
 
+// Watcher untuk pagination
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Fungsi untuk mengubah halaman
 const handlePageChange = (newPageIndex) => {
-    pagination.value.pageIndex = newPageIndex;
-    fetchData();
+    pagination.value.pageIndex = newPageIndex; // Update index halaman
+    fetchData(); // Ambil data terbaru
 };
 
+// State untuk opsi kategori dan unit
+const options = ref([]);
+const selectedCategories = ref([]);
 
-const options = ref([])
-const selectedCategories = ref([])
-
+// Fungsi untuk mengambil opsi kategori dan unit
 const fetchOptions = async () => {
     try {
-        const response = await axios.get('/api/categories')
-
+        const response = await axios.get('/api/categories');
+        // Map data kategori ke format yang diinginkan
         options.value = response.data.data.map((category) => ({
             id: category.id,
             name: category.name,
             value: category.id
-        }))
+        }));
 
-        const unitResponse = await axios.get('/api/units')
-
+        const unitResponse = await axios.get('/api/units');
+        // Map data unit ke format yang diinginkan
         units.value = unitResponse.data.data.map((unit) => ({
             id: unit.id,
             name: unit.name,
             value: unit.id
-        }))
+        }));
     } catch (error) {
-        console.error('Error fetching options:', error)
+        console.error('Error fetching options:', error);
     }
-}
-
-const updateIdCategory = (value) => {
-    selectedCategories.value = value;
-    form.setFieldValue('category_id', value.id);
 };
 
+// Fungsi untuk memperbarui ID kategori
+const updateIdCategory = (value) => {
+    selectedCategories.value = value; // Simpan kategori yang dipilih
+    form.setFieldValue('category_id', value.id); // Set nilai kategori di form
+};
+
+// Fungsi untuk menghasilkan SKU unik
 const generateSKU = async () => {
-    let uniqueSKU = false;
-    let newSKU = '';
+    let uniqueSKU = false; // Status SKU unik
+    let newSKU = ''; // Variabel untuk SKU baru
 
+    // Loop sampai menemukan SKU yang unik
     while (!uniqueSKU) {
-        newSKU = 'CSTM' + Math.floor(Math.random() * 1000000000).toString();
+        newSKU = 'CSTM' + Math.floor(Math.random() * 1000000000).toString(); // Generate SKU baru
 
-        const response = await axios.post(`/api/products/check-sku`, { sku: newSKU });
-
-        uniqueSKU = response.data.unique;
+        const response = await axios.post(`/api/products/check-sku`, { sku: newSKU }); // Cek apakah SKU unik
+        uniqueSKU = response.data.unique; // Update status SKU unik
     }
 
-    sku.value = newSKU;
-    form.setFieldValue('sku', newSKU);
+    sku.value = newSKU; // Set SKU baru
+    form.setFieldValue('sku', newSKU); // Set nilai SKU di form
 };
 </script>
 
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
 
 <template>
+    <!-- Mengatur judul halaman -->
 
     <Head title="Daftar Produk" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Produk</h1>
+        <!-- Button Tambah dan Input Pencarian -->
         <div class="flex flex-col md:flex-row justify-between">
             <div class="flex gap-2">
                 <Link :href="route('products.create')">

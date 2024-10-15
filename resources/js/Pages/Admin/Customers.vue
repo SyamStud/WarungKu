@@ -7,9 +7,7 @@ import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
@@ -23,35 +21,28 @@ import FormItem from '@/Components/ui/form/FormItem.vue';
 import FormLabel from '@/Components/ui/form/FormLabel.vue';
 import FormControl from '@/Components/ui/form/FormControl.vue';
 import Textarea from '@/Components/ui/textarea/Textarea.vue';
-import Select from '@/Components/ui/select/Select.vue';
-import SelectTrigger from '@/Components/ui/select/SelectTrigger.vue';
-import SelectValue from '@/Components/ui/select/SelectValue.vue';
-import SelectContent from '@/Components/ui/select/SelectContent.vue';
-import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
-import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
-import TableHead from '@/Components/ui/table/TableHead.vue';
+import Button from '@/components/ui/button/Button.vue';
 
+// Inisialisasi Toast untuk notifikasi
 const Toast = useToast();
 
 /* MODAL */
+// State untuk modal tambah, edit, dan hapus pelanggan
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
-
 const selectedCustomer = ref(null);
 const isEdit = ref(false);
 
+// Fungsi untuk membuka modal tambah pelanggan
 const openAddModal = () => {
-    form.setValues({
-        name: '',
-        phone: '',
-        address: '',
-    });
+    form.setValues({ name: '', phone: '', address: '' });
     isEdit.value = false;
     isAddModalOpen.value = true;
 };
 
+// Fungsi untuk membuka modal edit pelanggan
 const openEditModal = (customer) => {
     isEdit.value = true;
     selectedCustomer.value = customer;
@@ -64,13 +55,13 @@ const openEditModal = (customer) => {
     isEditModalOpen.value = true;
 };
 
+// Fungsi untuk membuka modal hapus pelanggan
 const openDeleteModal = (customer) => {
     selectedCustomer.value = customer;
     isDeleteModalOpen.value = true;
 };
 
-
-// VALIDATION FRONT END FORM
+// Validasi form tambah/edit menggunakan Zod
 const addFormSchema = toTypedSchema(z.object({
     name: z.string().min(2).max(50),
     phone: z.any().optional(),
@@ -87,32 +78,24 @@ const form = useForm({
     validationSchema: computed(() => isEdit.value ? editFormSchema : addFormSchema),
 });
 
-let isLoading = ref(false);
-
-// ACTION FORM 
+// Fungsi submit form untuk tambah/edit pelanggan
 const onSubmit = form.handleSubmit(async (values) => {
     try {
         isLoading.value = true;
         let response;
+        // Cek apakah mode edit atau tambah
         if (isEdit.value) {
-            console.log(values);
             response = await axios.post(`/admin/customers/${selectedCustomer.value.id}?_method=PUT`, values);
         } else {
             response = await axios.post('/admin/customers', values);
         }
 
+        // Menampilkan notifikasi sukses atau error
         if (response.data.status === 'error') {
             isLoading.value = false;
-
-            return Toast.fire({
-                icon: "error",
-                title: response.data.message,
-            });
+            return Toast.fire({ icon: "error", title: response.data.message });
         } else {
-            Toast.fire({
-                icon: "success",
-                title: response.data.message,
-            });
+            Toast.fire({ icon: "success", title: response.data.message });
         }
 
         isEdit.value ? (isEditModalOpen.value = false) : (isAddModalOpen.value = false);
@@ -124,23 +107,16 @@ const onSubmit = form.handleSubmit(async (values) => {
     }
 });
 
+// Fungsi untuk menghapus pelanggan
 const deleteCustomer = async () => {
     if (selectedCustomer.value) {
         try {
             const response = await axios.post(`/admin/customers/${selectedCustomer.value.id}?_method=DELETE`);
             if (response.data.status === 'error') {
-                return Toast.fire({
-                    icon: "error",
-                    title: response.data.message,
-                });
+                return Toast.fire({ icon: "error", title: response.data.message });
             } else {
-                Toast.fire({
-                    icon: "success",
-                    title: response.data.message,
-                });
+                Toast.fire({ icon: "success", title: response.data.message });
             }
-
-            isAddModalOpen.value = false;
             isDeleteModalOpen.value = false;
             fetchData();
         } catch (error) {
@@ -150,6 +126,7 @@ const deleteCustomer = async () => {
 };
 
 /* TABLE */
+// Definisi kolom tabel
 const columns = [
     { accessorKey: 'name', header: 'Nama Pelanggan' },
     { accessorKey: 'phone', header: 'Nomor Telepon' },
@@ -157,7 +134,7 @@ const columns = [
 ];
 
 const data = ref([]);
-const globalFilter = ref('');
+const globalFilter = ref('');  // Filter pencarian
 const pagination = ref({
     pageIndex: 0,
     pageSize: 10,
@@ -165,8 +142,10 @@ const pagination = ref({
     total: 0,
 });
 
+// Sorting untuk tabel
 const sorting = ref({ field: 'id', direction: 'asc' });
 
+// Inisialisasi table dengan pagination manual
 const table = useVueTable({
     get data() { return data.value; },
     columns,
@@ -181,16 +160,12 @@ const table = useVueTable({
     manualPagination: true,
     pageCount: computed(() => pagination.value.pageCount),
     onPaginationChange: (updater) => {
-        if (typeof updater === 'function') {
-            const newPagination = updater(pagination.value);
-            pagination.value = { ...pagination.value, ...newPagination };
-        } else {
-            pagination.value = { ...pagination.value, ...updater };
-        }
+        pagination.value = typeof updater === 'function' ? updater(pagination.value) : updater;
         fetchData();
     }
 });
 
+// Fungsi untuk mengambil data pelanggan dari server
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/customers', {
@@ -203,6 +178,7 @@ const fetchData = async () => {
             }
         });
 
+        // Menyimpan data dan informasi pagination
         data.value = response.data.data;
         pagination.value = {
             pageIndex: response.data.meta.current_page - 1,
@@ -215,22 +191,25 @@ const fetchData = async () => {
     }
 };
 
+// Fungsi debounce untuk optimisasi pengambilan data
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Fungsi sorting untuk tabel
 const sortBy = (field) => {
-    if (sorting.value.field === field) {
-        sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-        sorting.value.field = field;
-        sorting.value.direction = 'asc';
-    }
+    sorting.value = {
+        field,
+        direction: sorting.value.field === field && sorting.value.direction === 'asc' ? 'desc' : 'asc',
+    };
     fetchData();
 };
 
-onMounted(fetchData);
-
+// Watch pagination untuk memantau perubahan
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Mengambil data awal saat komponen dimount
+onMounted(fetchData);
+
+// Fungsi untuk mengubah halaman tabel
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
     fetchData();
@@ -239,11 +218,14 @@ const handlePageChange = (newPageIndex) => {
 
 
 <template>
-
+    <!-- Mengatur judul halaman -->
     <Head title="Daftar Pelanggan" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Pelanggan</h1>
+
+        <!-- Button Tambah Kategori dan Input Pencarian -->
         <div class="flex flex-col md:flex-row justify-between">
             <Button @click="openAddModal()" class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah
                 Pelanggan</Button>

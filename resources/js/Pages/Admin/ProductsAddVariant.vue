@@ -6,9 +6,7 @@ import * as z from 'zod';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { Head, Link } from '@inertiajs/vue3';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import FormInput from '@/Components/ui/form/FormInput.vue';
@@ -28,6 +26,7 @@ import SelectContent from '@/Components/ui/select/SelectContent.vue';
 import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
 import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import Separator from '@/Components/ui/separator/Separator.vue';
+import Button from '@/components/ui/button/Button.vue';
 
 const Toast = useToast();
 
@@ -40,16 +39,17 @@ const units = ref([]);
 const isCost = ref(true);
 const isStock = ref(true);
 
-
+// Fungsi untuk menangani perubahan pada switch "Harga Modal"
 const handleCost = (value) => {
     isCost.value = value;
 };
 
+// Fungsi untuk menangani perubahan pada switch "Stok"
 const handleStock = (value) => {
     isStock.value = value;
 };
 
-// VALIDATION FRONT END FORM
+// Skema validasi form menggunakan zod dan vee-validate
 const addFormSchema = toTypedSchema(z.object({
     product_id: z.number(),
     status: z.string().min(2).max(50),
@@ -63,6 +63,7 @@ const addFormSchema = toTypedSchema(z.object({
     }))
 }));
 
+// Inisialisasi form dengan skema validasi dan nilai awal
 const form = useForm({
     validationSchema: computed(() => addFormSchema),
 
@@ -75,7 +76,7 @@ const form = useForm({
 
 let isLoading = ref(false);
 
-// ACTION FORM 
+// Fungsi untuk menangani submit form
 const onSubmit = async () => {
     try {
         isLoading.value = true;
@@ -116,7 +117,7 @@ const onSubmit = async () => {
                 title: response.data.message,
             });
 
-            // Reset the form and clear inputs
+            // Reset form dan bersihkan input
             form.resetForm();
             form.setFieldValue('product_id', selectedProducts._rawValue.id);
 
@@ -140,6 +141,7 @@ const onSubmit = async () => {
     }
 };
 
+// Fungsi untuk menghasilkan SKU unik
 const generateSKU = async () => {
     let uniqueSKU = false;
     let newSKU = '';
@@ -154,20 +156,21 @@ const generateSKU = async () => {
     form.setFieldValue('sku', newSKU);
 };
 
+// Fungsi yang dijalankan saat komponen dimuat
 onMounted(async () => {
     formReady.value = true;
 
     await fetchOptions();
 });
 
-// Watch for changes in sku and update form
+// Watcher untuk memantau perubahan pada sku dan memperbarui form
 watch(sku, (newValue) => {
     form.setFieldValue('sku', newValue);
 });
 
 const options = ref([])
 
-
+// Fungsi untuk mengambil data produk dan unit dari API
 const fetchOptions = async () => {
     try {
         const response = await axios.get('/api/products')
@@ -190,17 +193,20 @@ const fetchOptions = async () => {
     }
 }
 
+// Fungsi untuk memperbarui ID produk yang dipilih
 const updateIdProduct = (value) => {
     selectedProducts.value = value;
     form.setFieldValue('product_id', value.id);
 };
 
+// Fungsi untuk menambahkan input variasi produk
 const addVariantInput = () => {
     const currentVariants = [...form.values.variantInputs];
     currentVariants.push({ quantity: '1', unit_id: '1', price: '', cost: '', stock: '' });
     form.setFieldValue('variantInputs', currentVariants);
 };
 
+// Fungsi untuk menghapus input variasi produk
 const removeVariantInput = (index) => {
     if (form.values.variantInputs && form.values.variantInputs.length > 1) {
         const currentVariants = [...form.values.variantInputs];
@@ -209,6 +215,7 @@ const removeVariantInput = (index) => {
     }
 };
 
+// Fungsi untuk memperbarui nilai input variasi produk
 const updateVariantInput = (index, field, event) => {
     const currentVariants = [...form.values.variantInputs];
     let value;
@@ -233,10 +240,12 @@ const updateVariantInput = (index, field, event) => {
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
 
 <template>
+    <!-- Mengatur judul halaman -->
 
     <Head title="Daftar Produk" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Tambah Variasi Produk</h1>
         <hr class="my-5 border-[1.5px] bg-gray-300">
         <div class="flex items-center gap-8">
@@ -263,8 +272,8 @@ const updateVariantInput = (index, field, event) => {
                                     <FormLabel>Nama Produk</FormLabel>
                                     <Multiselect class="h-5" v-model="selectedProducts" :options="options"
                                         @update:modelValue="updateIdProduct" :close-on-select="false"
-                                        :preserve-search="true" placeholder="Pilih produk" label="name"
-                                        track-by="name" :preselect-first="false" />
+                                        :preserve-search="true" placeholder="Pilih produk" label="name" track-by="name"
+                                        :preselect-first="false" />
                                     <FormMessage />
                                 </FormItem>
                             </FormField>

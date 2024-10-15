@@ -9,26 +9,28 @@ import Textarea from '@/Components/ui/textarea/Textarea.vue';
 import { Head, usePage } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm } from 'vee-validate';
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, ref } from 'vue';
 import { z } from 'zod';
 import axios from 'axios';
 import Switch from '@/Components/ui/switch/Switch.vue';
 import PosLayout from '@/Layouts/PosLayout.vue';
-import PosLayoutMobile from '@/Layouts/PosLayoutMobile.vue';
 import Button from '@/components/ui/button/Button.vue';
 import { useToast } from '@/Composables/useToast';
 import Spinner from '@/Components/Spinner.vue';
 import Input from '@/Components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
 
+// Menggunakan composable useToast untuk menampilkan notifikasi
 const Toast = useToast();
 
+// Mendefinisikan state untuk customer, isLoading, globalSettings, dan userSettings
 const customer = ref({});
 const isLoading = ref(false);
 const globalSettings = ref({});
 const userSettings = ref({});
 const test = ref(true);
 
+// Mendefinisikan skema validasi menggunakan zod
 const formSchema = toTypedSchema(z.object({
     shop_name: z.string().min(2).max(50),
     shop_address: z.string().min(5).max(255),
@@ -40,6 +42,7 @@ const formSchema = toTypedSchema(z.object({
     sound_success_transaction: z.boolean(),
 }));
 
+// Menggunakan useForm dari vee-validate untuk mengelola form
 const form = useForm({
     validationSchema: formSchema,
     initialValues: {
@@ -54,8 +57,10 @@ const form = useForm({
     },
 });
 
+// Mengambil props dari usePage
 const { props } = usePage();
 
+// Menggunakan lifecycle hook onMounted untuk melakukan fetch data saat komponen dimuat
 onMounted(async () => {
     console.log('userSettings', props.userSettings); // Data user settings
     console.log('user', props.auth); // Data user yang login
@@ -77,6 +82,7 @@ onMounted(async () => {
     isLoading.value = false;
 });
 
+// Fungsi untuk menangani submit form
 const onSubmit = async () => {
     try {
         const response = await axios.post('/settings', form.values);
@@ -98,6 +104,7 @@ const onSubmit = async () => {
     }
 };
 
+// Fungsi untuk mengubah user settings
 const changeUserSettings = async (key, value) => {
     try {
         userSettings.value[key] = value;
@@ -120,6 +127,7 @@ const changeUserSettings = async (key, value) => {
     };
 };
 
+// Fungsi untuk mengubah global settings
 const changeGlobalSettings = async (key, value) => {
     try {
         globalSettings.value[key] = value;
@@ -149,6 +157,7 @@ const changeGlobalSettings = async (key, value) => {
     };
 };
 
+// Fungsi untuk melakukan fetch data settings dari server
 const fetchData = async () => {
     try {
         const response = await axios.get('/settings/getSettings');

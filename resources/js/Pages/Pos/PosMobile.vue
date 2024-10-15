@@ -19,8 +19,7 @@
 
                         <form @submit.prevent="addProduct" class="mt-5">
                             <Input autofocus ref="identifierInputRef" v-model="identifierInput"
-                                @keyup.enter="addProduct"
-                                placeholder="Scan atau cari nama produk"
+                                @keyup.enter="addProduct" placeholder="Scan atau cari nama produk"
                                 class="w-full px-4 h-16 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         </form>
                     </div>
@@ -45,7 +44,7 @@
                         <span class="text-[0.8rem] text-gray-500 font-medium">Diskon :</span>
                         <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold text-right">- {{
                             formatRupiah(cart.discount)
-                        }}</span>
+                            }}</span>
 
                         <!-- Garis Bawah Diskon -->
                         <div class="col-span-2 border border-b border-gray-300 my-1"></div>
@@ -58,10 +57,11 @@
                                 - cart.discount)
                         }}</span>
                         <span class="text-[0.8rem] text-gray-500 font-medium">Pajak :</span>
-                        <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold text-right">+ {{ formatRupiah(cart.tax)
+                        <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold text-right">+ {{
+                            formatRupiah(cart.tax)
                             }}</span>
                     </div>
-                    
+
                     <div class="flex items-center space-x-2 justify-center text-center mb-5">
                         <span class="text-gray-600 font-semibold text-sm">Total Akhir :</span>
                         <h3 class="text-lg font-bold text-gray-900 text-right">{{ formatRupiah(grandTotal) }}</h3>
@@ -300,94 +300,31 @@
 </template>
 
 <script setup>
-import PosLayout from '@/Layouts/PosLayout.vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Head } from '@inertiajs/vue3';
-
-defineProps({
-    canLogin: {
-        type: Boolean,
-    },
-    canRegister: {
-        type: Boolean,
-    }
-});
-
-function handleImageError() {
-    document.getElementById('screenshot-container')?.classList.add('!hidden');
-    document.getElementById('docs-card')?.classList.add('!row-span-1');
-    document.getElementById('docs-card-content')?.classList.add('!flex-row');
-    document.getElementById('background')?.classList.add('!hidden');
-}
-
-import { ref, computed, onMounted, onUnmounted, reactive } from 'vue';
-import VueMultiselect, { Multiselect } from 'vue-multiselect';
-import ProductTable from '@/Components/ProductTable.vue';
 import axios from 'axios';
+import { Multiselect } from 'vue-multiselect';
+
+import PosLayoutMobile from '@/Layouts/PosLayoutMobile.vue';
+import ProductTableMobile from '@/Components/ProductTableMobile.vue';
 import Input from '@/Components/ui/input/Input.vue';
-import { Label } from '@/components/ui/label'
-import {
-    Sheet,
-    SheetClose,
-    SheetContent,
-    SheetDescription,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/Components/ui/sheet'
-import Button from '@/Components/ui/button/Button.vue';
-import Separator from '@/Components/ui/separator/Separator.vue';
 import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import DialogFooter from '@/Components/ui/dialog/DialogFooter.vue';
-import useSpeak from '@/Composables/useSpeak';
-import { useToast } from '@/Composables/useToast';
-import { add } from 'lodash';
-import { get } from '@vueuse/core';
-import useTerbilang from '@/Composables/useTerbilang';
 import FormInput from '@/Components/ui/form/FormInput.vue';
-import {
-    Menubar,
-    MenubarContent,
-    MenubarItem,
-    MenubarMenu,
-    MenubarSeparator,
-    MenubarShortcut,
-    MenubarTrigger,
-} from '@/Components/ui/menubar'
 import {
     AlertDialog,
     AlertDialogAction,
-    AlertDialogCancel,
     AlertDialogContent,
-    AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from '@/Components/ui/alert-dialog'
+} from '@/Components/ui/alert-dialog';
 
-import { Link } from '@inertiajs/vue3';
-import NavigationMenu from '@/Components/ui/navigation-menu/NavigationMenu.vue';
-import NavigationMenuList from '@/Components/ui/navigation-menu/NavigationMenuList.vue';
-import NavigationMenuItem from '@/Components/ui/navigation-menu/NavigationMenuItem.vue';
-import NavigationMenuTrigger from '@/Components/ui/navigation-menu/NavigationMenuTrigger.vue';
-import NavigationMenuContent from '@/Components/ui/navigation-menu/NavigationMenuContent.vue';
-import NavigationMenuLink from '@/Components/ui/navigation-menu/NavigationMenuLink.vue';
-import { navigationMenuTriggerStyle } from '@/Components/ui/navigation-menu';
-import { FormField } from '@/Components/ui/form';
-import FormItem from '@/Components/ui/form/FormItem.vue';
-import FormLabel from '@/Components/ui/form/FormLabel.vue';
-import FormMessage from '@/Components/ui/form/FormMessage.vue';
-import Select from '@/Components/ui/select/Select.vue';
-import FormControl from '@/Components/ui/form/FormControl.vue';
-import SelectTrigger from '@/Components/ui/select/SelectTrigger.vue';
-import SelectValue from '@/Components/ui/select/SelectValue.vue';
-import SelectContent from '@/Components/ui/select/SelectContent.vue';
-import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
-import SelectItem from '@/Components/ui/select/SelectItem.vue';
-import PosLayoutMobile from '@/Layouts/PosLayoutMobile.vue';
-import ProductTableMobile from '@/Components/ProductTableMobile.vue';
+import { useToast } from '@/Composables/useToast';
+import useSpeak from '@/Composables/useSpeak';
+import useTerbilang from '@/Composables/useTerbilang';
+import Button from '@/components/ui/button/Button.vue';
 // import useTerbilang from '@/Composables/useTerbilang';
+
 
 const isAddModalOpen = ref(false);
 
@@ -398,17 +335,14 @@ const cancelButton = ref(null);
 
 const identifierInput = ref('');
 const selectedProduct = ref(null);
-const products = ref([]);
 const cartItems = ref([]);
 const transactionCode = ref('');
-
 
 const identifierInputRef = ref(null);
 const productSelectRef = ref(null);
 const updatingItemId = ref(null);
 
 const isLoading = ref(false);
-const currentFocusIndex = ref(-1);
 const productTableRef = ref(null);
 
 const isHelperOpen = ref(false);

@@ -21,14 +21,19 @@ import Spinner from '@/Components/Spinner.vue';
 import Input from '@/Components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
 
+// Menggunakan composable useToast untuk menampilkan notifikasi
 const Toast = useToast();
 
-const customer = ref({});
+// State untuk menandakan loading
 const isLoading = ref(false);
-const globalSettings = ref({});
-const userSettings = ref({});
-const test = ref(true);
 
+// State untuk menyimpan pengaturan global
+const globalSettings = ref({});
+
+// State untuk menyimpan pengaturan user
+const userSettings = ref({});
+
+// Skema validasi form menggunakan zod dan vee-validate
 const formSchema = toTypedSchema(z.object({
     shop_name: z.string().min(2).max(50),
     shop_address: z.string().min(5).max(255),
@@ -40,6 +45,7 @@ const formSchema = toTypedSchema(z.object({
     sound_success_transaction: z.boolean(),
 }));
 
+// Inisialisasi form dengan skema validasi dan nilai awal
 const form = useForm({
     validationSchema: formSchema,
     initialValues: {
@@ -54,8 +60,10 @@ const form = useForm({
     },
 });
 
+// Mengambil props dari halaman
 const { props } = usePage();
 
+// Fungsi yang dijalankan saat komponen di-mount
 onMounted(async () => {
     console.log('userSettings', props.userSettings); // Data user settings
     console.log('user', props.auth); // Data user yang login
@@ -77,6 +85,7 @@ onMounted(async () => {
     isLoading.value = false;
 });
 
+// Fungsi untuk submit form
 const onSubmit = async () => {
     try {
         const response = await axios.post('/settings', form.values);
@@ -98,6 +107,7 @@ const onSubmit = async () => {
     }
 };
 
+// Fungsi untuk mengubah pengaturan user
 const changeUserSettings = async (key, value) => {
     try {
         userSettings.value[key] = value;
@@ -120,6 +130,7 @@ const changeUserSettings = async (key, value) => {
     };
 };
 
+// Fungsi untuk mengubah pengaturan global
 const changeGlobalSettings = async (key, value) => {
     try {
         globalSettings.value[key] = value;
@@ -149,6 +160,7 @@ const changeGlobalSettings = async (key, value) => {
     };
 };
 
+// Fungsi untuk mengambil data pengaturan dari server
 const fetchData = async () => {
     try {
         const response = await axios.get('/settings/getSettings');

@@ -28,8 +28,7 @@ const errors = ref({});
 const selectedCategories = ref([]);
 const units = ref([]);
 
-
-// VALIDATION FRONT END FORM
+// VALIDASI FORM FRONT END
 const addFormSchema = toTypedSchema(z.object({
     product_id: z.string(),
     supplier_id: z.string(),
@@ -52,7 +51,7 @@ const form = useForm({
 
 let isLoading = ref(false);
 
-// ACTION FORM 
+// AKSI FORM 
 const onSubmit = async () => {
     try {
         isLoading.value = true;
@@ -70,7 +69,7 @@ const onSubmit = async () => {
                 title: response.data.message,
             });
 
-            // Reset the form and clear inputs
+            // Reset form dan bersihkan input
             form.resetForm();
 
             identifier.value = '';
@@ -85,7 +84,7 @@ const onSubmit = async () => {
         console.error('Error submitting form:', error);
         Toast.fire({
             icon: "error",
-            title: "An error occurred while submitting the form",
+            title: "Terjadi kesalahan saat mengirim form",
         });
     } finally {
         isLoading.value = false;
@@ -106,6 +105,7 @@ const isSupplierModalOpen = ref(false);
 const searchingSupplier = ref([]);
 const selectedSupplier = ref(null);
 
+// Fungsi untuk mencari produk berdasarkan nama
 const handleSearchProduct = async () => {
     try {
         const response = await axios.post(`/products/getVariantByName`, { name: identifier.value });
@@ -113,17 +113,12 @@ const handleSearchProduct = async () => {
         console.log(response.data.product);
         isProductModalOpen.value = true;
         searchingProduct.value = response.data.product;
-
-        // if (response.data.status === 'success') {
-        //     form.setFieldValue('name', response.data.data.name);
-        // } else {
-        //     form.setFieldValue('name', '');
-        // }
     } catch (error) {
         console.error('Error searching product:', error);
     }
 };
 
+// Fungsi untuk mencari supplier berdasarkan nama
 const handleSearchSupplier = async () => {
     try {
         const response = await axios.post(`/admin/suppliers/getByName`, { name: identifierSupplier.value });
@@ -131,17 +126,12 @@ const handleSearchSupplier = async () => {
         console.log(response.data.data);
         isSupplierModalOpen.value = true;
         searchingSupplier.value = response.data.data;
-
-        // if (response.data.status === 'success') {
-        //     form.setFieldValue('name', response.data.data.name);
-        // } else {
-        //     form.setFieldValue('name', '');
-        // }
     } catch (error) {
         console.error('Error searching supplier:', error);
     }
 };
 
+// Fungsi untuk memilih produk
 const handleSelect = (product) => {
     selectedProduct.value = product;
     isProductModalOpen.value = false;
@@ -149,6 +139,7 @@ const handleSelect = (product) => {
     form.setFieldValue('product_id', product.id);
 };
 
+// Fungsi untuk memilih supplier
 const handleSelectSupplier = (supplier) => {
     selectedSupplier.value = supplier;
     isSupplierModalOpen.value = false;
@@ -161,10 +152,12 @@ const handleSelectSupplier = (supplier) => {
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
 
 <template>
+    <!-- Mengatur judul halaman -->
 
     <Head title="Form Restock" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Tambah Restock Supplier</h1>
         <hr class="my-5 border-[1.5px] bg-gray-300">
 

@@ -2,20 +2,15 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Input } from '@/Components/ui/input/index.js';
-import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
-import { DialogFooter } from '@/Components/ui/dialog';
-import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
-const Toast = useToast();;
 
-/* TABLE */
+/* Definisi Kolom Tabel */
 const columns = [
     { accessorKey: 'transaction', header: 'Kode Transaksi' },
     { accessorKey: 'customer', header: 'Nama Terhutang' },
@@ -28,8 +23,11 @@ const columns = [
     { accessorKey: 'settled_at', header: 'Tanggal Lunas' },
 ];
 
+/* State Data Tabel dan Filter */
 const data = ref([]);
 const globalFilter = ref('');
+
+/* State Pagination */
 const pagination = ref({
     pageIndex: 0,
     pageSize: 10,
@@ -37,8 +35,10 @@ const pagination = ref({
     total: 0,
 });
 
+/* State Sorting */
 const sorting = ref({ field: 'id', direction: 'asc' });
 
+/* Inisialisasi Tabel dengan Pagination dan Sorting Manual */
 const table = useVueTable({
     get data() { return data.value; },
     columns,
@@ -59,10 +59,22 @@ const table = useVueTable({
         } else {
             pagination.value = { ...pagination.value, ...updater };
         }
-        fetchData();
+        fetchData(); // Memanggil ulang data ketika pagination berubah
     }
 });
 
+/* Fungsi untuk Mengubah Sorting */
+const sortBy = (field) => {
+    if (sorting.value.field === field) {
+        sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        sorting.value.field = field;
+        sorting.value.direction = 'asc';
+    }
+    fetchData(); // Memuat ulang data dengan sorting baru
+};
+
+/* Fungsi untuk Memuat Data dari API */
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/debt-items', {
@@ -75,6 +87,7 @@ const fetchData = async () => {
             }
         });
 
+        /* Memperbarui Data dan Pagination */
         data.value = response.data.data;
         pagination.value = {
             pageIndex: response.data.meta.current_page - 1,
@@ -87,38 +100,36 @@ const fetchData = async () => {
     }
 };
 
+/* Menggunakan Debounce untuk Mengurangi Panggilan API Terlalu Sering */
 const debouncedFetchData = debounce(fetchData, 300);
 
-const sortBy = (field) => {
-    if (sorting.value.field === field) {
-        sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-        sorting.value.field = field;
-        sorting.value.direction = 'asc';
-    }
-    fetchData();
-};
-
+/* Memuat Data Pertama Kali Ketika Komponen Dimuat */
 onMounted(() => {
     fetchData();
-})
+});
 
+/* Watcher untuk Pagination (jika ada perubahan dalam pagination) */
 watch(() => pagination.value, () => { }, { deep: true });
 
+/* Fungsi untuk Mengubah Halaman */
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
-    fetchData();
+    fetchData(); // Panggil ulang data untuk halaman baru
 };
 </script>
 
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
 
 <template>
+    <!-- Mengatur judul halaman -->
 
     <Head title="Daftar Item Hutang" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Item Hutang</h1>
+
+        <!-- Input Pencarian -->
         <div class="flex flex-col md:flex-row justify-end">
             <div class="flex items-center py-4 w-full md:w-72">
                 <Input placeholder="Cari Item Hutang..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"

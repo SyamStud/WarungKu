@@ -2,11 +2,9 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
-
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import Button from '@/Components/ui/button/Button.vue';
 import { Input } from '@/Components/ui/input/index.js';
 import { useToast } from '@/Composables/useToast';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
@@ -14,21 +12,29 @@ import { DialogFooter } from '@/Components/ui/dialog';
 import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
+import Button from '@/components/ui/button/Button.vue';
+
+// Inisialisasi Toast untuk notifikasi
 const Toast = useToast();
 
 /* MODAL */
 const isDeleteModalOpen = ref(false);
 const selectedCartItem = ref(null);
 
+// Fungsi untuk membuka modal hapus produk
 const openDeleteModal = (cartItem) => {
     selectedCartItem.value = cartItem;
     isDeleteModalOpen.value = true;
 };
 
+// Fungsi untuk menghapus produk yang dipilih
 const deleteCartItem = async () => {
     if (selectedCartItem.value) {
         try {
+            // Mengirim permintaan ke server untuk menghapus item
             const response = await axios.post(`/admin/cart-items/${selectedCartItem.value.id}?_method=DELETE`);
+
+            // Menampilkan notifikasi berdasarkan respons
             if (response.data.status === 'error') {
                 return Toast.fire({
                     icon: "error",
@@ -41,6 +47,7 @@ const deleteCartItem = async () => {
                 });
             }
 
+            // Menutup modal dan refresh data setelah penghapusan
             isDeleteModalOpen.value = false;
             fetchData();
         } catch (error) {
@@ -49,7 +56,8 @@ const deleteCartItem = async () => {
     }
 };
 
-/* TABLE */
+/* TABLE SETUP */
+// Definisi kolom-kolom untuk tabel
 const columns = [
     { accessorKey: 'cart', header: 'Kode Transaksi' },
     { accessorKey: 'product', header: 'Produk' },
@@ -58,6 +66,7 @@ const columns = [
     { accessorKey: 'total_price', header: 'Total Harga' },
 ];
 
+// State data untuk tabel
 const data = ref([]);
 const globalFilter = ref('');
 const pagination = ref({
@@ -67,8 +76,10 @@ const pagination = ref({
     total: 0,
 });
 
+// Mengatur sorting default
 const sorting = ref({ field: 'id', direction: 'asc' });
 
+// Inisialisasi tabel menggunakan Vue Table
 const table = useVueTable({
     get data() { return data.value; },
     columns,
@@ -93,6 +104,7 @@ const table = useVueTable({
     }
 });
 
+// Fungsi untuk mengambil data dari API
 const fetchData = async () => {
     try {
         const response = await axios.get('/api/cart-items', {
@@ -105,6 +117,7 @@ const fetchData = async () => {
             }
         });
 
+        // Memperbarui data dan informasi pagination
         data.value = response.data.data;
         pagination.value = {
             pageIndex: response.data.meta.current_page - 1,
@@ -117,8 +130,10 @@ const fetchData = async () => {
     }
 };
 
+// Fungsi untuk debouncing pencarian
 const debouncedFetchData = debounce(fetchData, 300);
 
+// Fungsi untuk mengatur sorting
 const sortBy = (field) => {
     if (sorting.value.field === field) {
         sorting.value.direction = sorting.value.direction === 'asc' ? 'desc' : 'asc';
@@ -129,12 +144,15 @@ const sortBy = (field) => {
     fetchData();
 };
 
+// Memanggil data ketika komponen dimuat pertama kali
 onMounted(() => {
     fetchData();
-})
+});
 
+// Mengawasi perubahan pada pagination
 watch(() => pagination.value, () => { }, { deep: true });
 
+// Fungsi untuk mengubah halaman pada pagination
 const handlePageChange = (newPageIndex) => {
     pagination.value.pageIndex = newPageIndex;
     fetchData();
@@ -144,11 +162,14 @@ const handlePageChange = (newPageIndex) => {
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
 
 <template>
-
+    <!-- Mengatur judul halaman -->
     <Head title="Daftar Item Transaksi Sementara" />
 
     <AdminLayout>
+        <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Item Transaksi Sementara</h1>
+
+        <!-- Input pencarian -->
         <div class="flex flex-col md:flex-row justify-end">
             <div class="flex items-center py-4 w-full md:w-72">
                 <Input placeholder="Cari Item Transaksi Sementara..." v-model="globalFilter"
@@ -157,24 +178,24 @@ const handlePageChange = (newPageIndex) => {
         </div>
 
         <div>
-            <!-- Table  -->
+            <!-- Tabel -->
             <div class="rounded-md border">
                 <Table>
                     <TableHeaderWrapper :columns="columns" :sorting="sorting" @sort="sortBy" />
 
                     <TableBody>
                         <TableRow v-for="(row, index) in table.getRowModel().rows" :key="row.id">
-                            <!-- Kolom pertama untuk nomor urut -->
+                            <!-- Kolom untuk nomor urut -->
                             <TableCell>
                                 {{ (pagination.pageIndex) * 10 + index + 1 }}
                             </TableCell>
 
-                            <!-- Kolom-kolom lainnya -->
+                            <!-- Kolom data dari tabel -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
                                 {{ cell.getValue() }}
                             </TableCell>
 
-                            <!-- Kolom untuk aksi -->
+                            <!-- Kolom aksi hapus -->
                             <TableCell>
                                 <div class="flex gap-2">
                                     <Button @click="() => openDeleteModal(row.original)">Hapus</Button>
@@ -188,7 +209,7 @@ const handlePageChange = (newPageIndex) => {
             <!-- Pagination -->
             <PaginationWrapper :pagination="pagination" :onPageChange="handlePageChange" />
 
-            <!-- Delete Modal -->
+            <!-- Modal hapus -->
             <DialogWrapper v-model:open="isDeleteModalOpen" title="Hapus Produk" desc="Hapus produk">
                 <DialogFooter>
                     <Button @click="isDeleteModalOpen = false" variant="outline">Batal</Button>
