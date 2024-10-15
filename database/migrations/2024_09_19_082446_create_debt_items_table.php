@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('status', ['unpaid', 'partial', 'paid'])->default('unpaid');
             $table->timestamp('last_payment_at')->nullable();
             $table->timestamp('settled_at')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

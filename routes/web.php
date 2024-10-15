@@ -30,6 +30,7 @@ use App\Http\Controllers\{
     Admin\TransactionItemController,
     Admin\DebtPaymentHistoryController
 };
+use App\Http\Controllers\Admin\DebtController;
 use App\Http\Controllers\Admin\UnitController;
 
 // Email Verification Routes
@@ -47,9 +48,6 @@ Route::post('/email/verification-notification', fn(Request $request) => $request
 
 // Authentication Routes
 Route::get('/', fn() => Inertia::render('Auth/Login'));
-Route::get('/dashboard', fn() => Inertia::render('Admin/Dashboard'))
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
 
 Route::get('/not-available-mobile', fn() => Inertia::render('NotAvailableMobile'))
     ->name('not-available-mobile');
@@ -66,7 +64,7 @@ Route::middleware('auth')->group(function () {
     // Admin Routes
     Route::prefix('admin')->group(function () {
         // Dashboard Routes
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/dashboardSummary', [DashboardController::class, 'dashboardSummary']);
 
         // Product Routes
@@ -93,6 +91,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('/customers', CustomerController::class);
         Route::resource('/debt-items', DebtItemController::class);
         Route::resource('/units', UnitController::class);
+        Route::resource('/debts', DebtController::class);
+        Route::post('/debts/delete', [DebtController::class, 'destroy']);
 
         // Supplier Routes
         Route::post('/suppliers/getByName', [SupplierController::class, 'getByName']);
@@ -104,7 +104,6 @@ Route::middleware('auth')->group(function () {
 
         // Debt Payment History
         Route::get('/debt-payment-history', [DebtPaymentHistoryController::class, 'index']);
-        Route::get('/debts', [DebtItemController::class, 'debtIndex']);
     });
 
 

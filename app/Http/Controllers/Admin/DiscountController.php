@@ -38,6 +38,29 @@ class DiscountController extends Controller
             ], 422);
         }
 
+        $isOrderDiscount = Discount::where('type', 'order')->where('is_active', 1)->count();
+
+        if ($request->type == 'order' && $isOrderDiscount > 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Sudah ada potongan harga belanja yang aktif',
+            ]);
+        }
+
+        if ($request->amount > 100 && $request->amount_type == 'percentage') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Diskon tidak boleh lebih dari 100%',
+            ]);
+        }
+
+        if ($request->start_date > $request->end_date) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tanggal mulai tidak valid',
+            ]);
+        }
+
         $discount = new Discount();
         $discount->name = $request->name;
         $discount->description = $request->description;
@@ -50,15 +73,17 @@ class DiscountController extends Controller
         $discount->is_active = $request->is_active;
         $discount->save();
 
-        $discountProduct = new DiscountProduct();
-        $discountProduct->discount_id = $discount->id;
-        $discountProduct->product_variant_id = $request->product_id;
-        $discountProduct->is_active = $request->is_active;
-        $discountProduct->save();
+        if ($request->type == 'product') {
+            $discountProduct = new DiscountProduct();
+            $discountProduct->discount_id = $discount->id;
+            $discountProduct->product_variant_id = $request->product_id;
+            $discountProduct->is_active = $request->is_active;
+            $discountProduct->save();
+        }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Discount created successfully',
+            'message' => 'Diskon berhasil ditambahkan',
         ]);
     }
 
@@ -85,7 +110,7 @@ class DiscountController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Discount updated successfully',
+            'message' => 'Diskon berhasil diubah',
         ]);
     }
 
@@ -98,7 +123,7 @@ class DiscountController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Discount deleted successfully',
+            'message' => 'Diskon berhasil dihapus',
         ]);
     }
 

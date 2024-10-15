@@ -824,6 +824,7 @@ class CartController extends Controller
             ->whereHas('discount', function ($query) use ($quantity) {
                 $query->where('threshold', '<=', $quantity);
             })
+            ->where('is_active', true)
             ->with(['discount' => function ($query) {
                 $query->orderBy('threshold', 'desc');
             }])
@@ -855,7 +856,9 @@ class CartController extends Controller
     protected function getOrderDiscount($totalPrice)
     {
         return Discount::where('type', 'order')
-            ->where('threshold', '<=', $totalPrice)->first();
+            ->where('threshold', '<=', $totalPrice)
+            ->where('is_active', true)
+            ->first();
     }
 
     public function calculateTax($totalPrice)

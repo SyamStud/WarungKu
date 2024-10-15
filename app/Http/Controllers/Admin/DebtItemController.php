@@ -10,11 +10,6 @@ use Barryvdh\Debugbar\Facades\Debugbar;
 
 class DebtItemController extends Controller
 {
-    public function debtIndex()
-    {
-        return Inertia::render('Admin/Debts');
-    }
-
     /**
      * Display a listing of the resource.
      */
