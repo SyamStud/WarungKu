@@ -56,7 +56,7 @@ const onSubmit = async () => {
     try {
         isLoading.value = true;
 
-        const response = await axios.post('/admin/restocks', form.values);
+        const response = await axios.post('/admin/purchases', form.values);
 
         if (response.data.status === 'error') {
             Toast.fire({

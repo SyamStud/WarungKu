@@ -24,6 +24,7 @@ const columns = [
     { accessorKey: 'grand_total', header: 'Total Akhir' },
     { accessorKey: 'total_payment', header: 'Total Bayar' },
     { accessorKey: 'total_change', header: 'Kembalian' },
+    { accessorKey: 'profit', header: 'Keuntungan' },
     { accessorKey: 'payment_method', header: 'Metode Pembayaran' },
     { accessorKey: 'created_at', header: 'Tanggal Transaksi' },
     { accessorKey: 'user', header: 'Kasir' },
@@ -159,7 +160,9 @@ const handlePageChange = (newPageIndex) => {
                                 </template>
 
                                 <template v-else>
-                                    {{ formatRupiah(cell.getValue()) }}
+                                    <span :class="{ 'text-green-600 font-semibold': cell.column.id === 'profit', 'text-red-600 font-semibold': cell.column.id === 'discount' }">
+                                        {{ formatRupiah(cell.getValue()) }}
+                                    </span>
                                 </template>
                             </TableCell>
                         </TableRow>

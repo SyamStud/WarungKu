@@ -15,9 +15,11 @@ class ProductVariant extends Model
         'unit_id',
         'quantity',
         'price',
-        'cost',
+        'stock',
+        'stock_status',
         'status',
     ];
+
 
     public function product()
     {
@@ -27,11 +29,6 @@ class ProductVariant extends Model
     public function unit()
     {
         return $this->belongsTo(Unit::class);
-    }
-
-    public function stocks()
-    {
-        return $this->hasMany(Stock::class);
     }
 
     public function stockMovements()

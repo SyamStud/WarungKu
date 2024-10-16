@@ -225,7 +225,7 @@ const tabs = [
         name: 'Pembelian',
         imageSrc: 'https://img.icons8.com/?size=100&id=BfXx00KJSKHH&format=png&color=000000',
         tools: [
-            { link: "/admin/restocks", name: 'Restock Produk Supplier', imageSrc: 'https://img.icons8.com/?size=100&id=LbZI1V6lICp2&format=png&color=000000' },
+            { link: "/admin/purchases", name: 'Restock Produk Supplier', imageSrc: 'https://img.icons8.com/?size=100&id=LbZI1V6lICp2&format=png&color=000000' },
             { link: "/admin/restock-lists", name: 'List Belanja', imageSrc: 'https://img.icons8.com/?size=100&id=ZODLIcapQpqg&format=png&color=000000' },
             { link: "/admin/suppliers", name: 'Supplier', imageSrc: 'https://img.icons8.com/?size=100&id=38216&format=png&color=000000' },
         ]
@@ -235,7 +235,7 @@ const tabs = [
         imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000',
         tools: [
             { link: '/admin/products', name: 'Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
-            { link: '/admin/stocks', name: 'Stok', imageSrc: 'https://img.icons8.com/?size=100&id=VWrzCw0rvxVx&format=png&color=000000' },
+            { link: '/admin/restocks', name: 'Restock', imageSrc: 'https://img.icons8.com/?size=100&id=VWrzCw0rvxVx&format=png&color=000000' },
             { link: '/admin/stock-movements', name: 'Riwayat Stok', imageSrc: 'https://img.icons8.com/?size=100&id=18971&format=png&color=000000' },
             { link: '/admin/categories', name: 'Kategori', imageSrc: 'https://img.icons8.com/?size=100&id=XnHBz2LnhELw&format=png&color=000000' },
             { link: '/admin/units', name: 'Unit', imageSrc: 'https://img.icons8.com/?size=100&id=12927&format=png&color=000000' },

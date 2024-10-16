@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use Carbon\Carbon;
 use Inertia\Inertia;
-use App\Models\Restock;
+use App\Models\Purchase;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Models\TransactionItem;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\ProductVariant;
 use App\Models\Stock;
 
 class DashboardController extends Controller
@@ -25,7 +26,7 @@ class DashboardController extends Controller
         $totalTransactionToday = Transaction::whereDate('created_at', Carbon::today())->sum('total_price');
 
         // Hitung total pembelian (purchase) hari ini
-        $totalPurchaseToday = Restock::whereDate('created_at', Carbon::today())->sum('price');
+        $totalPurchaseToday = Purchase::whereDate('created_at', Carbon::today())->sum('price');
 
         // Ambil transaksi dengan total tertinggi hari ini
         $highestTransaction = Transaction::whereDate('created_at', Carbon::today())->orderBy('total_price', 'desc')->first();
@@ -48,10 +49,9 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        $needRestock = Stock::select('product_variant_id', DB::raw('SUM(quantity) as total_quantity'))
-            ->with('productVariant.product')
-            ->groupBy('product_variant_id')
-            ->havingRaw('SUM(quantity) <= 5')
+        $needPurchase = ProductVariant::select('id', DB::raw('stock as total_quantity'))
+            ->with('product') // Pastikan relasi 'product' ada di model ProductVariant
+            ->having('stock', '<=', 5) // Memfilter jumlah quantity
             ->orderBy('total_quantity')
             ->limit(10)
             ->get();
@@ -63,7 +63,7 @@ class DashboardController extends Controller
             'highest_transaction' => $highestTransactionPrice,
             'top_one' => $topOneProductName,
             'top_products' => $topProducts,
-            'need_restock' => $needRestock,
+            'need_purchase' => $needPurchase,
         ]);
     }
 }

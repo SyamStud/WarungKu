@@ -20,6 +20,7 @@ return new class extends Migration
             $table->double('grand_total');
             $table->double('total_payment');
             $table->double('total_change');
+            $table->double('total_profit');
             $table->enum('payment_method', ['cash', 'qris', 'debt'])->default('cash');
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();

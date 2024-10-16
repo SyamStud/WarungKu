@@ -10,26 +10,14 @@ class Restock extends Model
     use HasFactory;
 
     protected $fillable = [
-        'product_id',
-        'supplier_id',
+        'product_variant_id',
         'quantity',
-        'price',
-        'note',
-        'created_by',
+        'cost',
+        'status',
     ];
 
-    public function product()
+    public function productVariant()
     {
-        return $this->belongsTo(Product::class);
-    }
-
-    public function supplier()
-    {
-        return $this->belongsTo(Supplier::class);
-    }
-
-    public function createdBy()
-    {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(ProductVariant::class);
     }
 }

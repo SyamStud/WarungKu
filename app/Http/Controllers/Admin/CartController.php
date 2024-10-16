@@ -5,20 +5,23 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Cart;
 use App\Models\Debt;
 use Inertia\Inertia;
-use App\Models\Stock;
+use App\Models\Restock;
 use App\Models\Setting;
 use App\Models\CartItem;
 use App\Models\DebtItem;
 use App\Models\Discount;
 use Mike42\Escpos\Printer;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Models\StockMovement;
+use App\Models\ProductVariant;
 use App\Models\DiscountProduct;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Mike42\Escpos\CapabilityProfile;
 use Illuminate\Support\Facades\Cache;
+use Barryvdh\Debugbar\Facades\Debugbar;
 use Illuminate\Support\Facades\Validator;
 use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
 
@@ -437,7 +440,7 @@ class CartController extends Controller
         // $cacheKey = 'product_' . md5($request->identifier);
 
         $product = DB::table('products')
-            ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
+            ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
             ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
             ->join('units', 'product_variants.unit_id', '=', 'units.id')
             ->where('products.sku', $request->identifier)
@@ -447,7 +450,7 @@ class CartController extends Controller
         // $product = Cache::remember($cacheKey, now()->addHours(24), function () use ($request) {
         //     // Use query builder for faster lookup
         //     return DB::table('products')
-        //         ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
+        //         ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
         //         ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
         //         ->join('units', 'product_variants.unit_id', '=', 'units.id')
         //         ->where('products.sku', $request->identifier)->first();
@@ -455,7 +458,7 @@ class CartController extends Controller
 
         if (!$product) {
             $products = DB::table('products')
-                ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
+                ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
                 ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
                 ->join('units', 'product_variants.unit_id', '=', 'units.id')
                 ->where('products.name', 'like', '%' . $request->identifier . '%')
@@ -464,7 +467,7 @@ class CartController extends Controller
 
             // $products = Cache::remember($cacheKey . '_name', now()->addHours(24), function () use ($request) {
             //     return DB::table('products')
-            //         ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
+            //         ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
             //         ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
             //         ->join('units', 'product_variants.unit_id', '=', 'units.id')
             //         ->where('products.name', 'like', '%' . $request->identifier . '%')
@@ -491,7 +494,7 @@ class CartController extends Controller
 
         if ($request->variant_id != 0) {
             $product = DB::table('products')
-                ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
+                ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
                 ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
                 ->join('units', 'product_variants.unit_id', '=', 'units.id')
                 ->where('products.sku', $request->identifier)
@@ -656,82 +659,176 @@ class CartController extends Controller
 
         // $this->print($cart, $cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
 
-        return DB::transaction(function () use ($cart, $cartItems, $request) {
-            $transaction = DB::table('transactions')->insertGetId([
-                'user_id' => Auth::id(),
-                'transaction_code' => $cart->transaction_code,
-                'total_price' => $cart->total_price,
-                'discount' => $cart->discount,
-                'tax' => $cart->tax,
-                'grand_total' => $cart->grand_total,
-                'total_payment' => $request->total_payment,
-                'total_change' => $request->total_payment - ($cart->grand_total),
-                'payment_method' => $request->payment_method,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            foreach ($cartItems as $cartItem) {
-                $transactionItem = DB::table('transaction_items')->insertGetId([
-                    'transaction_id' => $transaction,
-                    'product_id' => $cartItem->product_id,
-                    'product_variant_id' => $cartItem->product_variant_id,
-                    'quantity' => $cartItem->quantity,
-                    'price' => $cartItem->price,
-                    'discount' => $cartItem->discount,
-                    'discounted_price' => $cartItem->discounted_price,
-                    'total_price' => $cartItem->total_price,
-                    'discounted_total_price' => $cartItem->discounted_total_price,
+        try {
+            return DB::transaction(function () use ($cart, $cartItems, $request) {
+                $transaction = Transaction::create([
+                    'user_id' => Auth::id(),
+                    'transaction_code' => $cart->transaction_code,
+                    'total_price' => $cart->total_price,
+                    'discount' => $cart->discount,
+                    'tax' => $cart->tax,
+                    'grand_total' => $cart->grand_total,
+                    'total_payment' => $request->total_payment,
+                    'total_change' => $request->total_payment - ($cart->grand_total),
+                    'payment_method' => $request->payment_method,
+                    'total_profit' => 0,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
 
+                foreach ($cartItems as $cartItem) {
+                    $remainingQuantity = $cartItem->quantity;
+                    $totalProfit = 0;
+
+                    while ($remainingQuantity > 0) {
+                        $stockUsed = Restock::where('product_variant_id', $cartItem->product_variant_id)
+                            ->where('quantity', '>', 0)
+                            ->where('status', '!=', 'sold-out')
+                            ->orderBy('created_at', 'asc')
+                            ->first();
+
+                        Debugbar::info($remainingQuantity);
+
+                        if (!$stockUsed) {
+                            $stockUsed = Restock::where('product_variant_id', $cartItem->product_variant_id)
+                                ->orderBy('created_at', 'desc')
+                                ->first();
+
+                            $existingStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
+                                ->where('cost', $stockUsed->cost)
+                                ->whereDate('created_at', now()->toDateString())
+                                ->first();
+
+                            if ($existingStock) {
+                                $existingStock->quantity -= $remainingQuantity;
+                                $existingStock->status = 'in-use';
+
+                                $existingStock->save();
+                            } else {
+                                $stockUsed = Restock::create([
+                                    'product_variant_id' => $cartItem->product_variant_id,
+                                    'quantity' => -$remainingQuantity,
+                                    'cost' => $stockUsed->cost,
+                                    'status' => 'in-use',
+                                ]);
+                            }
+
+                            $profit = $cartItem->discounted_price * $remainingQuantity - ($stockUsed->cost * $remainingQuantity);
+                            Debugbar::info($profit);
+                            $totalProfit += $profit;
+                            Debugbar::info($totalProfit);
+
+                            $transactionItem = DB::table('transaction_items')->insertGetId([
+                                'transaction_id' => $transaction->id,
+                                'product_id' => $cartItem->product_id,
+                                'product_variant_id' => $cartItem->product_variant_id,
+                                'quantity' => $remainingQuantity,
+                                'price' => $cartItem->price,
+                                'discount' => $cartItem->discount,
+                                'discounted_price' => $cartItem->discounted_price,
+                                'total_price' => $cartItem->price * $remainingQuantity,
+                                'discounted_total_price' => $cartItem->discounted_price * $remainingQuantity,
+                                'profit' => $profit,
+                                'restock_id' => $stockUsed->id,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+
+                            break;
+                        }
+
+                        $quantityFromThisStock = min($remainingQuantity, $stockUsed->quantity);
+                        $profit = $cartItem->discounted_price * $quantityFromThisStock - ($stockUsed->cost * $quantityFromThisStock);
+                        $totalProfit += $profit;
+
+                        $transactionItem = DB::table('transaction_items')->insertGetId([
+                            'transaction_id' => $transaction->id,
+                            'product_id' => $cartItem->product_id,
+                            'product_variant_id' => $cartItem->product_variant_id,
+                            'quantity' => $quantityFromThisStock,
+                            'price' => $cartItem->price,
+                            'discount' => $cartItem->discount,
+                            'discounted_price' => $cartItem->discounted_price,
+                            'total_price' => $cartItem->price * $quantityFromThisStock,
+                            'discounted_total_price' => $cartItem->discounted_price * $quantityFromThisStock,
+                            'profit' => $profit,
+                            'restock_id' => $stockUsed->id,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        $stockUsed->quantity -= $quantityFromThisStock;
+                        if ($stockUsed->quantity <= 0) {
+                            $stockUsed->status = 'sold-out';
+                        } else {
+                            $stockUsed->status = 'in-use';
+                        }
+                        $stockUsed->save();
+
+                        $remainingQuantity -= $quantityFromThisStock;
+
+                        if ($request->payment_method == 'debt') {
+                            $debt = Debt::where('transaction_id', $transaction->id)->first();
+                            if (!$debt) {
+                                $debt = Debt::create([
+                                    'customer_id' => $request->customer_id,
+                                    'transaction_id' => $transaction->id,
+                                    'total_amount' => $cart->grand_total,
+                                    'remaining_amount' => $cart->grand_total,
+                                ]);
+                            }
+
+                            DebtItem::create([
+                                'debt_id' => $debt->id,
+                                'transaction_item_id' => $transactionItem,
+                                'total_amount' => $cartItem->discounted_price * $quantityFromThisStock,
+                                'remaining_amount' => $cartItem->discounted_price * $quantityFromThisStock,
+                            ]);
+                        }
+                    }
+
+                    $transaction->total_profit += $totalProfit;
+                }
+
+                $transaction->save();
+
                 if ($request->payment_method == 'debt') {
-                    $debt = Debt::create([
-                        'customer_id' => $request->customer_id,
-                        'transaction_id' => $transaction,
-                        'total_amount' => $cart->grand_total,
-                        'remaining_amount' => $cart->grand_total,
-                    ]);
+                    if ($cart->tax > 0) {
+                        $debt = Debt::where('transaction_id', $transaction->id)->first();
 
-                    DebtItem::create([
-                        'debt_id' => $debt->id,
-                        'transaction_item_id' => $transactionItem,
-                        'total_amount' => $cartItem->discounted_total_price,
-                        'remaining_amount' => $cartItem->discounted_total_price,
-                    ]);
+                        DebtItem::create([
+                            'debt_id' => $debt->id,
+                            'total_amount' => $cart->tax,
+                            'remaining_amount' => $cart->tax,
+                        ]);
+                    }
                 }
-            }
 
-            if ($request->payment_method == 'debt') {
-                if ($cart->tax > 0) {
-                    $debt = Debt::where('transaction_id', $transaction)->first();
+                $cart->delete();
 
-                    DebtItem::create([
-                        'debt_id' => $debt->id,
-                        'total_amount' => $cart->tax,
-                        'remaining_amount' => $cart->tax,
-                    ]);
-                }
-            }
-
-            $cart->delete();
-
+                return response()->json([
+                    'message' => 'Transaction stored successfully',
+                    'status' => 'success',
+                ]);
+            });
+        } catch (\Exception $e) {
+            // Jika ada error, rollback transaksi dan kirim pesan error
             return response()->json([
-                'message' => 'Transaction stored successfully',
-                'status' => 'success',
-            ]);
-        });
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 400);
+        }
     }
+
 
     public function decreaseStock($cartItems)
     {
         foreach ($cartItems as $cartItem) {
-            $stock = Stock::where('product_variant_id', $cartItem->product_variant_id)->first();
+            $productVariant = ProductVariant::where('id', $cartItem->product_variant_id)->first();
 
-            if ($stock) {
-                $stock->quantity -= $cartItem->quantity;
-                $stock->save();
+            if ($productVariant) {
+                $productVariant->stock -= $cartItem->quantity;
+                $productVariant->save();
 
                 $stockMovement = StockMovement::create([
                     'product_variant_id' => $cartItem->product_variant_id,

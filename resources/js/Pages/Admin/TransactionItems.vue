@@ -29,6 +29,7 @@ const columns = [
     { accessorKey: 'total_price', header: 'Total Harga' },
     { accessorKey: 'discount', header: 'Diskon' },
     { accessorKey: 'discounted_total_price', header: 'Total Akhir' },
+    { accessorKey: 'profit', header: 'Keuntungan' },
 ];
 
 // Data transaksi
@@ -156,8 +157,11 @@ const handlePageChange = (newPageIndex) => {
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
                                 <template v-if="cell.column.id === 'price' || cell.column.id === 'total_price' || cell.column.id === 'discount'
-                                    || cell.column.id === 'discounted_total_price'">
-                                    {{ formatRupiah(cell.getValue()) }}
+                                    || cell.column.id === 'discounted_total_price' || cell.column.id === 'profit'">
+                                    <span
+                                        :class="{ 'text-green-600 font-semibold': cell.column.id === 'profit', 'text-red-600 font-semibold': cell.column.id === 'discount' }">
+                                        {{ formatRupiah(cell.getValue()) }}
+                                    </span>
                                 </template>
 
                                 <template v-else>

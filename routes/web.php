@@ -7,7 +7,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\{
     Pos\PosController,
     ProfileController,
-    RestockController,
+    PurchaseController,
     SettingController,
     RestockListController,
     UserSettingController,
@@ -31,6 +31,7 @@ use App\Http\Controllers\{
     Admin\DebtPaymentHistoryController
 };
 use App\Http\Controllers\Admin\DebtController;
+use App\Http\Controllers\Admin\RestockController;
 use App\Http\Controllers\Admin\UnitController;
 
 // Email Verification Routes
@@ -73,15 +74,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/products/add-variant', [ProductController::class, 'storeVariant'])->name('products.store.variant');
             Route::resource('/products', ProductController::class);
 
-            // Restock Routes
-            Route::resource('/restocks', RestockController::class);
+            // Purchase Routes
+            Route::resource('/purchases', PurchaseController::class);
             Route::resource('/restock-lists', RestockListController::class)->middleware('check.mobile');
             Route::post('/restock-lists/print', [RestockListController::class, 'print']);
 
             // Other Admin Routes
             Route::resource('/users', UserController::class);
             Route::resource('/categories', CategoryController::class);
-            Route::resource('/stocks', StockController::class);
+            Route::resource('/restocks', RestockController::class);
             Route::resource('/stock-movements', StockMovementController::class);
             Route::resource('/carts', CartController::class);
             Route::resource('/cart-items', CartItemController::class);
@@ -136,8 +137,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/settings/updateSettings', [SettingController::class, 'updateSettings']);
     Route::resource('/settings', SettingController::class);
 
-    // Restock Routes
-    Route::resource('/restocks', RestockController::class);
+    // Purchase Routes
+    Route::resource('/purchases', PurchaseController::class);
 });
 
 require __DIR__ . '/auth.php';

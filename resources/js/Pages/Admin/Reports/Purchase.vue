@@ -5,13 +5,13 @@
             <!-- <Button @click="download">Download</Button> -->
             <ReportCalendar api-endpoint="/api/purchases" />
 
-            <ReportLineChart apiEndpoint="/api/restocks/chartData" chartTitle="Total Revenue Over Time"
-                yAxisLabel="restocks" xAxisLabel="Time Period" labelRange="Select Time Range"
+            <ReportLineChart apiEndpoint="/api/purchases/chartData" chartTitle="Total Revenue Over Time"
+                yAxisLabel="purchases" xAxisLabel="Time Period" labelRange="Select Time Range"
                 placeholderRange="Choose Range" :rangeOptions="[
                     { value: 'weekly', label: 'Weekly' },
                     { value: 'monthly', label: 'Monthly' },
                     { value: 'yearly', label: 'Yearly' }
-                ]" defaultRange="monthly" dataKey="restocklist" />
+                ]" defaultRange="monthly" dataKey="purchaselist" />
         </div>
     </AdminLayout>
 </template>

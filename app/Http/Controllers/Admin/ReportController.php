@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Models\Restock;
+use App\Models\Purchase;
 use App\Models\Transaction;
 use Barryvdh\Debugbar\Facades\Debugbar;
 use Barryvdh\Debugbar\Twig\Extension\Debug;
@@ -52,7 +52,7 @@ class ReportController extends Controller
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        $purchases = Restock::whereBetween('created_at', [$startDate, $endDate])
+        $purchases = Purchase::whereBetween('created_at', [$startDate, $endDate])
             ->get()
             ->groupBy(function ($item) {
                 return $item->created_at->format('Y-m-d');

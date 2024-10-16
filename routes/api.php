@@ -1,6 +1,6 @@
 <?php
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\RestockController;
+use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\Admin\CartController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\UserController;
@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\RestockListController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\RestockController;
 use App\Http\Controllers\Admin\CartItemController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
@@ -16,9 +17,9 @@ use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\StockMovementController;
+use App\Http\Controllers\Admin\DiscountProductController;
 use App\Http\Controllers\Admin\TransactionItemController;
 use App\Http\Controllers\Admin\DebtPaymentHistoryController;
-use App\Http\Controllers\Admin\DiscountProductController;
 
 // User Routes
 Route::get('/users', [UserController::class, 'userData']);
@@ -33,7 +34,7 @@ Route::post('/products/get', [ProductController::class, 'getProduct']);
 Route::post('/products/getVariantByName', [ProductController::class, 'getProductByName']);
 
 // Stock Routes
-Route::get('/stocks', [StockController::class, 'stockData']);
+Route::get('/restocks', [RestockController::class, 'restockData']);
 Route::get('/stock-movements', [StockMovementController::class, 'stockMovementData']);
 
 // Cart and Cart Item Routes
@@ -54,10 +55,10 @@ Route::get('/debt-payment-history', [DebtPaymentHistoryController::class, 'getDe
 // Unit Routes
 Route::get('/units', [UnitController::class, 'unitData']);
 
-// Supplier and Restock Routes
+// Supplier and Purchase Routes
 Route::get('/suppliers', [SupplierController::class, 'supplierData']);
-Route::get('/restocks', [RestockController::class, 'restockData']);
-Route::get('/restocks/chartData', [RestockController::class, 'getRestockChartData']);
+Route::get('/purchases', [PurchaseController::class, 'purchaseData']);
+Route::get('/purchases/chartData', [PurchaseController::class, 'getPurchaseChartData']);
 Route::get('restock-lists', [RestockListController::class, 'restockListData']);
 
 // Report Routes

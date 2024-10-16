@@ -13,12 +13,10 @@ return new class extends Migration
     {
         Schema::create('restocks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('supplier_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_variant_id')->constrained()->onDelete('cascade');
             $table->integer('quantity');
-            $table->double('price');
-            $table->text('note')->nullable();
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->double('cost');
+            $table->enum('status', ['available', 'in-use', 'sold-out'])->default('available');
             $table->timestamps();
         });
     }

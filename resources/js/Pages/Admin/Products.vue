@@ -64,7 +64,6 @@ const openEditModal = (product) => {
         name: product.name,
         category_id: oldCategory.id,
         price: product.price,
-        cost: product.cost,
         status: product.status,
         quantity: product.quantity,
         unit_id: product.unit_id.toString(),
@@ -84,7 +83,6 @@ const formSchema = toTypedSchema(z.object({
     name: z.string().min(2),
     category_id: z.number().min(1),
     price: z.number(),
-    cost: z.number(),
     status: z.string().min(2),
     quantity: z.string(),
     unit_id: z.string(),
@@ -167,7 +165,8 @@ const columns = [
     { accessorKey: 'variant', header: 'Variasi' },
     { accessorKey: 'category', header: 'Kategori' },
     { accessorKey: 'price', header: 'Harga Jual' },
-    { accessorKey: 'cost', header: 'Harga Modal' },
+    { accessorKey: 'stock', header: 'Stok' },
+    { accessorKey: 'stock_status', header: 'Status Stok' },
     { accessorKey: 'status', header: 'Status' },
 ];
 
@@ -356,7 +355,7 @@ const generateSKU = async () => {
 
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                <template v-if="cell.column.id === 'price' || cell.column.id === 'cost'">
+                                <template v-if="cell.column.id === 'price'">
                                     {{ formatRupiah(cell.getValue()) }}
                                 </template>
 
@@ -425,7 +424,6 @@ const generateSKU = async () => {
 
                     <div class="flex flex-col md:flex-row gap-4">
                         <FormInput name="price" label="Harga Jual" type="number" />
-                        <FormInput name="cost" label="Harga Modal" type="number" />
                     </div>
                     <div class="flex flex-col md:flex-row gap-4">
                         <div class="w-full">
@@ -568,7 +566,6 @@ const generateSKU = async () => {
 
                     <div class="flex flex-col md:flex-row gap-4">
                         <FormInput name="price" label="Harga Jual" type="number" />
-                        <FormInput name="cost" label="Harga Modal" type="number" />
                     </div>
                     <div class="flex flex-col md:flex-row gap-4">
 

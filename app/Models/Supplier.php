@@ -19,4 +19,9 @@ class Supplier extends Model
         'contact_position',
         'status',
     ];
+
+    public function purchases()
+    {
+        return $this->hasMany(Purchase::class);
+    }
 }

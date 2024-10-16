@@ -63,6 +63,7 @@ class TransactionController extends Controller
                 'payment_method' => $transaction->payment_method,
                 'user' => $transaction->user->name,
                 'created_at' => $transaction->created_at->format('d F Y H:i'),
+                'profit' => $transaction->total_profit,
             ];
         });
 

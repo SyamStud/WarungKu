@@ -64,6 +64,7 @@ class TransactionItemController extends Controller
                 'discount' => $transactionItem->discount,
                 'total_price' => $transactionItem->total_price,
                 'discounted_total_price' => $transactionItem->discounted_total_price,
+                'profit' => $transactionItem->profit,
             ];
         });
 

@@ -21,7 +21,6 @@ class ProductVariantFactory extends Factory
             'price' => $this->faker->numberBetween(1, 5) * 1000,
             'unit_id' => 1,
             'quantity' => 1,
-            'cost' => $this->faker->numberBetween(1, 5) * 1000,
             'status' => 'active',
         ];
     }

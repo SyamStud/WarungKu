@@ -16,6 +16,7 @@ class TransactionItem extends Model
         'quantity',
         'price',
         'total_price',
+        'profit',
     ];
 
     public function transaction()

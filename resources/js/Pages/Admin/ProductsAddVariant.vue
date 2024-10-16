@@ -36,13 +36,7 @@ const errors = ref({});
 const selectedProducts = ref([]);
 const units = ref([]);
 
-const isCost = ref(true);
 const isStock = ref(true);
-
-// Fungsi untuk menangani perubahan pada switch "Harga Modal"
-const handleCost = (value) => {
-    isCost.value = value;
-};
 
 // Fungsi untuk menangani perubahan pada switch "Stok"
 const handleStock = (value) => {
@@ -58,7 +52,6 @@ const addFormSchema = toTypedSchema(z.object({
         quantity: z.string().min(1).max(50),
         unit_id: z.any(),
         price: z.number().min(1),
-        cost: z.any().optional(),
         stock: z.any().optional()
     }))
 }));
@@ -70,7 +63,7 @@ const form = useForm({
     initialValues: {
         product_id: selectedProducts ? selectedProducts.id : null,
         status: 'active',
-        variantInputs: [{ quantity: '1', unit_id: '1', price: '', cost: '', stock: '' }]
+        variantInputs: [{ quantity: '1', unit_id: '1', price: '', stock: '' }]
     },
 });
 
@@ -202,7 +195,7 @@ const updateIdProduct = (value) => {
 // Fungsi untuk menambahkan input variasi produk
 const addVariantInput = () => {
     const currentVariants = [...form.values.variantInputs];
-    currentVariants.push({ quantity: '1', unit_id: '1', price: '', cost: '', stock: '' });
+    currentVariants.push({ quantity: '1', unit_id: '1', price: '', stock: '' });
     form.setFieldValue('variantInputs', currentVariants);
 };
 
@@ -226,7 +219,7 @@ const updateVariantInput = (index, field, event) => {
         value = event;
     }
 
-    if (['price', 'cost', 'stock'].includes(field)) {
+    if (['price', 'stock'].includes(field)) {
         value = value === '' ? '' : Number(value);
     } if (field === 'quantity') {
         value = value === '' ? '' : value.toString();
@@ -249,11 +242,6 @@ const updateVariantInput = (index, field, event) => {
         <h1 class="text-2xl font-semibold text-gray-900">Tambah Variasi Produk</h1>
         <hr class="my-5 border-[1.5px] bg-gray-300">
         <div class="flex items-center gap-8">
-            <div class="flex items-center gap-4">
-                <label class="text-md font-bold text-gray-900">Harga Modal</label>
-                <Switch :checked="isCost" :modelValue="isCost" @update:checked="handleCost" />
-            </div>
-
             <Separator orientation="vertical" class="h-5 w-[2px] bg-gray-300" />
             <div class="flex items-center gap-4">
                 <label class="text-md font-bold text-gray-900 ">Stok</label>
@@ -356,12 +344,6 @@ const updateVariantInput = (index, field, event) => {
                                 <FormInput :name="`variantInputs.${index}.price`" :value="input.price" :errors="errors"
                                     label="Harga Jual" type="number"
                                     @input="(e) => updateVariantInput(index, 'price', e)" />
-                            </div>
-
-                            <div v-if="isCost" class="w-full">
-                                <FormInput :name="`variantInputs.${index}.cost`" :id="`cost-${index}`"
-                                    :value="input.cost" :errors="errors" label="Harga Modal" type="number"
-                                    @input="(e) => updateVariantInput(index, 'cost', e)" />
                             </div>
 
                             <div v-if="isStock" class="w-full">

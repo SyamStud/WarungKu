@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use Inertia\Inertia;
-use App\Models\Stock;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
@@ -60,23 +59,19 @@ class ProductController extends Controller
         $createdVariants = $product->productVariants()->createMany($productVariants->toArray());
 
         foreach ($createdVariants as $index => $variant) {
-            Debugbar::info($variant);
+            $variant->stock = isset($request->variantInputs[$index]['stock']) ? $request->variantInputs[$index]['stock'] : 0;
 
-            $stock = new Stock();
-            $stock->product_variant_id = $variant->id;
-            $stock->quantity = isset($request->variantInputs[$index]['stock']) ? $request->variantInputs[$index]['stock'] : 0;
-
-            if ($stock->quantity == 0) {
-                $stock->status = 'not-set';
-            } else if ($stock->quantity < 10) {
-                $stock->status = 'limit-stock';
-            } else if ($stock->quantity >= 10) {
-                $stock->status = 'in-stock';
+            if ($variant->stock == 0) {
+                $variant->stock_status = 'not-set';
+            } else if ($variant->stock < 10) {
+                $variant->stock_status = 'limit-stock';
+            } else if ($variant->stock >= 10) {
+                $variant->stock_status = 'in-stock';
             } else {
-                $stock->status = 'out-of-stock';
+                $variant->stock_status = 'out-of-stock';
             }
 
-            $stock->save();
+            $variant->save();
         }
 
         return response()->json([
@@ -111,23 +106,19 @@ class ProductController extends Controller
         $createdVariants = $product->productVariants()->createMany($productVariants->toArray());
 
         foreach ($createdVariants as $index => $variant) {
-            Debugbar::info($variant);
+            $variant->stock = isset($request->variantInputs[$index]['stock']) ? $request->variantInputs[$index]['stock'] : 0;
 
-            $stock = new Stock();
-            $stock->product_variant_id = $variant->id;
-            $stock->quantity = isset($request->variantInputs[$index]['stock']) ? $request->variantInputs[$index]['stock'] : 0;
-
-            if ($stock->quantity == 0) {
-                $stock->status = 'not-set';
-            } else if ($stock->quantity < 10) {
-                $stock->status = 'limit-stock';
-            } else if ($stock->quantity >= 10) {
-                $stock->status = 'in-stock';
+            if ($variant->stock == 0) {
+                $variant->stock_status = 'not-set';
+            } else if ($variant->stock < 10) {
+                $variant->stock_status = 'limit-stock';
+            } else if ($variant->stock >= 10) {
+                $variant->stock_status = 'in-stock';
             } else {
-                $stock->status = 'out-of-stock';
+                $variant->stock_status = 'out-of-stock';
             }
 
-            $stock->save();
+            $variant->save();
         }
 
         return response()->json([
@@ -147,7 +138,6 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'category_id' => 'exists:categories,id',
             'price' => 'required|numeric',
-            'cost' => 'numeric',
             'status' => 'required',
             'quantity' => 'required',
             'unit_id' => 'required|exists:units,id',
@@ -168,7 +158,6 @@ class ProductController extends Controller
         $product->productVariants->each(function ($variant) use ($request) {
             $variant->update([
                 'price' => $request->price,
-                'cost' => $request->cost,
                 'status' => $request->status,
                 'quantity' => $request->quantity,
                 'unit_id' => $request->unit_id,
@@ -254,7 +243,7 @@ class ProductController extends Controller
      */
     public function productVariantData(Request $request)
     {
-        $query = ProductVariant::query()->with('product', 'unit', 'stocks');
+        $query = ProductVariant::query()->with('product', 'unit');
 
         // Handle global search
         if ($request->has('search')) {
@@ -272,7 +261,6 @@ class ProductController extends Controller
                     })
                     ->orWhere('quantity', 'like', '%' . $searchTerm . '%')
                     ->orWhere('price', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('cost', 'like', '%' . $searchTerm . '%')
                     ->orWhere('status', 'like', '%' . $searchTerm . '%');
             });
         }
@@ -300,12 +288,12 @@ class ProductController extends Controller
                 'name' => $product->product->name,
                 'category' => $product->product->category->name,
                 'price' => $product->price,
-                'cost' => $product->cost,
                 'status' => $product->status,
                 'quantity' => $product->quantity,
                 'unit' => $product->unit->name,
                 'variant' => $product->quantity . ' ' . $product->unit->name,
-                'stock' => $product->stocks->sum('quantity'),
+                'stock' => $product->stock,
+                'stock_status' => $product->stock_status,
                 'unit_id' => $product->unit->id
             ];
         });
@@ -438,7 +426,7 @@ class ProductController extends Controller
         // Jika tidak ada cache, lakukan query dan mapping
         $products = ProductVariant::whereHas('product', function ($query) use ($request) {
             $query->where('name', 'like', '%' . $request->name . '%');
-        })->with('product:id,sku,name', 'unit:id,name', 'stocks:id,product_variant_id,quantity')->get();
+        })->with('product:id,sku,name', 'unit:id,name')->get();
 
         if ($products->isEmpty()) {
             return response()->json([
@@ -453,12 +441,11 @@ class ProductController extends Controller
                 'sku' => $productVariant->product->sku,
                 'name' => $productVariant->product->name,
                 'price' => $productVariant->price,
-                'cost' => $productVariant->cost,
                 'status' => $productVariant->status,
                 'quantity' => $productVariant->quantity,
                 'unit' => $productVariant->unit->name,
                 'variant' => $productVariant->quantity == '1' ? $productVariant->unit->name : $productVariant->quantity . ' ' . $productVariant->unit->name,
-                'stock' => $productVariant->stocks->sum('quantity'),
+                'stock' => $productVariant->stock,
                 'unit_id' => $productVariant->unit->id
             ];
         });
