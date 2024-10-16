@@ -15,7 +15,11 @@ class TransactionItem extends Model
         'product_variant_id',
         'quantity',
         'price',
+        'disount',
+        'discounted_price',
         'total_price',
+        'discounted_total_price',
+        'restock_id',
         'profit',
     ];
 

@@ -13,10 +13,12 @@ class Transaction extends Model
         'user_id',
         'transaction_code',
         'total_price',
+        'discount',
+        'tax',
+        'grand_total',
         'total_payment',
         'total_change',
         'payment_method',
-        'grand_total',
         'total_profit',
     ];
 
