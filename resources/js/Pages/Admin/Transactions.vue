@@ -24,6 +24,7 @@ const columns = [
     { accessorKey: 'grand_total', header: 'Total Akhir' },
     { accessorKey: 'total_payment', header: 'Total Bayar' },
     { accessorKey: 'total_change', header: 'Kembalian' },
+    { accessorKey: 'payment_method', header: 'Metode Pembayaran' },
     { accessorKey: 'created_at', header: 'Tanggal Transaksi' },
     { accessorKey: 'user', header: 'Kasir' },
 ];
@@ -153,7 +154,7 @@ const handlePageChange = (newPageIndex) => {
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
                                 <template
-                                    v-if="cell.column.id === 'transaction_code' || cell.column.id === 'created_at' || cell.column.id === 'user'">
+                                    v-if="cell.column.id === 'transaction_code' || cell.column.id === 'created_at' || cell.column.id === 'user' || cell.column.id === 'payment_method'">
                                     {{ cell.getValue() }}
                                 </template>
 

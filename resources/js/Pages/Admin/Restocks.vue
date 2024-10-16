@@ -23,12 +23,14 @@ import FormControl from '@/Components/ui/form/FormControl.vue';
 import Textarea from '@/Components/ui/textarea/Textarea.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
 import Button from '@/components/ui/button/Button.vue';
+import { useFormatRupiah } from '@/Composables/useFormatRupiah';
 
 const Toast = useToast();
+const { formatRupiah } = useFormatRupiah();
 
 /* MODAL */
-const isEditModalOpen = ref(false); 
-const isDeleteModalOpen = ref(false); 
+const isEditModalOpen = ref(false);
+const isDeleteModalOpen = ref(false);
 const selectedRestock = ref(null);
 const isEdit = ref(false);
 
@@ -248,7 +250,14 @@ const handlePageChange = (newPageIndex) => {
 
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() }}
+                                <template
+                                    v-if="cell.column.id === 'price'">
+                                    {{ formatRupiah(cell.getValue()) }}
+                                </template>
+
+                                <template v-else>
+                                    {{ cell.getValue() }}
+                                </template>
                             </TableCell>
 
                             <!-- Kolom untuk aksi -->

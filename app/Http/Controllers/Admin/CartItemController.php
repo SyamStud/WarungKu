@@ -72,9 +72,13 @@ class CartItemController extends Controller
                 'id' => $cartItem->id,
                 'cart' => $cartItem->cart->transaction_code,
                 'product' => $cartItem->product->name,
+                'variant' => $cartItem->productVariant ? ($cartItem->productVariant->quantity == 1 ? $cartItem->productVariant->unit->name : $cartItem->productVariant->quantity . ' - ' . $cartItem->productVariant->unit->name) : '',
                 'quantity' => $cartItem->quantity,
                 'price' => $cartItem->price,
+                'discount' => $cartItem->discount,
+                'discount_price' => $cartItem->discount_price,
                 'total_price' => $cartItem->total_price,
+                'discounted_total_price' => $cartItem->discounted_total_price,
             ];
         });
 

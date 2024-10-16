@@ -60,50 +60,52 @@ Route::middleware('auth')->group(function () {
 });
 
 // Admin Routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     // Admin Routes
-    Route::prefix('admin')->group(function () {
-        // Dashboard Routes
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-        Route::get('/dashboard/dashboardSummary', [DashboardController::class, 'dashboardSummary']);
+    Route::middleware('role:admin')->group(function () {
+        Route::prefix('admin')->group(function () {
+            // Dashboard Routes
+            Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/dashboard/dashboardSummary', [DashboardController::class, 'dashboardSummary']);
 
-        // Product Routes
-        Route::get('/products/add-variant', [ProductController::class, 'addVariant'])->name('products.add.variant');
-        Route::post('/products/add-variant', [ProductController::class, 'storeVariant'])->name('products.store.variant');
-        Route::resource('/products', ProductController::class);
+            // Product Routes
+            Route::get('/products/add-variant', [ProductController::class, 'addVariant'])->name('products.add.variant');
+            Route::post('/products/add-variant', [ProductController::class, 'storeVariant'])->name('products.store.variant');
+            Route::resource('/products', ProductController::class);
 
-        // Restock Routes
-        Route::resource('/restocks', RestockController::class);
-        Route::resource('/restock-lists', RestockListController::class)->middleware('check.mobile');
-        Route::post('/restock-lists/print', [RestockListController::class, 'print']);
+            // Restock Routes
+            Route::resource('/restocks', RestockController::class);
+            Route::resource('/restock-lists', RestockListController::class)->middleware('check.mobile');
+            Route::post('/restock-lists/print', [RestockListController::class, 'print']);
 
-        // Other Admin Routes
-        Route::resource('/users', UserController::class);
-        Route::resource('/categories', CategoryController::class);
-        Route::resource('/stocks', StockController::class);
-        Route::resource('/stock-movements', StockMovementController::class);
-        Route::resource('/carts', CartController::class);
-        Route::resource('/cart-items', CartItemController::class);
-        Route::resource('/discount-products', DiscountProductController::class);
-        Route::resource('/transactions', TransactionController::class);
-        Route::resource('/discounts', DiscountController::class);
-        Route::resource('/transaction-items', TransactionItemController::class);
-        Route::resource('/customers', CustomerController::class);
-        Route::resource('/debt-items', DebtItemController::class);
-        Route::resource('/units', UnitController::class);
-        Route::resource('/debts', DebtController::class);
-        Route::post('/debts/delete', [DebtController::class, 'destroy']);
+            // Other Admin Routes
+            Route::resource('/users', UserController::class);
+            Route::resource('/categories', CategoryController::class);
+            Route::resource('/stocks', StockController::class);
+            Route::resource('/stock-movements', StockMovementController::class);
+            Route::resource('/carts', CartController::class);
+            Route::resource('/cart-items', CartItemController::class);
+            Route::resource('/discount-products', DiscountProductController::class);
+            Route::resource('/transactions', TransactionController::class);
+            Route::resource('/discounts', DiscountController::class);
+            Route::resource('/transaction-items', TransactionItemController::class);
+            Route::resource('/customers', CustomerController::class);
+            Route::resource('/debt-items', DebtItemController::class);
+            Route::resource('/units', UnitController::class);
+            Route::resource('/debts', DebtController::class);
+            Route::post('/debts/delete', [DebtController::class, 'destroy']);
 
-        // Supplier Routes
-        Route::post('/suppliers/getByName', [SupplierController::class, 'getByName']);
-        Route::resource('/suppliers', SupplierController::class);
+            // Supplier Routes
+            Route::post('/suppliers/getByName', [SupplierController::class, 'getByName']);
+            Route::resource('/suppliers', SupplierController::class);
 
-        // Report Routes
-        Route::get('/reports/transaction', [ReportController::class, 'transactionIndex']);
-        Route::get('/reports/purchase', [ReportController::class, 'purchaseIndex']);
+            // Report Routes
+            Route::get('/reports/transaction', [ReportController::class, 'transactionIndex']);
+            Route::get('/reports/purchase', [ReportController::class, 'purchaseIndex']);
 
-        // Debt Payment History
-        Route::get('/debt-payment-history', [DebtPaymentHistoryController::class, 'index']);
+            // Debt Payment History
+            Route::get('/debt-payment-history', [DebtPaymentHistoryController::class, 'index']);
+        });
     });
 
 

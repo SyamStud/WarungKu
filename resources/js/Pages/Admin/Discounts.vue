@@ -375,6 +375,20 @@ const handlePageChange = (newPageIndex) => {
                                         cell.getValue() === 'order' ? 'Potongan Harga Belanja' : '-' }}
                                 </template>
 
+                                <template v-if="cell.column.id === 'is_active'">
+                                    <span :class="{
+                                        'flex gap-1 items-center': '1',
+                                        'text-green-500': cell.getValue() === '1',
+                                        'text-red-500': cell.getValue() === '0'
+                                    }">
+                                        <img class="w-5"
+                                            :src="cell.getValue() === '0' ? 'https://img.icons8.com/?size=100&id=63688&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=63312&format=png&color=000000'"
+                                            alt="">
+
+                                        {{ cell.getValue() === '1' ? 'Aktif' : 'Tidak Aktif' }}
+                                    </span>
+                                </template>
+
                                 <template v-else-if="cell.column.id === 'amount'">
                                     <template v-if="row.original.amount_type === 'percentage'">
                                         {{ cell.getValue() }}%
@@ -388,7 +402,7 @@ const handlePageChange = (newPageIndex) => {
                                 </template>
 
                                 <template v-else>
-                                    {{ cell.getValue() ? cell.getValue() : '-' }}
+                                    {{ cell.getValue() ? cell.getValue() : '0' }}
                                 </template>
                             </TableCell>
 

@@ -9,6 +9,9 @@ import { Input } from '@/Components/ui/input/index.js';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
+import { useFormatRupiah } from '@/Composables/useFormatRupiah';
+
+const { formatRupiah } = useFormatRupiah();
 
 /* Kolom tabel yang menampilkan berbagai informasi terkait pembayaran utang */
 const columns = [
@@ -19,8 +22,8 @@ const columns = [
     { accessorKey: 'quantity', header: 'Kuantitas' },
     { accessorKey: 'total_debt', header: 'Total Hutang' },
     { accessorKey: 'paid_amount', header: 'Total Dibayar' },
-    { accessorKey: 'payment_method', header: 'Metode Pembayaran' },
     { accessorKey: 'debt_remaining', header: 'Total Tersisa' },
+    { accessorKey: 'payment_method', header: 'Metode Pembayaran' },
     { accessorKey: 'paid_at', header: 'Tanggal Pembayaran' },
     { accessorKey: 'user', header: 'Kasir' },
 ];
@@ -154,7 +157,14 @@ const handlePageChange = (newPageIndex) => {
 
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() }}
+                                <template
+                                    v-if="cell.column.id === 'total_debt' || cell.column.id === 'paid_amount' || cell.column.id === 'debt_remaining'">
+                                    {{ formatRupiah(cell.getValue()) }}
+                                </template>
+
+                                <template v-else>
+                                    {{ cell.getValue() }}
+                                </template>
                             </TableCell>
                         </TableRow>
                     </TableBody>

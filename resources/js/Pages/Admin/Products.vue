@@ -31,8 +31,10 @@ import FormMessage from '@/Components/ui/form/FormMessage.vue';
 import Multiselect from 'vue-multiselect';
 import Label from '@/components/ui/label/Label.vue';
 import Button from '@/components/ui/button/Button.vue';
+import { useFormatRupiah } from '@/Composables/useFormatRupiah';
 
 const Toast = useToast();
+const { formatRupiah } = useFormatRupiah();
 
 /* MODAL */
 // State untuk kontrol modal
@@ -354,7 +356,29 @@ const generateSKU = async () => {
 
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() }}
+                                <template v-if="cell.column.id === 'price' || cell.column.id === 'cost'">
+                                    {{ formatRupiah(cell.getValue()) }}
+                                </template>
+
+                                <template v-else-if="cell.column.id === 'status'">
+                                    <span :class="{
+                                        'flex gap-1 items-center': true,
+                                        'text-green-500': cell.getValue() === 'active',
+                                        'text-red-500': cell.getValue() === 'inactive',
+                                        'text-gray-500 gap-2': cell.getValue() === 'draft'
+                                    }">
+                                        <img :class="cell.getValue() === 'draft' ? 'w-7' : 'w-5'"
+                                            :src="cell.getValue() === 'inactive' ? 'https://img.icons8.com/?size=100&id=63688&format=png&color=000000' : cell.getValue() === 'active' ? 'https://img.icons8.com/?size=100&id=63312&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=10264&format=png&color=737373'"
+                                            alt="">
+
+                                        {{ cell.getValue() === 'active' ? 'Aktif' : cell.getValue() === 'inactive' ?
+                                            'Tidak Aktif' : 'Draft' }}
+                                    </span>
+                                </template>
+
+                                <template v-else>
+                                    {{ cell.getValue() }}
+                                </template>
                             </TableCell>
 
                             <!-- Kolom untuk aksi -->

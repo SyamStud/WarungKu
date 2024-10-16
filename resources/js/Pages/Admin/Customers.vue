@@ -27,6 +27,8 @@ import Button from '@/components/ui/button/Button.vue';
 // Inisialisasi Toast untuk notifikasi
 const Toast = useToast();
 
+const isLoading = ref(false);
+
 /* MODAL */
 // State untuk modal tambah, edit, dan hapus pelanggan
 const isAddModalOpen = ref(false);

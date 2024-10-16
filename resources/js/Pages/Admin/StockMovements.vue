@@ -140,7 +140,27 @@ const handlePageChange = (newPageIndex) => {
 
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() }}
+                                <template v-if="cell.column.id === 'quantity'">
+                                    {{ cell.column.id === 'quantity' && row.getValue('type') === 'out' ? -cell.getValue() : cell.getValue() }}
+                                </template>
+
+                                <template v-else-if="cell.column.id === 'type'">
+                                    <span :class="{
+                                        'flex gap-1 items-center': true,
+                                        'text-green-500': cell.getValue() === 'in',
+                                        'text-red-500': cell.getValue() === 'out'
+                                    }">
+                                        <img class="w-5"
+                                            :src="cell.getValue() === 'in' ? 'https://img.icons8.com/?size=100&id=26210&format=png&color=40C057' : 'https://img.icons8.com/?size=100&id=26209&format=png&color=FA5252'"
+                                            alt="">
+
+                                        {{ cell.getValue() === 'in' ? 'Masuk' : 'Keluar' }}
+                                    </span>
+                                </template>
+
+                                <template v-else>
+                                    {{ cell.getValue() }}
+                                </template>
                             </TableCell>
                         </TableRow>
                     </TableBody>

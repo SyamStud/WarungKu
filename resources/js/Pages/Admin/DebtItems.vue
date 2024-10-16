@@ -9,6 +9,9 @@ import { Input } from '@/Components/ui/input/index.js';
 import TableHeaderWrapper from '@/Components/ui/table/TableHeaderWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
+import { useFormatRupiah } from '@/Composables/useFormatRupiah';
+
+const { formatRupiah } = useFormatRupiah();
 
 /* Definisi Kolom Tabel */
 const columns = [
@@ -152,7 +155,14 @@ const handlePageChange = (newPageIndex) => {
 
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() }}
+                                <template
+                                    v-if="cell.column.id === 'total_amount' || cell.column.id === 'paid_amount' || cell.column.id === 'remaining_amount'">
+                                    {{ formatRupiah(cell.getValue()) }}
+                                </template>
+
+                                <template v-else>
+                                    {{ cell.getValue() }}
+                                </template>
                             </TableCell>
                         </TableRow>
                     </TableBody>

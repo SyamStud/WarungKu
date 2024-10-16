@@ -13,9 +13,11 @@ import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
 import Button from '@/components/ui/button/Button.vue';
+import { useFormatRupiah } from '@/Composables/useFormatRupiah';
 
 /* Inisialisasi Toast untuk menampilkan notifikasi */
 const Toast = useToast();
+const { formatRupiah } = useFormatRupiah();  // Fungsi untuk format Rupiah
 
 /* MODAL */
 const isDeleteModalOpen = ref(false);  // Mengontrol apakah modal hapus terbuka atau tidak
@@ -201,7 +203,14 @@ const handlePageChange = (newPageIndex) => {
 
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() ? cell.getValue() : '-' }}
+                                <template
+                                    v-if="cell.column.id === 'total_debt' || cell.column.id === 'paid_amount' || cell.column.id === 'remaining_debt'">
+                                    {{ formatRupiah(cell.getValue()) }}
+                                </template>
+
+                                <template v-else>
+                                    {{ cell.getValue() }}
+                                </template>
                             </TableCell>
 
                             <!-- Kolom untuk aksi -->
@@ -221,7 +230,8 @@ const handlePageChange = (newPageIndex) => {
             <!-- Delete Modal -->
             <DialogWrapper v-model:open="isDeleteModalOpen" title="Hapus Hutang" desc="">
                 <p>Menghapus hutang artinya <b>melunasi semua hutang</b> yang dimiliki pelanggan. <span
-                        class="font-extrabold">Anda yakin semua hutang pelanggan telah lunas?</span></p>
+                        class="font-extrabold">Anda
+                        yakin semua hutang pelanggan telah lunas?</span></p>
 
                 <DialogFooter>
                     <Button @click="isDeleteModalOpen = false" variant="outline">Batal</Button>

@@ -85,6 +85,9 @@ class CartController extends Controller
                 'id' => $cart->id,
                 'transaction_code' => $cart->transaction_code,
                 'total_price' => $cart->total_price,
+                'discount' => $cart->discount,
+                'tax' => $cart->tax,
+                'grand_total' => $cart->grand_total,
                 'user' => $cart->user_id ? $cart->user->name : '-',
                 'created_at' => $cart->created_at->format('d F Y H:i'),
             ];
@@ -431,27 +434,42 @@ class CartController extends Controller
             ], 400);
         }
 
-        $cacheKey = 'product_' . md5($request->identifier);
+        // $cacheKey = 'product_' . md5($request->identifier);
 
-        // Try to get product from cache
-        $product = Cache::remember($cacheKey, now()->addHours(24), function () use ($request) {
-            // Use query builder for faster lookup
-            return DB::table('products')
+        $product = DB::table('products')
+            ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
+            ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
+            ->join('units', 'product_variants.unit_id', '=', 'units.id')
+            ->where('products.sku', $request->identifier)
+            ->where('product_variants.status', 'active')
+            ->first();
+
+        // $product = Cache::remember($cacheKey, now()->addHours(24), function () use ($request) {
+        //     // Use query builder for faster lookup
+        //     return DB::table('products')
+        //         ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
+        //         ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
+        //         ->join('units', 'product_variants.unit_id', '=', 'units.id')
+        //         ->where('products.sku', $request->identifier)->first();
+        // });
+
+        if (!$product) {
+            $products = DB::table('products')
                 ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
                 ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
                 ->join('units', 'product_variants.unit_id', '=', 'units.id')
-                ->where('products.sku', $request->identifier)->first();
-        });
+                ->where('products.name', 'like', '%' . $request->identifier . '%')
+                ->where('product_variants.status', 'active')
+                ->get();
 
-        if (!$product) {
-            $products = Cache::remember($cacheKey . '_name', now()->addHours(24), function () use ($request) {
-                return DB::table('products')
-                    ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
-                    ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
-                    ->join('units', 'product_variants.unit_id', '=', 'units.id')
-                    ->where('products.name', 'like', '%' . $request->identifier . '%')
-                    ->get();
-            });
+            // $products = Cache::remember($cacheKey . '_name', now()->addHours(24), function () use ($request) {
+            //     return DB::table('products')
+            //         ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.cost', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
+            //         ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
+            //         ->join('units', 'product_variants.unit_id', '=', 'units.id')
+            //         ->where('products.name', 'like', '%' . $request->identifier . '%')
+            //         ->get();
+            // });
 
             $transformedProducts = $products->map(function ($product) use ($request) {
                 return [
@@ -719,7 +737,7 @@ class CartController extends Controller
                     'product_variant_id' => $cartItem->product_variant_id,
                     'quantity' => $cartItem->quantity,
                     'type' => 'out',
-                    'reference' => 'transaction',
+                    'reference' => 'Transaksi',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

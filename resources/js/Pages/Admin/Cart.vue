@@ -13,9 +13,11 @@ import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
 import Button from '@/components/ui/button/Button.vue';
+import { useFormatRupiah } from '@/Composables/useFormatRupiah';
 
 // Inisialisasi Toast untuk notifikasi
 const Toast = useToast();
+const { formatRupiah } = useFormatRupiah();
 
 /* MODAL */
 const isDeleteModalOpen = ref(false);
@@ -59,6 +61,10 @@ const deleteCart = async () => {
 const columns = [
     { accessorKey: 'transaction_code', header: 'Kode Transaksi' },
     { accessorKey: 'total_price', header: 'Total Belanja' },
+    { accessorKey: 'discount', header: 'Diskon' },
+    { accessorKey: 'tax', header: 'Pajak' },
+    { accessorKey: 'grand_total', header: 'Total Akhir' },
+    { accessorKey: 'created_at', header: 'Tanggal Transaksi' },
     { accessorKey: 'user', header: 'Kasir' },
 ];
 
@@ -163,6 +169,7 @@ const handlePageChange = (newPageIndex) => {
 <template>
 
     <!-- Mengatur judul halaman -->
+
     <Head title="Daftar Transaksi Sementara" />
 
     <AdminLayout>
@@ -195,7 +202,14 @@ const handlePageChange = (newPageIndex) => {
 
                             <!-- Kolom data lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() }}
+                                <template
+                                    v-if="cell.column.id === 'transaction_code' || cell.column.id === 'created_at' || cell.column.id === 'user'">
+                                    {{ cell.getValue() }}
+                                </template>
+
+                                <template v-else>
+                                    {{ formatRupiah(cell.getValue()) }}
+                                </template>
                             </TableCell>
 
                             <!-- Kolom aksi hapus -->

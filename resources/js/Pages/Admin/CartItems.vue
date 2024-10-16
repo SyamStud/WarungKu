@@ -13,9 +13,11 @@ import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import { Table, TableBody, TableCell, TableRow } from '@/Components/ui/table';
 import PaginationWrapper from '@/Components/ui/pagination/PaginationWrapper.vue';
 import Button from '@/components/ui/button/Button.vue';
+import { useFormatRupiah } from '@/Composables/useFormatRupiah';
 
 // Inisialisasi Toast untuk notifikasi
 const Toast = useToast();
+const { formatRupiah } = useFormatRupiah();
 
 /* MODAL */
 const isDeleteModalOpen = ref(false);
@@ -61,9 +63,12 @@ const deleteCartItem = async () => {
 const columns = [
     { accessorKey: 'cart', header: 'Kode Transaksi' },
     { accessorKey: 'product', header: 'Produk' },
+    { accessorKey: 'variant', header: 'Variasi' },
     { accessorKey: 'quantity', header: 'Jumlah' },
     { accessorKey: 'price', header: 'Harga Satuan' },
     { accessorKey: 'total_price', header: 'Total Harga' },
+    { accessorKey: 'discount', header: 'Diskon' },
+    { accessorKey: 'discounted_total_price', header: 'Total Akhir' },
 ];
 
 // State data untuk tabel
@@ -163,6 +168,7 @@ const handlePageChange = (newPageIndex) => {
 
 <template>
     <!-- Mengatur judul halaman -->
+
     <Head title="Daftar Item Transaksi Sementara" />
 
     <AdminLayout>
@@ -192,7 +198,14 @@ const handlePageChange = (newPageIndex) => {
 
                             <!-- Kolom data dari tabel -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() }}
+                                <template v-if="cell.column.id === 'price' || cell.column.id === 'total_price' || cell.column.id === 'discount'
+                                    || cell.column.id === 'discounted_total_price'">
+                                    {{ formatRupiah(cell.getValue()) }}
+                                </template>
+
+                                <template v-else>
+                                    {{ cell.getValue() }}
+                                </template>
                             </TableCell>
 
                             <!-- Kolom aksi hapus -->
