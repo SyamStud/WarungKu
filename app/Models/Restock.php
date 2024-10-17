@@ -12,6 +12,7 @@ class Restock extends Model
     protected $fillable = [
         'product_variant_id',
         'quantity',
+        'difference',
         'cost',
         'status',
     ];

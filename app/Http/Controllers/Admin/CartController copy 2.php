@@ -693,26 +693,30 @@ class CartController extends Controller
                                 ->orderBy('created_at', 'desc')
                                 ->first();
 
-                            $existingStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
-                                ->where('cost', 0)
-                                ->whereDate('created_at', now()->toDateString())
-                                ->first();
+                            // $existingStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
+                            //     ->where('cost', $stockUsed->cost)
+                            //     ->whereDate('created_at', now()->toDateString())
+                            //     ->first();
 
-                            if ($existingStock) {
-                                $stockUsed->difference += $remainingQuantity;
-                                $stockUsed->status = 'overdrawn';
-                                $stockUsed->save();
-                            } else {
-                                $stockUsed = Restock::create([
-                                    'product_variant_id' => $cartItem->product_variant_id,
-                                    'quantity' => 0,
-                                    'difference' => $remainingQuantity,
-                                    'cost' => 0,
-                                    'status' => 'overdrawn',
-                                ]);
-                            }
+                            // if ($existingStock) {
+                            //     $existingStock->quantity -= $remainingQuantity;
+                            //     $existingStock->status = 'overdrawn';
 
-                            $profit = 0;
+                            //     $existingStock->save();
+                            // } else {
+                            //     $stockUsed = Restock::create([
+                            //         'product_variant_id' => $cartItem->product_variant_id,
+                            //         'quantity' => -$remainingQuantity,
+                            //         'cost' => $stockUsed->cost,
+                            //         'status' => 'overdrawn',
+                            //     ]);
+                            // }
+
+                            $stockUsed->difference += $remainingQuantity;
+                            $stockUsed->status = 'overdrawn';
+                            $stockUsed->save();
+
+                            $profit = $cartItem->discounted_price * $remainingQuantity - ($stockUsed->cost * $remainingQuantity);
                             $totalProfit += $profit;
 
                             $transactionItem = DB::table('transaction_items')->insertGetId([

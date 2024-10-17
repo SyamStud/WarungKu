@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_variant_id')->constrained()->onDelete('cascade');
             $table->integer('quantity');
+            $table->integer('difference')->default(0);
             $table->double('cost');
-            $table->enum('status', ['available', 'in-use', 'sold-out'])->default('available');
+            $table->enum('status', ['available', 'in-use', 'sold-out', 'overdrawn'])->default('available');
             $table->timestamps();
         });
     }

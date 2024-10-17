@@ -687,32 +687,31 @@ class CartController extends Controller
                             ->orderBy('created_at', 'asc')
                             ->first();
 
-                        // KETIKA STOCK KOSONG
                         if (!$stockUsed) {
                             $stockUsed = Restock::where('product_variant_id', $cartItem->product_variant_id)
                                 ->orderBy('created_at', 'desc')
                                 ->first();
 
                             $existingStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
-                                ->where('cost', 0)
+                                ->where('cost', $stockUsed->cost)
                                 ->whereDate('created_at', now()->toDateString())
                                 ->first();
 
                             if ($existingStock) {
-                                $stockUsed->difference += $remainingQuantity;
-                                $stockUsed->status = 'overdrawn';
-                                $stockUsed->save();
+                                $existingStock->quantity -= $remainingQuantity;
+                                $existingStock->status = 'overdrawn';
+
+                                $existingStock->save();
                             } else {
                                 $stockUsed = Restock::create([
                                     'product_variant_id' => $cartItem->product_variant_id,
-                                    'quantity' => 0,
-                                    'difference' => $remainingQuantity,
-                                    'cost' => 0,
+                                    'quantity' => -$remainingQuantity,
+                                    'cost' => $stockUsed->cost,
                                     'status' => 'overdrawn',
                                 ]);
                             }
 
-                            $profit = 0;
+                            $profit = $cartItem->discounted_price * $remainingQuantity - ($stockUsed->cost * $remainingQuantity);
                             $totalProfit += $profit;
 
                             $transactionItem = DB::table('transaction_items')->insertGetId([
