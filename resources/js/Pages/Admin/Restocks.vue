@@ -119,6 +119,7 @@ const columns = [
     { accessorKey: 'product', header: 'Nama Produk' },
     { accessorKey: 'variant', header: 'Variasi' },
     { accessorKey: 'quantity', header: 'Kuantitas' },
+    { accessorKey: 'difference', header: 'Selisih' },
     { accessorKey: 'cost', header: 'Harga Beli' },
     { accessorKey: 'created_at', header: 'Tanggal Beli' },
     { accessorKey: 'status', header: 'Status' },
@@ -274,7 +275,36 @@ const updateIdProduct = (value) => {
 
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-                                {{ cell.getValue() }}
+                                <template v-if="cell.column.id === 'quantity'">
+                                    <span
+                                        :class="cell.getValue() <= 0 ? 'text-red-600 font-semibold' : 'text-green-600 font-semibold'">
+                                        {{ cell.getValue() }}
+                                    </span>
+                                </template>
+
+                                <template v-else-if="cell.column.id === 'status'">
+                                    <span :class="{
+                                        'flex gap-1 items-center': true,
+                                        'text-green-500': cell.getValue() === 'available',
+                                        'text-red-500': cell.getValue() === 'sold-out',
+                                        'text-red-500 gap-2': cell.getValue() === 'overdrawn',
+                                        'text-[#228BE6] gap-2': cell.getValue() === 'in-use',
+
+                                    }">
+                                        <img class="w-5"
+                                            :src="cell.getValue() === 'sold-out' ? 'https://img.icons8.com/?size=100&id=63688&format=png&color=000000' : cell.getValue() === 'available' ? 'https://img.icons8.com/?size=100&id=63312&format=png&color=000000' : cell.getValue() === 'in-use' ? 'https://img.icons8.com/?size=100&id=NQGnL8pQZ6OS&format=png&color=228BE6' : 'https://img.icons8.com/?size=100&id=63690&format=png&color=000000'"
+                                            alt="">
+
+                                        {{ cell.getValue() === 'available' ? 'Tersedia' : cell.getValue() === 'sold-out'
+                                            ?
+                                            'Habis Terjual' : cell.getValue() === 'overdrawn' ? `Sedang Digunakan [Terhitung
+                                        Selisih]` : 'Sedang Digunakan' }}
+                                    </span>
+                                </template>
+
+                                <template v-else>
+                                    {{ cell.getValue() }}
+                                </template>
                             </TableCell>
 
                             <!-- Kolom untuk aksi -->
@@ -316,8 +346,7 @@ const updateIdProduct = (value) => {
                     <FormInput name="quantity" label="Stok Tambahan" type="number"
                         placeholder="Masukkan stok tambahan" />
 
-                    <FormInput name="cost" label="Harga Beli" type="number"
-                        placeholder="Masukkan harga beli" />
+                    <FormInput name="cost" label="Harga Beli" type="number" placeholder="Masukkan harga beli" />
 
                     <DialogFooter>
                         <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">

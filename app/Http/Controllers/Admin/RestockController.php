@@ -53,12 +53,40 @@ class RestockController extends Controller
             $restock->status = 'available';
             $restock->save();
         } else {
-            $restock = Restock::create([
-            'product_variant_id' => $productVariant->id,
-            'cost' => $request->cost,
-            'quantity' => $request->quantity,
-            'status' => 'available',
-            ]);
+            // Check if there are previous restocks with negative quantity
+            $previousRestock = Restock::where('product_variant_id', $productVariant->id)
+                ->where('quantity', '<', 0)
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+            if ($previousRestock) {
+                $remainingQuantity = $request->quantity + $previousRestock->quantity;
+
+                if ($remainingQuantity >= 0) {
+                    $previousRestock->quantity = 0;
+                    $previousRestock->status = 'sold-out';
+                    $previousRestock->save();
+
+                    if ($remainingQuantity > 0) {
+                        Restock::create([
+                            'product_variant_id' => $productVariant->id,
+                            'cost' => $request->cost,
+                            'quantity' => $remainingQuantity,
+                            'status' => 'available',
+                        ]);
+                    }
+                } else {
+                    $previousRestock->quantity = $remainingQuantity;
+                    $previousRestock->save();
+                }
+            } else {
+                Restock::create([
+                    'product_variant_id' => $productVariant->id,
+                    'cost' => $request->cost,
+                    'quantity' => $request->quantity,
+                    'status' => 'available',
+                ]);
+            }
         }
 
         $countStockMovement = $request->quantity - $productVariant->stock;
@@ -104,7 +132,7 @@ class RestockController extends Controller
      */
     public function restockData(Request $request)
     {
-        $query = Restock::query()->with('productVariant');
+        $query = Restock::query()->where('status', '!=', 'sold-out')->with('productVariant');
 
         // Handle global search
         if ($request->has('search')) {
@@ -136,6 +164,7 @@ class RestockController extends Controller
                 'product' => $restock->productVariant->product->name,
                 'variant' => $restock->productVariant->quantity == '1' ? $restock->productVariant->unit->name : $restock->productVariant->quantity . ' ' . $restock->productVariant->unit->name,
                 'quantity' => $restock->quantity,
+                'difference' => $restock->difference,
                 'cost' => $restock->cost,
                 'status' => $restock->status,
                 'created_at' => $restock->created_at->format('d M Y H:i'),

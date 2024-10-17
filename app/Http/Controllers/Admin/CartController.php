@@ -687,36 +687,33 @@ class CartController extends Controller
                             ->orderBy('created_at', 'asc')
                             ->first();
 
-                        Debugbar::info($remainingQuantity);
-
+                        // KETIKA STOCK KOSONG
                         if (!$stockUsed) {
                             $stockUsed = Restock::where('product_variant_id', $cartItem->product_variant_id)
                                 ->orderBy('created_at', 'desc')
                                 ->first();
 
                             $existingStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
-                                ->where('cost', $stockUsed->cost)
+                                ->where('cost', 0)
                                 ->whereDate('created_at', now()->toDateString())
                                 ->first();
 
                             if ($existingStock) {
-                                $existingStock->quantity -= $remainingQuantity;
-                                $existingStock->status = 'in-use';
-
-                                $existingStock->save();
+                                $stockUsed->difference += $remainingQuantity;
+                                $stockUsed->status = 'overdrawn';
+                                $stockUsed->save();
                             } else {
                                 $stockUsed = Restock::create([
                                     'product_variant_id' => $cartItem->product_variant_id,
-                                    'quantity' => -$remainingQuantity,
-                                    'cost' => $stockUsed->cost,
-                                    'status' => 'in-use',
+                                    'quantity' => 0,
+                                    'difference' => $remainingQuantity,
+                                    'cost' => 0,
+                                    'status' => 'overdrawn',
                                 ]);
                             }
 
-                            $profit = $cartItem->discounted_price * $remainingQuantity - ($stockUsed->cost * $remainingQuantity);
-                            Debugbar::info($profit);
+                            $profit = 0;
                             $totalProfit += $profit;
-                            Debugbar::info($totalProfit);
 
                             $transactionItem = DB::table('transaction_items')->insertGetId([
                                 'transaction_id' => $transaction->id,
@@ -758,8 +755,10 @@ class CartController extends Controller
                         ]);
 
                         $stockUsed->quantity -= $quantityFromThisStock;
-                        if ($stockUsed->quantity <= 0) {
+                        if ($stockUsed->quantity == 0) {
                             $stockUsed->status = 'sold-out';
+                        } else if ($stockUsed->quantity < 0) {
+                            $stockUsed->status = 'overdrawn';
                         } else {
                             $stockUsed->status = 'in-use';
                         }
