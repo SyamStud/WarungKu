@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\TransactionsExport;
 use Carbon\Carbon;
 use Inertia\Inertia;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 
 class TransactionController extends Controller
 {
@@ -23,7 +25,7 @@ class TransactionController extends Controller
      */
     public function transactionData(Request $request)
     {
-        $query = Transaction::query()->with('user');
+        $query = Transaction::query()->with('user')->orderBy('created_at', 'desc');
 
         // Handle global search
         if ($request->has('search')) {
@@ -160,5 +162,20 @@ class TransactionController extends Controller
                 ]
             ]
         ];
+    }
+
+    public function exportExcel()
+    {
+        // Tangkap tanggal dari query string
+        $startDate = request('start_date');
+        $endDate = request('end_date');
+
+        // Pastikan tanggal diberikan
+        if (!$startDate || !$endDate) {
+            return response()->json(['error' => 'Start date and end date are required'], 400);
+        }
+
+        // Panggil export menggunakan Maatwebsite Excel atau metode lainnya
+        return Excel::download(new TransactionsExport($startDate, $endDate), 'transaksi-' . now() . '.xlsx');
     }
 }

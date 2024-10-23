@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\RestocksExport;
 use Inertia\Inertia;
 use App\Models\Restock;
 use Illuminate\Http\Request;
 use App\Models\StockMovement;
 use App\Models\ProductVariant;
+use App\Models\TransactionItem;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\Debugbar\Facades\Debugbar;
 use Illuminate\Support\Facades\Validator;
 
@@ -127,12 +130,90 @@ class RestockController extends Controller
         ]);
     }
 
+    public function update(Request $request, Restock $restock)
+    {
+        $validation = Validator::make($request->all(), [
+            'product_variant_id' => 'required|exists:product_variants,id',
+            'quantity' => 'required|numeric',
+            'cost' => 'required|numeric',
+        ]);
+
+        if ($validation->fails()) {
+            return response()->json([
+                'message' => $validation->errors(),
+                'errors' => $validation->errors(),
+                'status' => 'error',
+            ]);
+        }
+
+        $restock->update($request->all());
+
+        $productVariant = ProductVariant::find($request->product_variant_id);
+        $productVariant->stock = $request->quantity;
+        $productVariant->save();
+
+        return response()->json([
+            'message' => 'Stok berhasil diperbarui',
+            'status' => 'success',
+        ]);
+    }
+
+    public function audit(Request $request)
+    {
+        $validation = Validator::make($request->all(), [
+            'product_variant_id' => 'required|exists:product_variants,id',
+            'cost' => 'required|numeric',
+        ]);
+
+        if ($validation->fails()) {
+            return response()->json([
+                'message' => $validation->errors(),
+                'errors' => $validation->errors(),
+                'status' => 'error',
+            ]);
+        }
+
+        $restock = Restock::where('id', $request->id)
+            ->first();
+
+        if ($restock) {
+            $restock->cost = $request->cost;
+            $restock->status = 'audit-completed';
+            $restock->save();
+
+            $transactionItem = TransactionItem::where('restock_id', $restock->id)
+                ->get();
+
+            foreach ($transactionItem as $item) {
+                $profit = $item->discounted_total_price - ($item->quantity * $request->cost);
+
+                $item->profit = $profit;
+                $item->save();
+
+                $transaction = $item->transaction;
+
+                $transaction->total_profit += $profit;
+                $transaction->save();
+            }
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Audit stok gagal',
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Audit stok berhasil',
+            'status' => 'success',
+        ]);
+    }
+
     /**
      * Get all stocks data.
      */
     public function restockData(Request $request)
     {
-        $query = Restock::query()->where('status', '!=', 'sold-out')->with('productVariant');
+        $query = Restock::query()->where('status', '!=', 'sold-out')->with('productVariant')->orderBy('updated_at', 'desc');
 
         // Handle global search
         if ($request->has('search')) {
@@ -182,5 +263,10 @@ class RestockController extends Controller
                 'to' => $to,
             ],
         ]);
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(new RestocksExport, 'Stok-' . now() . '.xlsx');
     }
 }

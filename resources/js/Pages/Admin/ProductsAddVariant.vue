@@ -36,13 +36,6 @@ const errors = ref({});
 const selectedProducts = ref([]);
 const units = ref([]);
 
-const isStock = ref(true);
-
-// Fungsi untuk menangani perubahan pada switch "Stok"
-const handleStock = (value) => {
-    isStock.value = value;
-};
-
 // Skema validasi form menggunakan zod dan vee-validate
 const addFormSchema = toTypedSchema(z.object({
     product_id: z.number(),
@@ -52,7 +45,8 @@ const addFormSchema = toTypedSchema(z.object({
         quantity: z.string().min(1).max(50),
         unit_id: z.any(),
         price: z.number().min(1),
-        stock: z.any().optional()
+        cost: z.number().min(1),
+        stock: z.number().min(1),
     }))
 }));
 
@@ -63,7 +57,7 @@ const form = useForm({
     initialValues: {
         product_id: selectedProducts ? selectedProducts.id : null,
         status: 'active',
-        variantInputs: [{ quantity: '1', unit_id: '1', price: '', stock: '' }]
+        variantInputs: [{ quantity: '1', unit_id: '1', price: 0, cost: 0, stock: 0 }]
     },
 });
 
@@ -94,7 +88,7 @@ const onSubmit = async () => {
 
         console.log('values', values);
 
-        const response = await axios.post('/admin/products/add-variant', values);
+        const response = await axios.post('/admin/product-sariants', values);
 
         if (response.data.status === 'error') {
             errors.value = response.data.message;
@@ -167,7 +161,6 @@ const options = ref([])
 const fetchOptions = async () => {
     try {
         const response = await axios.get('/api/products')
-
         options.value = response.data.data.map((product) => ({
             id: product.id,
             name: product.name,
@@ -175,7 +168,6 @@ const fetchOptions = async () => {
         }))
 
         const unitResponse = await axios.get('/api/units')
-
         units.value = unitResponse.data.data.map((unit) => ({
             id: unit.id,
             name: unit.name,
@@ -186,20 +178,22 @@ const fetchOptions = async () => {
     }
 }
 
-// Fungsi untuk memperbarui ID produk yang dipilih
+// Update product ID in form
 const updateIdProduct = (value) => {
     selectedProducts.value = value;
     form.setFieldValue('product_id', value.id);
 };
 
-// Fungsi untuk menambahkan input variasi produk
+// Add new variant input
 const addVariantInput = () => {
     const currentVariants = [...form.values.variantInputs];
-    currentVariants.push({ quantity: '1', unit_id: '1', price: '', stock: '' });
-    form.setFieldValue('variantInputs', currentVariants);
+    if (currentVariants.length < units.value.length) {
+        currentVariants.push({ quantity: '1', unit_id: '', price: 0, cost: 0, stock: 0 });
+        form.setFieldValue('variantInputs', currentVariants);
+    }
 };
 
-// Fungsi untuk menghapus input variasi produk
+// Remove variant input
 const removeVariantInput = (index) => {
     if (form.values.variantInputs && form.values.variantInputs.length > 1) {
         const currentVariants = [...form.values.variantInputs];
@@ -208,7 +202,7 @@ const removeVariantInput = (index) => {
     }
 };
 
-// Fungsi untuk memperbarui nilai input variasi produk
+// Update variant input
 const updateVariantInput = (index, field, event) => {
     const currentVariants = [...form.values.variantInputs];
     let value;
@@ -219,15 +213,28 @@ const updateVariantInput = (index, field, event) => {
         value = event;
     }
 
-    if (['price', 'stock'].includes(field)) {
+    if (['price', 'stock', 'cost'].includes(field)) {
         value = value === '' ? '' : Number(value);
-    } if (field === 'quantity') {
+    } else if (field === 'quantity') {
         value = value === '' ? '' : value.toString();
     }
 
     currentVariants[index] = { ...currentVariants[index], [field]: value };
     form.setFieldValue(`variantInputs.${index}.${field}`, value);
 };
+
+// Compute available units for each variant input
+const availableUnits = computed(() => (currentIndex) => {
+    const selectedUnits = form.values.variantInputs
+        .map(input => input.unit_id)
+        .filter((id, index) => index !== currentIndex && id !== undefined && id !== '');
+
+    return units.value.filter(unit => !selectedUnits.includes(unit.id.toString()));
+});
+
+const canAddMoreVariants = computed(() => {
+    return form.values.variantInputs.length < units.value.length;
+});
 </script>
 
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
@@ -241,17 +248,9 @@ const updateVariantInput = (index, field, event) => {
         <!-- Judul Halaman -->
         <h1 class="text-2xl font-semibold text-gray-900">Tambah Variasi Produk</h1>
         <hr class="my-5 border-[1.5px] bg-gray-300">
-        <div class="flex items-center gap-8">
-            <Separator orientation="vertical" class="h-5 w-[2px] bg-gray-300" />
-            <div class="flex items-center gap-4">
-                <label class="text-md font-bold text-gray-900 ">Stok</label>
-                <Switch :checked="isStock" :modelValue="isStock" @update:checked="handleStock" />
-            </div>
-        </div>
-        <hr class="my-5 border-[1.5px] bg-gray-300">
 
         <div v-if="formReady">
-            <div class="mx-auto p-6 bg-white rounded-lg shadow-lg">
+            <div class="mx-auto p-6 bg-white">
                 <form @submit.prevent="onSubmit" enctype="multipart/form-data" class="space-y-4">
                     <div class="flex flex-col md:flex-row gap-4">
                         <div class="w-full">
@@ -325,8 +324,8 @@ const updateVariantInput = (index, field, event) => {
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectGroup>
-                                                            <SelectItem v-for="unit in units" :key="unit.id.toString()"
-                                                                :value="unit.id.toString()">
+                                                            <SelectItem v-for="unit in availableUnits(index)"
+                                                                :key="unit.id.toString()" :value="unit.id.toString()">
                                                                 {{ unit.name }}
                                                             </SelectItem>
                                                         </SelectGroup>
@@ -346,7 +345,13 @@ const updateVariantInput = (index, field, event) => {
                                     @input="(e) => updateVariantInput(index, 'price', e)" />
                             </div>
 
-                            <div v-if="isStock" class="w-full">
+                            <div class="w-full">
+                                <FormInput :name="`variantInputs.${index}.cost`" :value="input.price" :errors="errors"
+                                    label="Harga Beli" type="number"
+                                    @input="(e) => updateVariantInput(index, 'cost', e)" />
+                            </div>
+
+                            <div class="w-full">
                                 <FormInput :name="`variantInputs.${index}.stock`" :id="`stock-${index}`"
                                     :value="input.stock" :errors="errors" label="Stok" type="number"
                                     @input="(e) => updateVariantInput(index, 'stock', e)" />
@@ -363,7 +368,7 @@ const updateVariantInput = (index, field, event) => {
                         </div>
                     </div>
 
-                    <Button type="button" @click="addVariantInput"
+                    <Button v-if="canAddMoreVariants" type="button" @click="addVariantInput"
                         class="mt-4 gap-2 flex bg-green-600 hover:bg-green-700">
                         <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24">
                             <g fill="none" fill-rule="evenodd">
@@ -379,7 +384,7 @@ const updateVariantInput = (index, field, event) => {
                     <Button style="margin-top: 25px;" type="submit" :class="{ 'bg-slate-500': isLoading }"
                         :disabled="isLoading">
                         <span :class="{ 'opacity-0': isLoading }">
-                            {{ isLoading ? 'Mohon tunggu ...' : 'Tambah Produk' }}
+                            {{ isLoading ? 'Mohon tunggu ...' : 'Tambah Variasi Produk' }}
                         </span>
                         <Spinner v-if="isLoading" size="sm" class="absolute inset-0 m-auto" />
                     </Button>

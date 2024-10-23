@@ -11,7 +11,7 @@ class ProductVariant extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'product_variant_id',
+        'product_id',
         'unit_id',
         'quantity',
         'price',
@@ -20,10 +20,9 @@ class ProductVariant extends Model
         'status',
     ];
 
-
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 
     public function unit()
@@ -39,5 +38,10 @@ class ProductVariant extends Model
     public function cartItems()
     {
         return $this->hasMany(CartItem::class);
+    }
+
+    public function restocks()
+    {
+        return $this->hasMany(Restock::class);
     }
 }

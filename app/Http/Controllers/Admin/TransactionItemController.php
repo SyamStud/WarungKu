@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Models\TransactionItem;
-use Illuminate\Http\Request;
+use App\Exports\TransactionItemsExport;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
+use App\Models\TransactionItem;
+use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 
 class TransactionItemController extends Controller
 {
@@ -22,7 +24,7 @@ class TransactionItemController extends Controller
      */
     public function transactionItemData(Request $request)
     {
-        $query = TransactionItem::query()->with('transaction', 'product');
+        $query = TransactionItem::query()->with('transaction', 'product')->orderBy('created_at', 'desc');
 
         // Handle global search
         if ($request->has('search')) {
@@ -79,5 +81,20 @@ class TransactionItemController extends Controller
                 'to' => $to,
             ],
         ]);
+    }
+
+    public function exportExcel()
+    {
+        // Tangkap tanggal dari query string
+        $startDate = request('start_date');
+        $endDate = request('end_date');
+
+        // Pastikan tanggal diberikan
+        if (!$startDate || !$endDate) {
+            return response()->json(['error' => 'Start date and end date are required'], 400);
+        }
+
+        // Panggil export menggunakan Maatwebsite Excel atau metode lainnya
+        return Excel::download(new TransactionItemsExport($startDate, $endDate), 'transaksi-' . now() . '.xlsx');
     }
 }

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\ProductVariant;
 use App\Models\Stock;
+use Barryvdh\Debugbar\Facades\Debugbar;
 
 class DashboardController extends Controller
 {
@@ -49,12 +50,14 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        $needPurchase = ProductVariant::select('id', DB::raw('stock as total_quantity'))
-            ->with('product') // Pastikan relasi 'product' ada di model ProductVariant
+        $needPurchase = ProductVariant::with('product')
             ->having('stock', '<=', 5) // Memfilter jumlah quantity
-            ->orderBy('total_quantity')
+            ->orderBy('stock')
             ->limit(10)
             ->get();
+
+
+        Debugbar::info($needPurchase);
 
         // Mengembalikan semua data dalam satu respons JSON
         return response()->json([
@@ -63,7 +66,7 @@ class DashboardController extends Controller
             'highest_transaction' => $highestTransactionPrice,
             'top_one' => $topOneProductName,
             'top_products' => $topProducts,
-            'need_purchase' => $needPurchase,
+            'need_restock' => $needPurchase,
         ]);
     }
 }

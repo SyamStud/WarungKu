@@ -45,6 +45,8 @@ const fetchData = async () => {
 // Memanggil fetchData saat komponen dipasang (mounted)
 onMounted(() => {
     fetchData();
+
+    console.log('Dashboard component is mounted', summary.value);
 });
 </script>
 
@@ -155,8 +157,8 @@ onMounted(() => {
                                     class="border-b border-gray-200 hover:bg-gray-50">
                                     <td class="py-3 px-6 text-left">{{ index + 1 }}</td>
                                     <td class="py-3 px-6 text-left font-medium text-gray-900">{{
-                                        product.product_variant.product.name }}</td>
-                                    <td class="py-3 px-6 text-center">{{ product.total_quantity }}</td>
+                                        product.product.name }}</td>
+                                    <td class="py-3 px-6 text-center">{{ product.stock }}</td>
                                 </tr>
                             </tbody>
                         </table>

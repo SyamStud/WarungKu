@@ -96,6 +96,12 @@ class CategoryController extends Controller
     {
         $query = Category::query();
 
+        if ($request->withDeleted) {
+            $query = Category::query()->withTrashed();
+        } else {
+            $query = Category::query();
+        }
+
         // Handle global search
         if ($request->has('search')) {
             $searchTerm = $request->search;

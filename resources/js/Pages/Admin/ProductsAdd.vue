@@ -35,7 +35,6 @@ const selectedCategories = ref([]);
 const units = ref([]);
 
 const isScan = ref(false);
-const isStock = ref(true);
 
 // Fungsi untuk menangani perubahan status scan barcode
 const handleScan = (value) => {
@@ -50,11 +49,6 @@ const handleScan = (value) => {
     }
 };
 
-// Fungsi untuk menangani perubahan status stok
-const handleStock = (value) => {
-    isStock.value = value;
-};
-
 // Fungsi untuk memperbarui SKU dalam form
 const updateFormSKU = () => {
     form.setFieldValue('sku', sku.value);
@@ -66,12 +60,12 @@ const addFormSchema = toTypedSchema(z.object({
     sku: z.string().min(2).max(50),
     name: z.string().min(2).max(50),
     status: z.string().min(2).max(50),
-    category_id: z.number(),
 
     variantInputs: z.array(z.object({
         quantity: z.string().min(1).max(50),
         unit_id: z.any(),
         price: z.number().min(1),
+        cost: z.number().min(1),
         stock: z.any().optional()
     }))
 }));
@@ -84,7 +78,7 @@ const form = useForm({
         sku: '',
         name: '',
         status: 'active',
-        variantInputs: [{ quantity: '1', unit_id: '1', price: '', stock: '' }]
+        variantInputs: [{ quantity: '1', unit_id: '1', price: 0, cost: 0, stock: '' }]
     },
 });
 
@@ -113,6 +107,8 @@ const onSubmit = async () => {
 
         const values = form.values;
 
+        console.log('form values:', values);
+
         const response = await axios.post('/admin/products', values);
 
         if (response.data.status === 'error') {
@@ -121,7 +117,7 @@ const onSubmit = async () => {
 
             Toast.fire({
                 icon: "error",
-                title: "Error saat menambahkan produk",
+                title: errors.value,
             });
         } else {
             Toast.fire({
@@ -188,11 +184,10 @@ watch(sku, (newValue) => {
 
 const options = ref([])
 
-// Fungsi untuk mengambil data kategori dan unit dari API
+// Fetch categories and units from API
 const fetchOptions = async () => {
     try {
         const response = await axios.get('/api/categories')
-
         options.value = response.data.data.map((category) => ({
             id: category.id,
             name: category.name,
@@ -200,7 +195,6 @@ const fetchOptions = async () => {
         }))
 
         const unitResponse = await axios.get('/api/units')
-
         units.value = unitResponse.data.data.map((unit) => ({
             id: unit.id,
             name: unit.name,
@@ -211,20 +205,22 @@ const fetchOptions = async () => {
     }
 }
 
-// Fungsi untuk memperbarui ID kategori dalam form
+// Update category ID in form
 const updateIdCategory = (value) => {
     selectedCategories.value = value;
     form.setFieldValue('category_id', value.id);
 };
 
-// Fungsi untuk menambah input variasi produk
+// Add new variant input
 const addVariantInput = () => {
     const currentVariants = [...form.values.variantInputs];
-    currentVariants.push({ quantity: '1', unit_id: '1', price: '', stock: '' });
-    form.setFieldValue('variantInputs', currentVariants);
+    if (currentVariants.length < units.value.length) {
+        currentVariants.push({ quantity: '1', unit_id: '', price: 0, cost: 0, stock: '' });
+        form.setFieldValue('variantInputs', currentVariants);
+    }
 };
 
-// Fungsi untuk menghapus input variasi produk
+// Remove variant input
 const removeVariantInput = (index) => {
     if (form.values.variantInputs && form.values.variantInputs.length > 1) {
         const currentVariants = [...form.values.variantInputs];
@@ -233,7 +229,7 @@ const removeVariantInput = (index) => {
     }
 };
 
-// Fungsi untuk memperbarui input variasi produk
+// Update variant input
 const updateVariantInput = (index, field, event) => {
     const currentVariants = [...form.values.variantInputs];
     let value;
@@ -244,21 +240,35 @@ const updateVariantInput = (index, field, event) => {
         value = event;
     }
 
-    if (['price', 'stock'].includes(field)) {
+    if (['price', 'stock', 'cost'].includes(field)) {
         value = value === '' ? '' : Number(value);
-    } if (field === 'quantity') {
+    } else if (field === 'quantity') {
         value = value === '' ? '' : value.toString();
     }
 
     currentVariants[index] = { ...currentVariants[index], [field]: value };
     form.setFieldValue(`variantInputs.${index}.${field}`, value);
 };
+
+// Compute available units for each variant input
+const availableUnits = computed(() => (currentIndex) => {
+    const selectedUnits = form.values.variantInputs
+        .map(input => input.unit_id)
+        .filter((id, index) => index !== currentIndex && id !== undefined && id !== '');
+
+    return units.value.filter(unit => !selectedUnits.includes(unit.id.toString()));
+});
+
+const canAddMoreVariants = computed(() => {
+    return form.values.variantInputs.length < units.value.length;
+});
 </script>
 
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>
 
 <template>
-<!-- Mengatur judul halaman -->
+    <!-- Mengatur judul halaman -->
+
     <Head title="Daftar Produk" />
 
     <AdminLayout>
@@ -268,14 +278,6 @@ const updateVariantInput = (index, field, event) => {
             <label class="text-md font-bold text-gray-900">Scan Barcode</label>
             <Switch :modelValue="isScan" @update:checked="handleScan" />
             <p class="text-sm font-semibold text-gray-500 italic">Aktifkan jika memasukkan SKU dengan scanner</p>
-        </div>
-        <hr class="my-5 border-[1.5px] bg-gray-300">
-        <div class="flex items-center gap-8">
-            <Separator orientation="vertical" class="h-5 w-[2px] bg-gray-300" />
-            <div class="flex items-center gap-4">
-                <label class="text-md font-bold text-gray-900 ">Stok</label>
-                <Switch :checked="isStock" :modelValue="isStock" @update:checked="handleStock" />
-            </div>
         </div>
         <hr class="my-5 border-[1.5px] bg-gray-300">
 
@@ -372,8 +374,8 @@ const updateVariantInput = (index, field, event) => {
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectGroup>
-                                                            <SelectItem v-for="unit in units" :key="unit.id.toString()"
-                                                                :value="unit.id.toString()">
+                                                            <SelectItem v-for="unit in availableUnits(index)"
+                                                                :key="unit.id.toString()" :value="unit.id.toString()">
                                                                 {{ unit.name }}
                                                             </SelectItem>
                                                         </SelectGroup>
@@ -393,7 +395,13 @@ const updateVariantInput = (index, field, event) => {
                                     @input="(e) => updateVariantInput(index, 'price', e)" />
                             </div>
 
-                            <div v-if="isStock" class="w-full">
+                            <div class="w-full">
+                                <FormInput :name="`variantInputs.${index}.cost`" :value="input.price" :errors="errors"
+                                    label="Harga Beli" type="number"
+                                    @input="(e) => updateVariantInput(index, 'cost', e)" />
+                            </div>
+
+                            <div class="w-full">
                                 <FormInput :name="`variantInputs.${index}.stock`" :id="`stock-${index}`"
                                     :value="input.stock" :errors="errors" label="Stok" type="number"
                                     @input="(e) => updateVariantInput(index, 'stock', e)" />
@@ -410,7 +418,7 @@ const updateVariantInput = (index, field, event) => {
                         </div>
                     </div>
 
-                    <Button type="button" @click="addVariantInput"
+                    <Button v-if="canAddMoreVariants" type="button" @click="addVariantInput"
                         class="mt-4 gap-2 flex bg-green-600 hover:bg-green-700">
                         <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24">
                             <g fill="none" fill-rule="evenodd">

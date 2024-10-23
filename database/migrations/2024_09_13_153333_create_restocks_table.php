@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('quantity');
             $table->integer('difference')->default(0);
             $table->double('cost');
-            $table->enum('status', ['available', 'in-use', 'sold-out', 'overdrawn'])->default('available');
+            $table->enum('status', ['available', 'in-use', 'sold-out', 'overdrawn', 'audit-needed', 'audit-completed'])->default('available');
             $table->timestamps();
         });
     }

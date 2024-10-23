@@ -6,7 +6,9 @@ use Inertia\Inertia;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
+use App\Exports\ProductsExport;
 use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Cache;
 use Barryvdh\Debugbar\Facades\Debugbar;
 use Illuminate\Support\Facades\Validator;
@@ -50,6 +52,18 @@ class ProductController extends Controller
             ]);
         }
 
+        $isProductExist = Product::where('sku', $request->sku)
+            ->where('category_id', $request->category_id)
+            ->where('name', $request->name)
+            ->exists();
+
+        if ($isProductExist) {
+            return response()->json([
+                'message' => 'Produk sudah terdaftar',
+                'status' => 'error',
+            ]);
+        }
+
         $product = Product::create($request->except('status', 'varianInputs'));
 
         $productVariants = collect($request->variantInputs)->map(function ($variant) use ($request) {
@@ -72,61 +86,89 @@ class ProductController extends Controller
             }
 
             $variant->save();
-        }
 
-        return response()->json([
-            'message' => 'Produk berhasil ditambahkan',
-            'product' => $product,
-            'status' => 'success',
-        ]);
-    }
+            $status = null;
 
-    public function storeVariant(Request $request)
-    {
-        $validation = Validator::make($request->all(), [
-            'product_id' => 'required|exists:products,id',
-            'status' => 'required',
-            'variantInputs' => 'required|array',
-        ]);
+            if ($variant->stock == 0) {
+                $status = 'sold-out';
+            } else if ($variant->stock > 0) {
+                $status = 'available';
+            }
 
-        if ($validation->fails()) {
-            return response()->json([
-                'message' => $validation->errors(),
-                'errors' => $validation->errors(),
-                'status' => 'error',
+            $variant->restocks()->create([
+                'quantity' => $variant->stock,
+                'cost' => $request->variantInputs[$index]['cost'],
+                'stock_status' => $status,
             ]);
         }
 
-        $product = Product::find($request->product_id);
-
-        $productVariants = collect($request->variantInputs)->map(function ($variant) use ($request) {
-            return array_merge($variant, ['status' => $request->status]);
-        });
-
-        $createdVariants = $product->productVariants()->createMany($productVariants->toArray());
-
-        foreach ($createdVariants as $index => $variant) {
-            $variant->stock = isset($request->variantInputs[$index]['stock']) ? $request->variantInputs[$index]['stock'] : 0;
-
-            if ($variant->stock == 0) {
-                $variant->stock_status = 'not-set';
-            } else if ($variant->stock < 10) {
-                $variant->stock_status = 'limit-stock';
-            } else if ($variant->stock >= 10) {
-                $variant->stock_status = 'in-stock';
-            } else {
-                $variant->stock_status = 'out-of-stock';
-            }
-
-            $variant->save();
-        }
-
         return response()->json([
             'message' => 'Produk berhasil ditambahkan',
             'product' => $product,
             'status' => 'success',
         ]);
     }
+
+    // public function storeVariant(Request $request)
+    // {
+    //     $validation = Validator::make($request->all(), [
+    //         'product_id' => 'required|exists:products,id',
+    //         'status' => 'required',
+    //         'variantInputs' => 'required|array',
+    //     ]);
+
+    //     if ($validation->fails()) {
+    //         return response()->json([
+    //             'message' => $validation->errors(),
+    //             'errors' => $validation->errors(),
+    //             'status' => 'error',
+    //         ]);
+    //     }
+
+    //     $product = Product::find($request->product_id);
+
+    //     $productVariants = collect($request->variantInputs)->map(function ($variant) use ($request) {
+    //         return array_merge($variant, ['status' => $request->status]);
+    //     });
+
+    //     $createdVariants = $product->productVariants()->createMany($productVariants->toArray());
+
+    //     foreach ($createdVariants as $index => $variant) {
+    //         $variant->stock = isset($request->variantInputs[$index]['stock']) ? $request->variantInputs[$index]['stock'] : 0;
+
+    //         if ($variant->stock == 0) {
+    //             $variant->stock_status = 'not-set';
+    //         } else if ($variant->stock < 10) {
+    //             $variant->stock_status = 'limit-stock';
+    //         } else if ($variant->stock >= 10) {
+    //             $variant->stock_status = 'in-stock';
+    //         } else {
+    //             $variant->stock_status = 'out-of-stock';
+    //         }
+
+    //         $variant->save();
+
+    //         $status = null;
+
+    //         if ($variant->stock == 0) {
+    //             $status = 'sold-out';
+    //         } else if ($variant->stock > 0) {
+    //             $status = 'available';
+    //         }
+
+    //         $variant->restocks()->create([
+    //             'quantity' => $variant->stock,
+    //             'cost' => $request->variantInputs[$index]['cost'],
+    //             'stock_status' => $status,
+    //         ]);
+    //     }
+
+    //     return response()->json([
+    //         'message' => 'Produk berhasil ditambahkan',
+    //         'product' => $product,
+    //         'status' => 'success',
+    //     ]);
+    // }
 
     /**
      * Update the specified resource in storage.
@@ -137,10 +179,6 @@ class ProductController extends Controller
             'sku' => 'required|string|max:255|unique:products,sku,' . $product->id,
             'name' => 'required|string|max:255',
             'category_id' => 'exists:categories,id',
-            'price' => 'required|numeric',
-            'status' => 'required',
-            'quantity' => 'required',
-            'unit_id' => 'required|exists:units,id',
         ], [
             'sku.unique' => 'SKU sudah terdaftar.',
         ]);
@@ -154,15 +192,6 @@ class ProductController extends Controller
         }
 
         $product->update($request->only('sku', 'name', 'category_id'));
-
-        $product->productVariants->each(function ($variant) use ($request) {
-            $variant->update([
-                'price' => $request->price,
-                'status' => $request->status,
-                'quantity' => $request->quantity,
-                'unit_id' => $request->unit_id,
-            ]);
-        });
 
         return response()->json([
             'message' => 'Produk berhasil diubah',
@@ -243,7 +272,7 @@ class ProductController extends Controller
      */
     public function productVariantData(Request $request)
     {
-        $query = ProductVariant::query()->with('product', 'unit');
+        $query = ProductVariant::query()->with('product', 'unit')->orderBy('created_at', 'desc');
 
         // Handle global search
         if ($request->has('search')) {
@@ -487,5 +516,10 @@ class ProductController extends Controller
         return response()->json([
             'product' => $products,
         ]);
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(new ProductsExport, 'produk-' . now() . '.xlsx');
     }
 }

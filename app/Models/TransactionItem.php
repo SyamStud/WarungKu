@@ -35,11 +35,16 @@ class TransactionItem extends Model
 
     public function productVariant()
     {
-        return $this->belongsTo(ProductVariant::class);
+        return $this->belongsTo(ProductVariant::class)->withTrashed();
     }
 
     public function debtItems()
     {
         return $this->hasMany(DebtItem::class);
+    }
+
+    public function restock()
+    {
+        return $this->belongsTo(Restock::class);
     }
 }

@@ -31,6 +31,7 @@ use App\Http\Controllers\{
     Admin\DebtPaymentHistoryController
 };
 use App\Http\Controllers\Admin\DebtController;
+use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\RestockController;
 use App\Http\Controllers\Admin\UnitController;
 
@@ -72,7 +73,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Product Routes
             Route::get('/products/add-variant', [ProductController::class, 'addVariant'])->name('products.add.variant');
             Route::post('/products/add-variant', [ProductController::class, 'storeVariant'])->name('products.store.variant');
+            
+            Route::get('/products/excel-export', [ProductController::class, 'exportExcel']);
             Route::resource('/products', ProductController::class);
+
+            Route::get('/product-variants/export-excel', [ProductVariantController::class, 'exportExcel']);
+            Route::resource('/product-variants', ProductVariantController::class);
 
             // Purchase Routes
             Route::resource('/purchases', PurchaseController::class);
@@ -82,14 +88,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Other Admin Routes
             Route::resource('/users', UserController::class);
             Route::resource('/categories', CategoryController::class);
+            Route::post('/restocks/audit', [RestockController::class, 'audit']);
+
+            Route::get('/restocks/excel-export', [RestockController::class, 'exportExcel']);
             Route::resource('/restocks', RestockController::class);
+
+            Route::get('/stock-movements/export-excel', [StockMovementController::class, 'exportExcel']);
             Route::resource('/stock-movements', StockMovementController::class);
             Route::resource('/carts', CartController::class);
             Route::resource('/cart-items', CartItemController::class);
             Route::resource('/discount-products', DiscountProductController::class);
+
+            Route::get('/transactions/export-excel', [TransactionController::class, 'exportExcel']);
             Route::resource('/transactions', TransactionController::class);
-            Route::resource('/discounts', DiscountController::class);
+
+            Route::get('/transaction-items/export-excel', [TransactionItemController::class, 'exportExcel']);
             Route::resource('/transaction-items', TransactionItemController::class);
+
+            Route::resource('/discounts', DiscountController::class);
             Route::resource('/customers', CustomerController::class);
             Route::resource('/debt-items', DebtItemController::class);
             Route::resource('/units', UnitController::class);

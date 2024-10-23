@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use App\Models\StockMovement;
-use Illuminate\Http\Request;
+use App\Exports\StockMovementsExport;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
+use App\Models\StockMovement;
+use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StockMovementController extends Controller
 {
@@ -76,5 +78,20 @@ class StockMovementController extends Controller
                 'to' => $to,
             ],
         ]);
+    }
+
+    public function exportExcel()
+    {
+        // Tangkap tanggal dari query string
+        $startDate = request('start_date');
+        $endDate = request('end_date');
+
+        // Pastikan tanggal diberikan
+        if (!$startDate || !$endDate) {
+            return response()->json(['error' => 'Start date and end date are required'], 400);
+        }
+
+        // Panggil export menggunakan Maatwebsite Excel atau metode lainnya
+        return Excel::download(new StockMovementsExport($startDate, $endDate), 'stock-movements.xlsx');
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Cart;
 use App\Models\Debt;
 use Inertia\Inertia;
+use App\Models\Product;
 use App\Models\Restock;
 use App\Models\Setting;
 use App\Models\CartItem;
@@ -457,13 +458,24 @@ class CartController extends Controller
         // });
 
         if (!$product) {
-            $products = DB::table('products')
-                ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
+            $products = Product::select(
+                'products.id',
+                'products.sku',
+                'products.name',
+                'product_variants.id as variant_id',
+                'product_variants.price',
+                'product_variants.status',
+                'product_variants.quantity',
+                'units.name as unit_name'
+            )
                 ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
                 ->join('units', 'product_variants.unit_id', '=', 'units.id')
                 ->where('products.name', 'like', '%' . $request->identifier . '%')
                 ->where('product_variants.status', 'active')
+                ->whereNull('product_variants.deleted_at') // Abaikan varian yang soft delete
                 ->get();
+
+
 
             // $products = Cache::remember($cacheKey . '_name', now()->addHours(24), function () use ($request) {
             //     return DB::table('products')
@@ -760,6 +772,18 @@ class CartController extends Controller
                         } else if ($stockUsed->quantity < 0) {
                             $stockUsed->status = 'overdrawn';
                         } else {
+                            $differenceStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
+                                ->where('difference', '>', 0)
+                                ->where('status', '!=', 'audit-completed')
+                                ->get();
+
+                            if ($differenceStock->count() > 0) {
+                                foreach ($differenceStock as $diffStock) {
+                                    $diffStock->status = 'audit-needed';
+                                    $diffStock->save();
+                                }
+                            }
+
                             $stockUsed->status = 'in-use';
                         }
                         $stockUsed->save();
@@ -826,7 +850,19 @@ class CartController extends Controller
             $productVariant = ProductVariant::where('id', $cartItem->product_variant_id)->first();
 
             if ($productVariant) {
-                $productVariant->stock -= $cartItem->quantity;
+                if ($productVariant->stock > $cartItem->quantity) {
+                    $productVariant->stock -= $cartItem->quantity;
+
+                    if ($productVariant->stock > 5) {
+                        $productVariant->stock_status = 'in-stock';
+                    } else {
+                        $productVariant->stock_status = 'limit-stock';
+                    }
+                } else {
+                    $productVariant->stock = 0;
+
+                    $productVariant->stock_status = 'out-of-stock';
+                }
                 $productVariant->save();
 
                 $stockMovement = StockMovement::create([

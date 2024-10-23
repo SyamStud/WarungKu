@@ -235,6 +235,7 @@ const tabs = [
         imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000',
         tools: [
             { link: '/admin/products', name: 'Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
+            { link: '/admin/product-variants', name: 'Variasi Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
             { link: '/admin/restocks', name: 'Restock', imageSrc: 'https://img.icons8.com/?size=100&id=VWrzCw0rvxVx&format=png&color=000000' },
             { link: '/admin/stock-movements', name: 'Riwayat Stok', imageSrc: 'https://img.icons8.com/?size=100&id=18971&format=png&color=000000' },
             { link: '/admin/categories', name: 'Kategori', imageSrc: 'https://img.icons8.com/?size=100&id=XnHBz2LnhELw&format=png&color=000000' },

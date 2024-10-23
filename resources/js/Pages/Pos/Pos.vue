@@ -609,7 +609,7 @@ const fetchSettings = async () => {
 
         console.log('globalSettings', globalSettings.value);
 
-        if (!globalSettings.value.shop_name || !globalSettings.value.shop_address) {
+        if (!globalSettings.value.shop_name || !globalSettings.value.shop_address || !globalSettings.value.printer_name) {
             isShopConfig.value = true;
         }
 
@@ -673,7 +673,7 @@ tr:hover {
                                 <span class="text-[0.8rem] text-gray-500 font-medium">Diskon :</span>
                                 <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold">- {{
                                     formatRupiah(cart.discount)
-                                    }}</span>
+                                }}</span>
 
                                 <!-- Garis Bawah Diskon -->
                                 <div class="col-span-2 border border-b border-gray-300 my-1"></div>
@@ -854,8 +854,9 @@ tr:hover {
                     <div class="bg-red-50 p-4 rounded-lg">
                         <div class="w-max mx-auto text-start">
                             <ul class="list-disc list-inside">
-                                <li class="text-gray-700 font-semibold">Nama Toko</li>
-                                <li class="text-gray-700 font-semibold">Alamat Toko</li>
+                                <li v-if="!globalSettings.shop_name" class="text-gray-700 font-semibold">Nama Toko</li>
+                                <li v-if="!globalSettings.shop_address" class="text-gray-700 font-semibold">Alamat Toko</li>
+                                <li v-if="!globalSettings.printer_name" class="text-gray-700 font-semibold">Nama Printer</li>
                             </ul>
                         </div>
                     </div>

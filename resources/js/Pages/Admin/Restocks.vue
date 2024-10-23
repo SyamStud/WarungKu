@@ -29,9 +29,10 @@ const Toast = useToast();
 /* MODAL */
 const isAddModalOpen = ref(false);
 const isEditModalOpen = ref(false);
-const isDeleteModalOpen = ref(false);
+const isAuditModalOpen = ref(false);
 const selectedStock = ref(null);
 const isEdit = ref(false);
+const isAudit = ref(false);
 
 // Fungsi untuk membuka modal tambah stok
 const openAddModal = () => {
@@ -55,11 +56,28 @@ const openEditModal = (stock) => {
     selectedProducts.value = options.value.find((option) => option.rawName === oldProduct.rawName);
 
     form.setValues({
+        id: stock.id,
         product_variant_id: oldProduct.id,
         quantity: stock.quantity,
         cost: stock.cost,
     });
     isEditModalOpen.value = true;
+};
+
+const openAuditModal = (stock) => {
+    isAudit.value = true;
+    selectedStock.value = stock;
+    form.resetForm();
+
+    const oldProduct = options.value.find((option) => option.rawName === stock.product);
+    selectedProducts.value = options.value.find((option) => option.rawName === oldProduct.rawName);
+
+    form.setValues({
+        id: stock.id,
+        product_variant_id: oldProduct.id,
+        cost: stock.cost,
+    });
+    isAuditModalOpen.value = true;
 };
 
 // VALIDASI FORM FRONT END
@@ -70,13 +88,28 @@ const addFormSchema = toTypedSchema(z.object({
 }));
 
 const editFormSchema = toTypedSchema(z.object({
+    id: z.number().min(1),
     product_variant_id: z.number().min(1),
     quantity: z.number(),
     cost: z.number(),
 }));
 
+const auditFormSchema = toTypedSchema(z.object({
+    id: z.number().min(1),
+    product_variant_id: z.number().min(1),
+    cost: z.number(),
+}));
+
 const form = useForm({
-    validationSchema: computed(() => isEdit.value ? editFormSchema : addFormSchema),
+    validationSchema: computed(() => {
+        if (isEdit.value) {
+            return editFormSchema;
+        } else if (isAudit.value) {
+            return auditFormSchema;
+        } else {
+            return addFormSchema;
+        }
+    }),
 });
 
 let isLoading = ref(false);
@@ -85,10 +118,21 @@ let isLoading = ref(false);
 const onSubmit = form.handleSubmit(async (values) => {
     try {
         isLoading.value = true;
-        let response = await axios.post(`/admin/restocks`, values);
 
+        let response;
 
-        console.log(response.data);
+        if (isAudit.value) {
+            console.log('audit', values);
+            response = await axios.post(`/admin/restocks/audit`, values);
+
+            isAudit.value = false;
+            isAuditModalOpen.value = false;
+        } else if (isEdit.value) {
+            response = await axios.post(`/admin/restocks/${values.id}?_method=PUT`, values);
+        } else {
+            response = await axios.post('/admin/restocks', values);
+        }
+
 
         if (response.data.status === 'error') {
             isLoading.value = false;
@@ -105,6 +149,7 @@ const onSubmit = form.handleSubmit(async (values) => {
         }
 
         isEdit.value ? (isEditModalOpen.value = false) : (isAddModalOpen.value = false);
+
         fetchData();
         selectedProducts.value = [];
         isLoading.value = false;
@@ -251,8 +296,18 @@ const updateIdProduct = (value) => {
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Stok</h1>
         <div class="flex flex-col md:flex-row justify-between">
             <div class="flex gap-2">
-                <Button @click="openAddModal()" class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah
-                    Stok</Button>
+                <Button @click="openAddModal()"
+                    class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800 flex items-center gap-1">
+                    <img class="w-5" src="https://img.icons8.com/?size=100&id=FnGQHvpuVbBr&format=png&color=FFFFFF"
+                        alt="">
+                    Tambah Stok
+                </Button>
+                <a href="/admin/restocks/excel-export">
+                    <Button class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-700 flex items-center gap-3">
+                        <img class="w-5" src="https://img.icons8.com/?size=100&id=11594&format=png&color=FFFFFF" alt="">
+                        Export Excel
+                    </Button>
+                </a>
             </div>
             <div class="flex items-center py-4 w-full md:w-72">
                 <Input placeholder="Cari Stok..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"
@@ -284,21 +339,25 @@ const updateIdProduct = (value) => {
 
                                 <template v-else-if="cell.column.id === 'status'">
                                     <span :class="{
-                                        'flex gap-1 items-center': true,
-                                        'text-green-500': cell.getValue() === 'available',
-                                        'text-red-500': cell.getValue() === 'sold-out',
-                                        'text-red-500 gap-2': cell.getValue() === 'overdrawn',
+                                        'flex gap-2 items-center': true,
+                                        'text-green-500 gap-2': cell.getValue() === 'available' || cell.getValue() === 'audit-completed',
+                                        'text-red-500 gap-2': cell.getValue() === 'sold-out' || cell.getValue() === 'overdrawn' || cell.getValue() === 'audit-needed',
                                         'text-[#228BE6] gap-2': cell.getValue() === 'in-use',
 
                                     }">
                                         <img class="w-5"
-                                            :src="cell.getValue() === 'sold-out' ? 'https://img.icons8.com/?size=100&id=63688&format=png&color=000000' : cell.getValue() === 'available' ? 'https://img.icons8.com/?size=100&id=63312&format=png&color=000000' : cell.getValue() === 'in-use' ? 'https://img.icons8.com/?size=100&id=NQGnL8pQZ6OS&format=png&color=228BE6' : 'https://img.icons8.com/?size=100&id=63690&format=png&color=000000'"
+                                            :src="cell.getValue() === 'sold-out' ? 'https://img.icons8.com/?size=100&id=63688&format=png&color=000000'
+                                                : cell.getValue() === 'available' ? 'https://img.icons8.com/?size=100&id=63312&format=png&color=000000'
+                                                    : cell.getValue() === 'in-use' ? 'https://img.icons8.com/?size=100&id=NQGnL8pQZ6OS&format=png&color=228BE6'
+                                                        : cell.getValue() === 'audit-needed' ? 'https://img.icons8.com/?size=100&id=mEAqOnLahgXV&format=png&color=FA5252'
+                                                            : cell.getValue() === 'audit-completed' ? 'https://img.icons8.com/?size=100&id=mEAqOnLahgXV&format=png&color=40C057' : 'https://img.icons8.com/?size=100&id=63690&format=png&color=000000'"
                                             alt="">
 
                                         {{ cell.getValue() === 'available' ? 'Tersedia' : cell.getValue() === 'sold-out'
                                             ?
                                             'Habis Terjual' : cell.getValue() === 'overdrawn' ? `Sedang Digunakan [Terhitung
-                                        Selisih]` : 'Sedang Digunakan' }}
+                                        Selisih]` : cell.getValue() === 'audit-needed' ? 'Audit Diperlukan' :
+                                                cell.getValue() === 'audit-completed' ? 'Audit Selesai' : 'Sedang Digunakan' }}
                                     </span>
                                 </template>
 
@@ -310,7 +369,12 @@ const updateIdProduct = (value) => {
                             <!-- Kolom untuk aksi -->
                             <TableCell>
                                 <div class="flex gap-2">
-                                    <Button @click="() => openEditModal(row.original)">Ubah</Button>
+                                    <Button class="bg-red-600 hover:bg-red-700"
+                                        v-if="row.original.status === 'audit-needed' || row.original.status === 'audit-completed' || row.original.status === 'overdrawn'"
+                                        @click="() => openAuditModal(row.original)">{{ row.original.status ==
+                                            'audit-completed' ? 'Audit Ulang' :
+                                            'Audit' }}</Button>
+                                    <Button v-else @click="() => openEditModal(row.original)">Ubah</Button>
                                 </div>
                             </TableCell>
                         </TableRow>
@@ -371,6 +435,27 @@ const updateIdProduct = (value) => {
                     <DialogFooter>
                         <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">
                             {{ isLoading ? 'Mohon tunggu ...' : 'Ubah Stok' }}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogWrapper>
+
+            <!-- Audit Modal -->
+            <DialogWrapper v-model:open="isAuditModalOpen" title="Audit Harga Stok"
+                desc="Ubah menjadi harga beli yang sesuai agar laporan keuntungan sesuai">
+                <form @submit="onSubmit" enctype="multipart/form-data" class="space-y-4">
+                    <div>
+                        <Label>Nama Produk</Label>
+                        <Input v-bind:modelValue="selectedProducts.name" disabled class="mt-2 font-semibold" type="text"
+                            :value="selectedProducts.name" />
+                    </div>
+
+                    <FormInput name="cost" label="Harga Beli" type="number" />
+                    <FormInput name="product_variant_id" label="" type="hidden" placeholder="Masukkan stok tambahan" />
+
+                    <DialogFooter>
+                        <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">
+                            {{ isLoading ? 'Mohon tunggu ...' : 'Konfirmasi Harga' }}
                         </Button>
                     </DialogFooter>
                 </form>

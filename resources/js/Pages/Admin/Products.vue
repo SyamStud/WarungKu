@@ -52,21 +52,19 @@ const openEditModal = (product) => {
     isEdit.value = true; // Set status edit
     selectedProduct.value = product; // Set produk yang dipilih
     form.resetForm(); // Reset form
+
+    console.log(product);
     sku.value = product.sku; // Set SKU produk
 
     // Cari kategori lama dari produk yang dipilih
     const oldCategory = options.value.find((option) => option.name === product.category);
-    selectedCategories.value = options.value.find((option) => option.name === oldCategory.name);
+    selectedCategories.value = oldCategory ? options.value.find((option) => option.name === oldCategory.name) : null;
 
     // Set nilai form berdasarkan produk yang dipilih
     form.setValues({
         sku: product.sku,
         name: product.name,
-        category_id: oldCategory.id,
-        price: product.price,
-        status: product.status,
-        quantity: product.quantity,
-        unit_id: product.unit_id.toString(),
+        category_id: oldCategory ? oldCategory.id : '',
     });
     isEditModalOpen.value = true; // Buka modal edit
 };
@@ -82,10 +80,6 @@ const formSchema = toTypedSchema(z.object({
     sku: z.string().min(2),
     name: z.string().min(2),
     category_id: z.number().min(1),
-    price: z.number(),
-    status: z.string().min(2),
-    quantity: z.string(),
-    unit_id: z.string(),
 }));
 
 // Inisialisasi form dengan schema validasi
@@ -97,14 +91,13 @@ let isLoading = ref(false); // State loading untuk form
 
 // ACTION FORM 
 // Fungsi untuk meng-handle submit form
-const onSubmit = form.handleSubmit(async (values) => {
+const onSubmit = async () => {
     try {
         isLoading.value = true; // Set loading true
 
-        values.quantity = values.quantity.replace(/\s/g, ''); // Menghapus spasi dari quantity
-
+        form.setFieldValue('sku', sku.value); // Set nilai SKU di form
         // Kirim request untuk menyimpan data produk
-        let response = await axios.post(`/admin/products/${selectedProduct.value.id}?_method=PUT`, values);
+        let response = await axios.post(`/admin/products/${selectedProduct.value.id}?_method=PUT`, form.values);
 
         // Cek status response
         if (response.data.status === 'error') {
@@ -128,12 +121,14 @@ const onSubmit = form.handleSubmit(async (values) => {
         console.error('Error submitting form:', error);
         isLoading.value = false; // Set loading false
     }
-});
+};
 
 // Fungsi untuk menghapus produk
 const deleteProduct = async () => {
     if (selectedProduct.value) {
         try {
+            console.log(selectedProduct.value.id);
+
             const response = await axios.post(`/admin/products/${selectedProduct.value.id}?_method=DELETE`);
             if (response.data.status === 'error') {
                 return Toast.fire({
@@ -162,12 +157,7 @@ const deleteProduct = async () => {
 const columns = [
     { accessorKey: 'sku', header: 'SKU' },
     { accessorKey: 'name', header: 'Nama' },
-    { accessorKey: 'variant', header: 'Variasi' },
     { accessorKey: 'category', header: 'Kategori' },
-    { accessorKey: 'price', header: 'Harga Jual' },
-    { accessorKey: 'stock', header: 'Stok' },
-    { accessorKey: 'stock_status', header: 'Status Stok' },
-    { accessorKey: 'status', header: 'Status' },
 ];
 
 const data = ref([]); // Data produk
@@ -209,7 +199,7 @@ const table = useVueTable({
 // Fungsi untuk mengambil data produk
 const fetchData = async () => {
     try {
-        const response = await axios.get('/api/productVariants', {
+        const response = await axios.get('/api/products', {
             params: {
                 search: globalFilter.value,
                 page: pagination.value.pageIndex + 1,
@@ -327,12 +317,18 @@ const generateSKU = async () => {
         <div class="flex flex-col md:flex-row justify-between">
             <div class="flex gap-2">
                 <Link :href="route('products.create')">
-                <Button class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Tambah Produk</Button>
+                <Button class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800 flex items-center gap-1">
+                    <img class="w-5" src="https://img.icons8.com/?size=100&id=FnGQHvpuVbBr&format=png&color=FFFFFF"
+                        alt="">
+                    Tambah Produk
+                </Button>
                 </Link>
-
-                <Link :href="route('products.add.variant')">
-                <Button class="w-full md:w-max mt-4">Tambah Variasi Produk</Button>
-                </Link>
+                <a href="/admin/products/excel-export">
+                    <Button class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-700 flex items-center gap-3">
+                        <img class="w-5" src="https://img.icons8.com/?size=100&id=11594&format=png&color=FFFFFF" alt="">
+                        Export Excel
+                    </Button>
+                </a>
             </div>
             <div class="flex items-center py-4 w-full md:w-72">
                 <Input placeholder="Cari Produk..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"
@@ -359,6 +355,35 @@ const generateSKU = async () => {
                                     {{ formatRupiah(cell.getValue()) }}
                                 </template>
 
+                                <template v-else-if="cell.column.id === 'stock'">
+                                    <span :class="{
+                                        'flex gap-2 items-center font-semibold': true,
+                                        'text-green-500 gap-2': row.original.stock_status === 'in-stock',
+                                        'text-yellow-500 gap-2': row.original.stock_status === 'limit-stock',
+                                        'text-red-500 gap-2': row.original.stock_status === 'out-of-stock',
+                                        'text-gray-500 gap-2': row.original.stock_status === 'not-set',
+                                    }">
+                                        {{ cell.getValue() }}
+                                    </span>
+                                </template>
+
+                                <template v-else-if="cell.column.id === 'stock_status'">
+                                    <span :class="{
+                                        'flex gap-2 items-center': true,
+                                        'text-green-500 gap-2': cell.getValue() === 'in-stock',
+                                        'text-yellow-500 gap-2': cell.getValue() === 'limit-stock',
+                                        'text-red-500 gap-2': cell.getValue() === 'out-of-stock',
+                                        'text-gray-500 gap-2': cell.getValue() === 'not-set',
+                                    }">
+                                        <img :class="cell.getValue() === 'draft' ? 'w-7' : 'w-5'"
+                                            :src="cell.getValue() === 'out-of-stock' ? 'https://img.icons8.com/?size=100&id=63688&format=png&color=000000' : cell.getValue() === 'in-stock' ? 'https://img.icons8.com/?size=100&id=63312&format=png&color=000000' : cell.getValue() === 'limit-stock' ? 'https://img.icons8.com/?size=100&id=12403&format=png&color=FAB005' : 'https://img.icons8.com/?size=100&id=u8JoCz1DkonK&format=png&color=737373'"
+                                            alt="">
+
+                                        {{ cell.getValue() === 'in-stock' ? 'Aman' : cell.getValue() === 'limit-stock' ?
+                                            'Hampir Habis' : cell.getValue() === 'not-set' ? 'Belum Diatur' : 'Habis' }}
+                                    </span>
+                                </template>
+
                                 <template v-else-if="cell.column.id === 'status'">
                                     <span :class="{
                                         'flex gap-1 items-center': true,
@@ -370,7 +395,8 @@ const generateSKU = async () => {
                                             :src="cell.getValue() === 'inactive' ? 'https://img.icons8.com/?size=100&id=63688&format=png&color=000000' : cell.getValue() === 'active' ? 'https://img.icons8.com/?size=100&id=63312&format=png&color=000000' : 'https://img.icons8.com/?size=100&id=10264&format=png&color=737373'"
                                             alt="">
 
-                                        {{ cell.getValue() === 'active' ? 'Aktif' : cell.getValue() === 'inactive' ?
+                                        {{ cell.getValue() === 'active' ? 'Aktif' : cell.getValue() === 'inactive'
+                                            ?
                                             'Tidak Aktif' : 'Draft' }}
                                     </span>
                                 </template>
@@ -476,7 +502,7 @@ const generateSKU = async () => {
 
             <!-- Edit Modal -->
             <DialogWrapper v-model:open="isEditModalOpen" title="Ubah Produk" desc="Ubah produk">
-                <form @submit="onSubmit" enctype="multipart/form-data" class="space-y-4">
+                <form @submit.prevent="onSubmit" enctype="multipart/form-data" class="space-y-4">
                     <div class="flex flex-col md:flex-row gap-4">
                         <!-- <FormInput name="sku" label="SKU" type="text" /> -->
                         <div class="w-full">
@@ -501,75 +527,7 @@ const generateSKU = async () => {
                         </div>
 
                     </div>
-                    <div class="flex gap-4">
-                        <div class="w-full">
-                            <Label for="">Satuan Unit</Label>
-                            <div class="flex gap-1">
-                                <div class="w-14">
-                                    <FormInput name="quantity" label="" type="text" />
-                                </div>
 
-                                <div class="min-w-max w-full mt-2">
-                                    <FormField v-slot="{ componentField }" name="unit_id">
-                                        <FormItem>
-                                            <Select v-bind="componentField">
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Pilih Tipe" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectGroup>
-                                                        <SelectItem v-for="unit in units" :key="unit.id.toString()"
-                                                            :value="unit.id.toString()">
-                                                            {{ unit.name }}
-                                                        </SelectItem>
-                                                    </SelectGroup>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </FormField>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="w-full">
-                            <FormField v-slot="{ componentField }" name="status">
-                                <FormItem>
-                                    <FormLabel>Status</FormLabel>
-                                    <Select v-bind="componentField">
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Pilih Status" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                <SelectItem value="active">
-                                                    Aktif
-                                                </SelectItem>
-                                                <SelectItem value="inactive">
-                                                    Tidak Aktif
-                                                </SelectItem>
-                                                <SelectItem value="draft">
-                                                    Draft
-                                                </SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col md:flex-row gap-4">
-                        <FormInput name="price" label="Harga Jual" type="number" />
-                    </div>
-                    <div class="flex flex-col md:flex-row gap-4">
-
-                    </div>
                     <DialogFooter>
                         <Button type="submit" :class="{ 'bg-slate-500': isLoading }" :disabled="isLoading">
                             {{ isLoading ? 'Mohon tunggu ...' : 'Ubah Produk' }}
