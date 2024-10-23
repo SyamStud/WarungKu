@@ -20,6 +20,7 @@ class Transaction extends Model
         'total_change',
         'payment_method',
         'total_profit',
+        'store_id',
     ];
 
     public function user()
@@ -30,5 +31,10 @@ class Transaction extends Model
     public function transactionItems()
     {
         return $this->hasMany(TransactionItem::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

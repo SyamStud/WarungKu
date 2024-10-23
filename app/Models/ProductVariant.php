@@ -18,6 +18,7 @@ class ProductVariant extends Model
         'stock',
         'stock_status',
         'status',
+        'store_id',
     ];
 
     public function product()
@@ -43,5 +44,10 @@ class ProductVariant extends Model
     public function restocks()
     {
         return $this->hasMany(Restock::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

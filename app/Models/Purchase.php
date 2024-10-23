@@ -16,6 +16,7 @@ class Purchase extends Model
         'price',
         'note',
         'user_id',
+        'store_id',
     ];
 
     public function product()
@@ -31,5 +32,10 @@ class Purchase extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

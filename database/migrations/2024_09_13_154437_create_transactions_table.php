@@ -23,6 +23,7 @@ return new class extends Migration
             $table->double('total_profit');
             $table->enum('payment_method', ['cash', 'qris', 'debt'])->default('cash');
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->timestamps();
         });
     }

@@ -9,10 +9,15 @@ class Unit extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'store_id'];
 
     public function productVariants()
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

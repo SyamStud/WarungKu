@@ -19,6 +19,7 @@ return new class extends Migration
             $table->double('price');
             $table->text('note')->nullable();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->timestamps();
         });
     }

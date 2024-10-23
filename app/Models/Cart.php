@@ -16,6 +16,7 @@ class Cart extends Model
         'discount',
         'tax',
         'grand_total',
+        'store_id',
     ];
 
     public function user()
@@ -26,5 +27,10 @@ class Cart extends Model
     public function cartItems()
     {
         return $this->hasMany(CartItem::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

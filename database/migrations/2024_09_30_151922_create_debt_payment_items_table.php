@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('debt_item_id')->constrained()->cascadeOnDelete();
             $table->double('amount');
             $table->double('remaining_debt');
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->softDeletes();
             $table->timestamps();
         });

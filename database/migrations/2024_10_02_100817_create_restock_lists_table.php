@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('quantity');
             $table->foreignId('unit_id')->constrained();
             $table->string('note')->nullable();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->timestamps();
         });
     }

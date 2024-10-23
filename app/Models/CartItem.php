@@ -19,6 +19,7 @@ class CartItem extends Model
         'discounted_price',
         'total_price',
         'discounted_total_price',
+        'store_id',
     ];
 
     public function cart()
@@ -34,5 +35,10 @@ class CartItem extends Model
     public function productVariant()
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

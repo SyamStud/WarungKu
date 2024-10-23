@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('stock')->default(0);
             $table->enum('stock_status', ['in-stock', 'limit-stock', 'out-of-stock', 'not-set'])->default('not-set');
             $table->enum('status', ['draft', 'active', 'inactive'])->default('active');
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->softDeletes();
             $table->timestamps();
         });

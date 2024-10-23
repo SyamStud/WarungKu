@@ -22,6 +22,7 @@ return new class extends Migration
             $table->double('discounted_price')->nullable();
             $table->double('total_price');
             $table->double('discounted_total_price')->nullable();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->timestamps();
         });
     }

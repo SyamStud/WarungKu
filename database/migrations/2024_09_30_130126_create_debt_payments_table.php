@@ -19,6 +19,7 @@ return new class extends Migration
             $table->timestamp('paid_at');
             $table->enum('payment_method', ['cash', 'qris']);
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->softDeletes();
             $table->timestamps();
         });

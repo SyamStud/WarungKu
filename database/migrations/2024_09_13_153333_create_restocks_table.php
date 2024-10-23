@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('difference')->default(0);
             $table->double('cost');
             $table->enum('status', ['available', 'in-use', 'sold-out', 'overdrawn', 'audit-needed', 'audit-completed'])->default('available');
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->timestamps();
         });
     }

@@ -14,6 +14,7 @@ class RestockList extends Model
         'quantity',
         'unit_id',
         'note',
+        'store_id',
     ];
 
     public function product()
@@ -24,5 +25,10 @@ class RestockList extends Model
     public function unit()
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

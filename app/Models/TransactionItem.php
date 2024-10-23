@@ -21,6 +21,7 @@ class TransactionItem extends Model
         'discounted_total_price',
         'restock_id',
         'profit',
+        'store_id',
     ];
 
     public function transaction()
@@ -46,5 +47,10 @@ class TransactionItem extends Model
     public function restock()
     {
         return $this->belongsTo(Restock::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

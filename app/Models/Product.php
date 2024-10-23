@@ -14,6 +14,7 @@ class Product extends Model
         'category_id',
         'sku',
         'name',
+        'store_id',
     ];
 
     public function category()
@@ -39,5 +40,15 @@ class Product extends Model
     public function purchases()
     {
         return $this->hasMany(Purchase::class);
+    }
+
+    public function restocks()
+    {
+        return $this->hasMany(Restock::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

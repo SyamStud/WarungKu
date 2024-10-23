@@ -13,7 +13,7 @@ class Category extends Model
 {
     use HasSlug, HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'slug'];
+    protected $fillable = ['name', 'slug', 'store_id'];
 
     public function setNameAttribute($value)
     {
@@ -31,5 +31,10 @@ class Category extends Model
     public function products()
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

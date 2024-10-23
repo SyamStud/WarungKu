@@ -13,6 +13,7 @@ class DiscountProduct extends Model
         'discount_id',
         'product_variant_id',
         'is_active',
+        'store_id',
     ];
 
     public function discount()
@@ -23,5 +24,10 @@ class DiscountProduct extends Model
     public function productVariant()
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

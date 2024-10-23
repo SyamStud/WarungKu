@@ -19,10 +19,16 @@ class Discount extends Model
         'start_date',
         'end_date',
         'is_active',
+        'store_id',
     ];
 
     public function discountProducts()
     {
         return $this->hasMany(DiscountProduct::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

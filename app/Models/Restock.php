@@ -15,10 +15,21 @@ class Restock extends Model
         'difference',
         'cost',
         'status',
+        'store_id',
     ];
 
     public function productVariant()
     {
         return $this->belongsTo(ProductVariant::class)->withTrashed();
+    }
+
+    public function transactionItems()
+    {
+        return $this->hasMany(TransactionItem::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

@@ -14,10 +14,16 @@ class Customer extends Model
         'name',
         'phone',
         'address',
+        'store_id',
     ];
 
     public function debts()
     {
         return $this->hasMany(Debt::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

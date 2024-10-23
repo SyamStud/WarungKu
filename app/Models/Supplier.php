@@ -18,10 +18,16 @@ class Supplier extends Model
         'contact_email',
         'contact_position',
         'status',
+        'store_id',
     ];
 
     public function purchases()
     {
         return $this->hasMany(Purchase::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

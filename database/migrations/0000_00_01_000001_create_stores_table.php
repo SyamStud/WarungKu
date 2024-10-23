@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('customers', function (Blueprint $table) {
+        Schema::create('stores', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('address');
             $table->string('phone')->nullable();
-            $table->string('address')->nullable();
-            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
-            $table->softDeletes();
+            $table->string('email')->nullable();
+            $table->string('website')->nullable();
+            $table->enum('status', ['active', 'pending','inactive'])->default('pending');
             $table->timestamps();
         });
     }
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('customers');
+        Schema::dropIfExists('stores');
     }
 };

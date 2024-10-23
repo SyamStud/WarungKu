@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('contact_email')->nullable();
             $table->string('contact_position')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->softDeletes();
             $table->timestamps();
         });

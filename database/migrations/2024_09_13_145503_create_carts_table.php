@@ -19,6 +19,7 @@ return new class extends Migration
             $table->double('tax')->nullable();
             $table->double('grand_total');
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->timestamps();
         });
     }

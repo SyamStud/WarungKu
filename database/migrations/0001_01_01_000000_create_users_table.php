@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
             $table->string('photo')->nullable();
+            $table->foreignId('store_id')->nullable()->constrained();
             $table->rememberToken();
             $table->timestamps();
         });

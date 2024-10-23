@@ -19,6 +19,7 @@ class DebtItem extends Model
         'status',
         'last_payment_at',
         'settled_at',
+        'store_id',
     ];
 
     public function debt(){
@@ -28,5 +29,10 @@ class DebtItem extends Model
     public function transactionItem()
     {
         return $this->belongsTo(TransactionItem::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

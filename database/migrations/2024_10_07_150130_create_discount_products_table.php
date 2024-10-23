@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('discount_id')->constrained('discounts')->onDelete('cascade');
             $table->foreignId('product_variant_id')->constrained()->onDelete('cascade');
             $table->boolean('is_active')->default(true);
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->timestamps();
         });
     }

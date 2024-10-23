@@ -15,6 +15,7 @@ class DebtPaymentItem extends Model
         'debt_item_id',
         'amount',
         'remaining_debt',
+        'store_id',
     ];
 
     public function debtPayment()
@@ -25,5 +26,10 @@ class DebtPaymentItem extends Model
     public function debtItem()
     {
         return $this->belongsTo(DebtItem::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

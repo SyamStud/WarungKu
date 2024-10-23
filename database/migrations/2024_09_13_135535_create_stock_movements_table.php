@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('quantity');
             $table->enum('type', ['in', 'out']); 
             $table->string('reference')->nullable();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->timestamps();
         });
     }

@@ -24,6 +24,7 @@ return new class extends Migration
             $table->double('discounted_total_price')->nullable();
             $table->foreignId('restock_id')->constrained()->onDelete('cascade');
             $table->double('profit');
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->timestamps();
         });
     }
