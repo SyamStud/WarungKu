@@ -224,10 +224,10 @@ const handlePageChange = (newPageIndex) => {
     <Head title="Daftar Purchase" />
 
     <AdminLayout>
-        <h1 class="text-2xl font-semibold text-gray-900">Riwayat Purchase Produk Supplier</h1>
+        <h1 class="text-2xl font-semibold text-gray-900">Riwayat Restock Produk Supplier</h1>
         <div class="flex flex-col md:flex-row justify-between">
             <Link href="/admin/purchases/create">
-            <Button class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Purchase Produk Supplier</Button>
+            <Button class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-800">Restock Produk Supplier</Button>
             </Link>
             <div class="flex items-center py-4 w-full md:w-72">
                 <Input placeholder="Cari Purchase..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"

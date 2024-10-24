@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\TransactionItemsExport;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Models\TransactionItem;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\TransactionItemsExport;
 
 class TransactionItemController extends Controller
 {
@@ -24,7 +25,7 @@ class TransactionItemController extends Controller
      */
     public function transactionItemData(Request $request)
     {
-        $query = TransactionItem::query()->with('transaction', 'product')->orderBy('created_at', 'desc');
+        $query = TransactionItem::query()->where('store_id', Auth::user()->store->id)->with('transaction', 'product')->orderBy('created_at', 'desc');
 
         // Handle global search
         if ($request->has('search')) {

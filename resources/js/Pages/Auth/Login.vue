@@ -23,14 +23,17 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(route('login'), {
-        onFinish: () => form.reset('password'),
+    axios.get('/sanctum/csrf-cookie').then(response => {
+        form.post(route('login'), {
+            onFinish: () => form.reset('password'),
+        });
     });
 };
 </script>
 
 <template>
     <GuestLayout>
+
         <Head title="Log in" />
 
         <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
@@ -41,16 +44,8 @@ const submit = () => {
             <div>
                 <InputLabel for="email" value="Email" />
 
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-2 block w-full"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                    placeholder="Masukkan Email"
-                />
+                <TextInput id="email" type="email" class="mt-2 block w-full" v-model="form.email" required autofocus
+                    autocomplete="username" placeholder="Masukkan Email" />
 
                 <InputError class="mt-2" :message="form.errors.email" />
             </div>
@@ -58,15 +53,8 @@ const submit = () => {
             <div class="mt-4">
                 <InputLabel for="password" value="Password" />
 
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-2 block w-full"
-                    v-model="form.password"
-                    required
-                    autocomplete="current-password"
-                    placeholder="Masukkan Password"
-                />
+                <TextInput id="password" type="password" class="mt-2 block w-full" v-model="form.password" required
+                    autocomplete="current-password" placeholder="Masukkan Password" />
 
                 <InputError class="mt-2" :message="form.errors.password" />
             </div>
@@ -79,12 +67,9 @@ const submit = () => {
             </div>
 
             <div class="flex items-center justify-end mt-4">
-                <Link
-                    v-if="canResetPassword"
-                    :href="route('password.request')"
-                    class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                    Forgot your password?
+                <Link v-if="canResetPassword" :href="route('password.request')"
+                    class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Forgot your password?
                 </Link>
 
                 <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">

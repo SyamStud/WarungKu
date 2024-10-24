@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Inertia\Inertia;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Services\SlugService;
+use Illuminate\Validation\Rule;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Inertia\Inertia;
 
 class CategoryController extends Controller
 {
@@ -25,10 +27,18 @@ class CategoryController extends Controller
     public function store(Request $request, SlugService $slugService)
     {
         $validation = Validator::make($request->all(), [
-            'name' => 'required|string|max:255|unique:categories,name',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('categories')->where(function ($query) use ($request) {
+                    return $query->where('store_id', $request->store_id); // Validasi unik berdasarkan store_id
+                }),
+            ],
         ], [
-            'name.unique' => 'Kategori sudah terdaftar.',
+            'name.unique' => 'Kategori sudah terdaftar di toko ini.',
         ]);
+
 
         if ($validation->fails()) {
             return response()->json([
@@ -40,6 +50,7 @@ class CategoryController extends Controller
         $category = new Category();
         $category->name = $request->name;
         $category->slug = $slugService->createSlug(Category::class, $request->name);
+        $category->store_id = Auth::user()->store->id;
         $category->save();
 
         return response()->json([
@@ -97,9 +108,9 @@ class CategoryController extends Controller
         $query = Category::query();
 
         if ($request->withDeleted) {
-            $query = Category::query()->withTrashed();
+            $query = Category::query()->where('store_id', Auth::user()->store->id)->withTrashed();
         } else {
-            $query = Category::query();
+            $query = Category::query()->where('store_id', Auth::user()->store->id);
         }
 
         // Handle global search

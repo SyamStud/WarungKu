@@ -6,6 +6,7 @@ use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Models\DebtPaymentItem;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class DebtPaymentHistoryController extends Controller
 {
@@ -17,7 +18,7 @@ class DebtPaymentHistoryController extends Controller
     public function getDebtPaymentHistory(Request $request)
     {
 
-        $query = DebtPaymentItem::query()->with('debtItem', 'debtPayment');
+        $query = DebtPaymentItem::query()->where('store_id', Auth::user()->store->id)->with('debtItem', 'debtPayment');
 
         // Handle global search
         if ($request->has('search')) {

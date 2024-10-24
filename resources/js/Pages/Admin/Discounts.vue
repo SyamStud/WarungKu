@@ -375,7 +375,7 @@ const handlePageChange = (newPageIndex) => {
                                         cell.getValue() === 'order' ? 'Potongan Harga Belanja' : '-' }}
                                 </template>
 
-                                <template v-if="cell.column.id === 'is_active'">
+                                <template v-else-if="cell.column.id === 'is_active'">
                                     <span :class="{
                                         'flex gap-1 items-center': '1',
                                         'text-green-500': cell.getValue() === '1',

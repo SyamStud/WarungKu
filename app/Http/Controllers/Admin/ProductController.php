@@ -76,7 +76,7 @@ class ProductController extends Controller
 
         $createdVariants = $product->productVariants()->createMany(
             $productVariants->map(function ($variant) use ($product) {
-            return array_merge($variant, ['store_id' => $product->store_id]);
+                return array_merge($variant, ['store_id' => $product->store_id]);
             })->toArray()
         );
 
@@ -281,7 +281,10 @@ class ProductController extends Controller
      */
     public function productVariantData(Request $request)
     {
-        $query = ProductVariant::query()->with('product', 'unit')->orderBy('created_at', 'desc');
+        $query = ProductVariant::query()
+            ->where('store_id', Auth::user()->store->id)
+            ->with('product', 'unit')
+            ->orderBy('created_at', 'desc');
 
         // Handle global search
         if ($request->has('search')) {

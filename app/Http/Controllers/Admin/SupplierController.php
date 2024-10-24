@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use Inertia\Inertia;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Inertia\Inertia;
 
 class SupplierController extends Controller
 {
@@ -38,7 +39,7 @@ class SupplierController extends Controller
             ]);
         }
 
-        Supplier::create($request->all());
+        Supplier::create(array_merge($request->all(), ['store_id' => Auth::user()->store->id]));
 
         return response()->json([
             'status' => 'success',
@@ -92,7 +93,7 @@ class SupplierController extends Controller
      */
     public function supplierData(Request $request)
     {
-        $query = Supplier::query();
+        $query = Supplier::query()->where('store_id', Auth::user()->store->id);
 
         // Handle global search
         if ($request->has('search')) {
@@ -158,7 +159,7 @@ class SupplierController extends Controller
             ]);
         }
 
-        $suppliers = Supplier::where('name', 'like', '%' . $request->name . '%')->get();
+        $suppliers = Supplier::where('name', 'like', '%' . $request->name . '%')->where('store_id', Auth::user()->store->id)->get();
 
         if ($suppliers->isEmpty()) {
             return response()->json([

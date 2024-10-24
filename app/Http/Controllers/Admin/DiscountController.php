@@ -7,6 +7,7 @@ use App\Models\Discount;
 use Illuminate\Http\Request;
 use App\Models\DiscountProduct;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class DiscountController extends Controller
@@ -38,7 +39,7 @@ class DiscountController extends Controller
             ], 422);
         }
 
-        $isOrderDiscount = Discount::where('type', 'order')->where('is_active', 1)->count();
+        $isOrderDiscount = Discount::where('type', 'order')->where('is_active', 1)->where('store_id', Auth::user()->store->id)->count();
 
         if ($request->type == 'order' && $isOrderDiscount > 0) {
             return response()->json([
@@ -71,6 +72,7 @@ class DiscountController extends Controller
         $discount->start_date = date('Y-m-d', strtotime($request->start_date));
         $discount->end_date = date('Y-m-d', strtotime($request->end_date));
         $discount->is_active = $request->is_active;
+        $discount->store_id = Auth::user()->store->id;
         $discount->save();
 
         if ($request->type == 'product') {
@@ -78,6 +80,7 @@ class DiscountController extends Controller
             $discountProduct->discount_id = $discount->id;
             $discountProduct->product_variant_id = $request->product_id;
             $discountProduct->is_active = $request->is_active;
+            $discountProduct->store_id = Auth::user()->store->id;
             $discountProduct->save();
         }
 
@@ -129,7 +132,7 @@ class DiscountController extends Controller
 
     public function discountData(Request $request)
     {
-        $query = Discount::query();
+        $query = Discount::query()->where('store_id', Auth::user()->store->id);
 
         // Handle global search
         if ($request->has('search')) {

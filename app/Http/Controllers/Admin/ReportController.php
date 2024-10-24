@@ -9,6 +9,7 @@ use App\Models\Purchase;
 use App\Models\Transaction;
 use Barryvdh\Debugbar\Facades\Debugbar;
 use Barryvdh\Debugbar\Twig\Extension\Debug;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Spatie\Browsershot\Browsershot;
 
@@ -32,7 +33,7 @@ class ReportController extends Controller
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        $transactions = Transaction::whereBetween('created_at', [$startDate, $endDate])
+        $transactions = Transaction::where('store_id', Auth::user()->store->id)->whereBetween('created_at', [$startDate, $endDate])
             ->get()
             ->groupBy(function ($item) {
                 return $item->created_at->format('Y-m-d');
@@ -52,7 +53,7 @@ class ReportController extends Controller
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
 
-        $purchases = Purchase::whereBetween('created_at', [$startDate, $endDate])
+        $purchases = Purchase::where('store_id', Auth::user()->store->id)->whereBetween('created_at', [$startDate, $endDate])
             ->get()
             ->groupBy(function ($item) {
                 return $item->created_at->format('Y-m-d');

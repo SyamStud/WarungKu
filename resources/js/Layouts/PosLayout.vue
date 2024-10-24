@@ -4,7 +4,7 @@
             <div class="w-full overflow-auto bg-white fixed top-0 z-10">
                 <div class="w-full flex justify-between">
                     <nav class="flex items-center px-5 gap-8">
-                        <div>
+                        <div v-if="isAdmin">
                             <Link href="/admin/dashboard" class="font-semibold text-sm text-black flex gap-1">
                             <img width="20" height="20" src="https://img.icons8.com/color/48/dashboard-layout.png"
                                 alt="dashboard-layout" />
@@ -187,7 +187,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import {
     Sheet,
     SheetClose,
@@ -202,8 +202,21 @@ import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import DialogFooter from '@/Components/ui/dialog/DialogFooter.vue';
 
 
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import Button from '@/components/ui/button/Button.vue';
+
+const { props } = usePage();
+const user = reactive(props.auth.user);
+
+const isAdmin = ref(false);
+
+onMounted(() => {
+    if (user.roles[0].name === 'admin') {
+        isAdmin.value = true;
+    } else {
+        isAdmin.value = false;
+    }
+});
 
 const cancelButton = ref(null);
 

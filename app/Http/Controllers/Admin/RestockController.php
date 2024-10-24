@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\RestocksExport;
 use Inertia\Inertia;
 use App\Models\Restock;
 use Illuminate\Http\Request;
 use App\Models\StockMovement;
 use App\Models\ProductVariant;
+use App\Exports\RestocksExport;
 use App\Models\TransactionItem;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\Debugbar\Facades\Debugbar;
 use Illuminate\Support\Facades\Validator;
@@ -48,6 +49,7 @@ class RestockController extends Controller
 
         $restock = Restock::where('product_variant_id', $productVariant->id)
             ->where('cost', $request->cost)
+            ->where('store_id', Auth::user()->store->id)
             ->whereDate('created_at', now()->toDateString())
             ->first();
 
@@ -59,6 +61,7 @@ class RestockController extends Controller
             // Check if there are previous restocks with negative quantity
             $previousRestock = Restock::where('product_variant_id', $productVariant->id)
                 ->where('quantity', '<', 0)
+                ->where('store_id', Auth::user()->store->id)
                 ->orderBy('created_at', 'asc')
                 ->first();
 
@@ -76,6 +79,7 @@ class RestockController extends Controller
                             'cost' => $request->cost,
                             'quantity' => $remainingQuantity,
                             'status' => 'available',
+                            'store_id' => Auth::user()->store->id,
                         ]);
                     }
                 } else {
@@ -88,6 +92,7 @@ class RestockController extends Controller
                     'cost' => $request->cost,
                     'quantity' => $request->quantity,
                     'status' => 'available',
+                    'store_id' => Auth::user()->store->id,
                 ]);
             }
         }
@@ -95,6 +100,7 @@ class RestockController extends Controller
         $countStockMovement = $request->quantity - $productVariant->stock;
 
         $stockMovements = new StockMovement();
+        $stockMovements->store_id = Auth::user()->store->id;
         $stockMovements->product_variant_id = $productVariant->id;
         $stockMovements->quantity = $countStockMovement;
 
@@ -148,9 +154,40 @@ class RestockController extends Controller
 
         $restock->update($request->all());
 
+        if ($restock->quantity <= 0) {
+            $restock->status = 'sold-out';
+            $restock->save();
+        } else {
+            $restock->status = 'available';
+            $restock->save();
+        }
+
         $productVariant = ProductVariant::find($request->product_variant_id);
+
+        $quantity = $productVariant->stock - $restock->quantity;
+
+        $type = $restock->quantity > $productVariant->stock ? 'in' : 'out';
+
         $productVariant->stock = $request->quantity;
+
+        if ($productVariant->stock > 10) {
+            $productVariant->stock_status = 'in-stock';
+        } else if ($productVariant->stock > 0) {
+            $productVariant->stock_status = 'limit-stock';
+        } else {
+            $productVariant->stock_status = 'out-of-stock';
+        }
+
         $productVariant->save();
+
+
+        $stockMovements = new StockMovement();
+        $stockMovements->store_id = Auth::user()->store->id;
+        $stockMovements->product_variant_id = $productVariant->id;
+        $stockMovements->quantity = abs($quantity);
+        $stockMovements->type = $type;
+        $stockMovements->reference = 'Penyesuaian Stok';
+        $stockMovements->save();
 
         return response()->json([
             'message' => 'Stok berhasil diperbarui',
@@ -213,7 +250,7 @@ class RestockController extends Controller
      */
     public function restockData(Request $request)
     {
-        $query = Restock::query()->where('status', '!=', 'sold-out')->with('productVariant')->orderBy('updated_at', 'desc');
+        $query = Restock::query()->where('status', '!=', 'sold-out')->where('store_id', Auth::user()->store->id)->with('productVariant')->orderBy('updated_at', 'desc');
 
         // Handle global search
         if ($request->has('search')) {

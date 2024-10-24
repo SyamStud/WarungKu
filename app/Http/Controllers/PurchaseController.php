@@ -58,6 +58,7 @@ class PurchaseController extends Controller
         }
 
         $purchase->user_id = Auth::user()->id;
+        $purchase->store_id = Auth::user()->store->id;
         $purchase->save();
 
 
@@ -110,7 +111,8 @@ class PurchaseController extends Controller
      */
     public function purchaseData(Request $request)
     {
-        $query = Purchase::query();
+        $query = Purchase::query()->where('store_id', Auth::user()->store->id)
+            ->with('product', 'supplier', 'user');
 
         // Handle global search
         if ($request->has('search')) {
@@ -215,6 +217,7 @@ class PurchaseController extends Controller
     {
         $purchases = Purchase::selectRaw('DATE(created_at) as date, SUM(price) as count')
             ->whereBetween('created_at', [$start, $end])
+            ->where('store_id', Auth::user()->store->id)
             ->groupBy('date')
             ->orderBy('date')
             ->get();

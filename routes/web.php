@@ -146,6 +146,8 @@ Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->gr
     Route::post('/products/getByName', [ProductController::class, 'getProductByName']);
     Route::post('/products/getVariantByName', [ProductController::class, 'getProductVariantByName']);
 
+    // Route::get('/pos', [PosController::class, 'index'])->name('pos');
+
     Route::prefix('pos')->group(function () {
         Route::resource('/', PosController::class);
         Route::get('/carts/getUserCart', [CartController::class, 'getUserCart']);
@@ -173,6 +175,7 @@ Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->gr
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    Route::get('/super-admin/dashboard', fn() => Inertia::render('SuperAdmin/Dashboard'))->name('dashboard.superadmin');
     Route::resource('/super-admin/store-applications', StoreApplicationController::class);
     Route::resource('/super-admin/stores', SuperStoreController::class);
 });

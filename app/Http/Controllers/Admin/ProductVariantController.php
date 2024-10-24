@@ -7,9 +7,10 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
 use App\Exports\ProductsExport;
-use App\Exports\ProductVariantsExport;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductVariantsExport;
 use Illuminate\Support\Facades\Validator;
 
 class ProductVariantController extends Controller
@@ -55,7 +56,12 @@ class ProductVariantController extends Controller
             return array_merge($variant, ['status' => $request->status]);
         });
 
-        $createdVariants = $product->productVariants()->createMany($productVariants->toArray());
+        $createdVariants = $product->productVariants()->createMany(
+            $productVariants->map(function ($variant) use ($request) {
+            $variant['store_id'] = Auth::user()->store->id;
+            return $variant;
+            })->toArray()
+        );
 
         foreach ($createdVariants as $index => $variant) {
             $variant->stock = isset($request->variantInputs[$index]['stock']) ? $request->variantInputs[$index]['stock'] : 0;
@@ -84,6 +90,7 @@ class ProductVariantController extends Controller
                 'quantity' => $variant->stock,
                 'cost' => $request->variantInputs[$index]['cost'],
                 'stock_status' => $status,
+                'store_id' => Auth::user()->store->id,
             ]);
         }
 

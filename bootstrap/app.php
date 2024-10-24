@@ -23,6 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.store' => \App\Http\Middleware\CheckStore::class,
             'check.store.status' => \App\Http\Middleware\CheckStoreStatus::class,
         ]);
+
+        $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

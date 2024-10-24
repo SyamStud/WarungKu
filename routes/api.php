@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\Admin\CartController;
@@ -24,14 +25,15 @@ use App\Http\Controllers\Admin\DebtPaymentHistoryController;
 use App\Http\Controllers\SuperAdmin\StoreApplicationController;
 
 // User Routes
-Route::get('/users', [UserController::class, 'userData']);
+Route::get('/store-users', [UserController::class, 'userData']);
+Route::get('/users', [UserController::class, 'allUserData']);
 Route::get('/users/chartData', [UserController::class, 'getUserChartData']);
 
 // Category and Product Routes
 Route::get('/categories', [CategoryController::class, 'categoryData']);
-Route::get('/products', [ProductController::class, 'productData']);
+Route::get('/products', [ProductController::class, 'productData'])->middleware('auth:sanctum');
 Route::get('/productVariants', [ProductController::class, 'productVariantData']);
-Route::post('/products/check-sku', [ProductController::class, 'checkSKU']);
+Route::post('/products/check-sku', [ProductController::class, 'checkSKU'])->middleware('auth:sanctum');
 Route::post('/products/get', [ProductController::class, 'getProduct']);
 Route::post('/products/getVariantByName', [ProductController::class, 'getProductByName']);
 

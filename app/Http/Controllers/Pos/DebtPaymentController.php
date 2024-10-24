@@ -62,10 +62,12 @@ class DebtPaymentController extends Controller
         $payment->paid_at = now();
         $payment->payment_method = $request->payment_method;
         $payment->user_id = Auth::user()->id;
+        $payment->store_id = Auth::user()->store->id;
         $payment->save();
 
         $debts = Debt::where('customer_id', $request->customer_id)
             ->where('status', '!=', 'paid')
+            ->where('store_id', Auth::user()->store->id)
             ->with('debtItems')
             ->orderBy('created_at', 'asc')
             ->get();
@@ -104,6 +106,7 @@ class DebtPaymentController extends Controller
                 $paymentItem->debt_item_id = $debtItem->id;
                 $paymentItem->amount = $paymentForThisItem;
                 $paymentItem->remaining_debt = $debtItem->remaining_amount;
+                $paymentItem->store_id = Auth::user()->store->id;
                 $paymentItem->save();
             }
 

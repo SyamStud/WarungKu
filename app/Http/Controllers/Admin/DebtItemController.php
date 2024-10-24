@@ -6,6 +6,7 @@ use Inertia\Inertia;
 use App\Models\DebtItem;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Barryvdh\Debugbar\Facades\Debugbar;
 
 class DebtItemController extends Controller
@@ -23,7 +24,7 @@ class DebtItemController extends Controller
      */
     public function debtItemData(Request $request)
     {
-        $query = DebtItem::query()->with('debt', 'transactionItem');
+        $query = DebtItem::query()->where('store_id', Auth::user()->store->id)->with('debt', 'transactionItem');
 
         // Handle global search
         if ($request->has('search')) {

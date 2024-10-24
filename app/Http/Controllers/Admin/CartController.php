@@ -54,7 +54,7 @@ class CartController extends Controller
      */
     public function cartData(Request $request)
     {
-        $query = Cart::query()->with('user');
+        $query = Cart::query()->where('store_id', Auth::user()->store->id)->with('user');
 
         // Handle global search
         if ($request->has('search')) {
@@ -114,7 +114,7 @@ class CartController extends Controller
     {
         $userId = Auth::id();
 
-        $cart = Cart::where('user_id', $userId)->first();
+        $cart = Cart::where('user_id', $userId)->where('store_id', Auth::user()->store->id)->first();
 
         if (!$cart) {
             return response()->json([
@@ -184,7 +184,6 @@ class CartController extends Controller
         }
 
         $productDiscount = $this->getProductDiscount($cartItem->product_variant_id, $request->quantity);
-
 
         $cartItem->discounted_price = $productDiscount
             ? $this->calculateProductDiscount($cartItem->price, $productDiscount)
@@ -323,6 +322,7 @@ class CartController extends Controller
             ->where('product_id', $cartItem->product_id)
             ->where('product_variant_id', $request->variant_id)
             ->where('id', '!=', $cartItem->id)
+            ->where('store_id', Auth::user()->store_id)
             ->first();
 
         if ($existingItem) {
@@ -446,6 +446,7 @@ class CartController extends Controller
             ->join('units', 'product_variants.unit_id', '=', 'units.id')
             ->where('products.sku', $request->identifier)
             ->where('product_variants.status', 'active')
+            ->where('products.store_id', Auth::user()->store_id)
             ->first();
 
         // $product = Cache::remember($cacheKey, now()->addHours(24), function () use ($request) {
@@ -472,6 +473,7 @@ class CartController extends Controller
                 ->join('units', 'product_variants.unit_id', '=', 'units.id')
                 ->where('products.name', 'like', '%' . $request->identifier . '%')
                 ->where('product_variants.status', 'active')
+                ->where('products.store_id', Auth::user()->store_id)
                 ->whereNull('product_variants.deleted_at') // Abaikan varian yang soft delete
                 ->get();
 
@@ -511,12 +513,14 @@ class CartController extends Controller
                 ->join('units', 'product_variants.unit_id', '=', 'units.id')
                 ->where('products.sku', $request->identifier)
                 ->where('product_variants.id', $request->variant_id)
+                ->where('products.store_id', Auth::user()->store_id)
                 ->first();
         }
 
         return DB::transaction(function () use ($request, $product) {
             $cart = DB::table('carts')->where('user_id', Auth::id())
                 ->where('transaction_code', $request->transaction_code)
+                ->where('store_id', Auth::user()->store_id)
                 ->first();
 
             if (!$cart) {
@@ -527,6 +531,7 @@ class CartController extends Controller
                     'discount' => 0,
                     'tax' => 0,
                     'grand_total' => 0,
+                    'store_id' => Auth::user()->store_id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -537,6 +542,7 @@ class CartController extends Controller
             $cartItem = DB::table('cart_items')
                 ->where('cart_id', $cartId)
                 ->where('product_variant_id', $product->variant_id)
+                ->where('store_id', Auth::user()->store_id)
                 ->first();
 
             if ($cartItem) {
@@ -550,6 +556,7 @@ class CartController extends Controller
 
                 $cartItem = CartItem::where('cart_id', $cartId)
                     ->where('product_variant_id', $product->variant_id)
+                    ->where('store_id', Auth::user()->store_id)
                     ->first();
 
                 $productDiscount = $this->getProductDiscount($product->variant_id, $cartItem->quantity);
@@ -598,6 +605,7 @@ class CartController extends Controller
                     'discounted_price' => $discounted_price ? $discounted_price : $product->price,
                     'total_price' => $product->price,
                     'discounted_total_price' => $discounted_price ? $discounted_price : $product->price,
+                    'store_id' => Auth::user()->store_id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -605,10 +613,12 @@ class CartController extends Controller
 
             $totalPrice = DB::table('cart_items')
                 ->where('cart_id', $cartId)
+                ->where('store_id', Auth::user()->store_id)
                 ->sum('total_price');
 
             $totalDiscount = DB::table('cart_items')
                 ->where('cart_id', $cartId)
+                ->where('store_id', Auth::user()->store_id)
                 ->sum('discount');
 
             $orderDiscount = $this->getOrderDiscount(($totalPrice - $totalDiscount));
@@ -649,6 +659,7 @@ class CartController extends Controller
 
         $cart = Cart::where('user_id', Auth::id())
             ->where('transaction_code', $request->transaction_code)
+            ->where('store_id', Auth::user()->store_id)
             ->first();
 
         if (!$cart) {
@@ -658,7 +669,7 @@ class CartController extends Controller
             ], 404);
         }
 
-        $cartItems = CartItem::where('cart_id', $cart->id)->get();
+        $cartItems = CartItem::where('cart_id', $cart->id)->where('store_id', Auth::user()->store_id)->get();
 
         if ($cartItems->isEmpty()) {
             return response()->json([
@@ -684,6 +695,7 @@ class CartController extends Controller
                     'total_change' => $request->total_payment - ($cart->grand_total),
                     'payment_method' => $request->payment_method,
                     'total_profit' => 0,
+                    'store_id' => Auth::user()->store_id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -696,18 +708,21 @@ class CartController extends Controller
                         $stockUsed = Restock::where('product_variant_id', $cartItem->product_variant_id)
                             ->where('quantity', '>', 0)
                             ->where('status', '!=', 'sold-out')
+                            ->where('store_id', Auth::user()->store_id)
                             ->orderBy('created_at', 'asc')
                             ->first();
 
                         // KETIKA STOCK KOSONG
                         if (!$stockUsed) {
                             $stockUsed = Restock::where('product_variant_id', $cartItem->product_variant_id)
+                                ->where('store_id', Auth::user()->store_id)
                                 ->orderBy('created_at', 'desc')
                                 ->first();
 
                             $existingStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
                                 ->where('cost', 0)
                                 ->whereDate('created_at', now()->toDateString())
+                                ->where('store_id', Auth::user()->store_id)
                                 ->first();
 
                             if ($existingStock) {
@@ -721,6 +736,7 @@ class CartController extends Controller
                                     'difference' => $remainingQuantity,
                                     'cost' => 0,
                                     'status' => 'overdrawn',
+                                    'store_id' => Auth::user()->store_id,
                                 ]);
                             }
 
@@ -739,6 +755,7 @@ class CartController extends Controller
                                 'discounted_total_price' => $cartItem->discounted_price * $remainingQuantity,
                                 'profit' => $profit,
                                 'restock_id' => $stockUsed->id,
+                                'store_id' => Auth::user()->store_id,
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ]);
@@ -762,6 +779,7 @@ class CartController extends Controller
                             'discounted_total_price' => $cartItem->discounted_price * $quantityFromThisStock,
                             'profit' => $profit,
                             'restock_id' => $stockUsed->id,
+                            'store_id' => Auth::user()->store_id,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
@@ -775,6 +793,7 @@ class CartController extends Controller
                             $differenceStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
                                 ->where('difference', '>', 0)
                                 ->where('status', '!=', 'audit-completed')
+                                ->where('store_id', Auth::user()->store_id)
                                 ->get();
 
                             if ($differenceStock->count() > 0) {
@@ -791,13 +810,14 @@ class CartController extends Controller
                         $remainingQuantity -= $quantityFromThisStock;
 
                         if ($request->payment_method == 'debt') {
-                            $debt = Debt::where('transaction_id', $transaction->id)->first();
+                            $debt = Debt::where('transaction_id', $transaction->id)->where('store_id', Auth::user()->store_id)->first();
                             if (!$debt) {
                                 $debt = Debt::create([
                                     'customer_id' => $request->customer_id,
                                     'transaction_id' => $transaction->id,
                                     'total_amount' => $cart->grand_total,
                                     'remaining_amount' => $cart->grand_total,
+                                    'store_id' => Auth::user()->store_id,
                                 ]);
                             }
 
@@ -806,6 +826,7 @@ class CartController extends Controller
                                 'transaction_item_id' => $transactionItem,
                                 'total_amount' => $cartItem->discounted_price * $quantityFromThisStock,
                                 'remaining_amount' => $cartItem->discounted_price * $quantityFromThisStock,
+                                'store_id' => Auth::user()->store_id,
                             ]);
                         }
                     }
@@ -817,12 +838,13 @@ class CartController extends Controller
 
                 if ($request->payment_method == 'debt') {
                     if ($cart->tax > 0) {
-                        $debt = Debt::where('transaction_id', $transaction->id)->first();
+                        $debt = Debt::where('transaction_id', $transaction->id)->where('store_id', Auth::user()->store_id)->first();
 
                         DebtItem::create([
                             'debt_id' => $debt->id,
                             'total_amount' => $cart->tax,
                             'remaining_amount' => $cart->tax,
+                            'store_id' => Auth::user()->store_id,
                         ]);
                     }
                 }
@@ -847,7 +869,7 @@ class CartController extends Controller
     public function decreaseStock($cartItems)
     {
         foreach ($cartItems as $cartItem) {
-            $productVariant = ProductVariant::where('id', $cartItem->product_variant_id)->first();
+            $productVariant = ProductVariant::where('id', $cartItem->product_variant_id)->where('store_id', Auth::user()->store_id)->first();
 
             if ($productVariant) {
                 if ($productVariant->stock > $cartItem->quantity) {
@@ -872,6 +894,7 @@ class CartController extends Controller
                     'reference' => 'Transaksi',
                     'created_at' => now(),
                     'updated_at' => now(),
+                    'store_id' => Auth::user()->store_id,
                 ]);
             }
         }
@@ -971,6 +994,7 @@ class CartController extends Controller
     protected function getProductDiscount($productId, $quantity)
     {
         return DiscountProduct::where('product_variant_id', $productId)
+            ->where('store_id', Auth::user()->store_id)
             ->whereHas('discount', function ($query) use ($quantity) {
                 $query->where('threshold', '<=', $quantity);
             })
@@ -1008,6 +1032,7 @@ class CartController extends Controller
         return Discount::where('type', 'order')
             ->where('threshold', '<=', $totalPrice)
             ->where('is_active', true)
+            ->where('store_id', Auth::user()->store_id)
             ->first();
     }
 

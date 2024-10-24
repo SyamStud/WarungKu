@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Barryvdh\Debugbar\Facades\Debugbar;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\ErrorHandler\Debug;
 
@@ -62,6 +63,7 @@ class UserController extends Controller
             'phone' => $request->phone,
             'address' => $request->address,
             'photo' => 'storage/' . $photoPath,
+            'store_id' => Auth::user()->store->id,
         ]);
 
         $user->assignRole($request->role);
@@ -139,9 +141,64 @@ class UserController extends Controller
     /**
      * Get all users data.
      */
-    public function userData(Request $request)
+    public function allUserData(Request $request)
     {
         $query = User::query()->with('roles');
+
+        // Handle global search
+        if ($request->has('search')) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                    ->orWhere('email', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Handle sorting
+        if ($request->has('sort')) {
+            $sortField = $request->sort;
+            $sortDirection = $request->input('direction', 'asc');
+            $query->orderBy($sortField, $sortDirection);
+        }
+
+        // Handle pagination
+        $perPage = $request->input('per_page', 10);
+        $users = $query->paginate($perPage);
+
+
+        // Calculate 'from' and 'to'
+        $from = ($users->currentPage() - 1) * $users->perPage() + 1;
+        $to = min($from + $users->count() - 1, $users->total());
+
+        $transformedUsers = $users->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'nik' => $user->nik,
+                'address' => $user->address,
+                'photo' => $user->photo,
+                'roles' => $user->roles->pluck('name')->implode(', '),
+            ];
+        });
+
+        return response()->json([
+            'data' => $transformedUsers,
+            'meta' => [
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'per_page' => $users->perPage(),
+                'total' => $users->total(),
+                'from' => $from,
+                'to' => $to,
+            ],
+        ]);
+    }
+
+    public function userData(Request $request)
+    {
+        $query = User::query()->where('store_id', Auth::user()->store->id)->with('roles');
 
         // Handle global search
         if ($request->has('search')) {

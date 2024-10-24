@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use Mike42\Escpos\Printer;
 use App\Models\RestockList;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Mike42\Escpos\CapabilityProfile;
 use Illuminate\Support\Facades\Validator;
 use Mike42\Escpos\PrintConnectors\WindowsPrintConnector;
@@ -39,7 +40,7 @@ class RestockListController extends Controller
             ], 422);
         }
 
-        $unit = Unit::where('name', 'PCS')->first();
+        $unit = Unit::where('name', 'PCS')->where('store_id', Auth::user()->store->id)->first();
 
         if (!$unit) {
             return response()->json([
@@ -62,7 +63,9 @@ class RestockListController extends Controller
             $message = 'Quantity updated successfully';
         } else {
             // Jika produk belum ada, buat entri baru
-            RestockList::create($request->all());
+            RestockList::create(array_merge($request->all(), [
+                'store_id' => Auth::user()->store->id,
+            ]));
             $message = 'Restock list created successfully';
         }
 
@@ -99,7 +102,7 @@ class RestockListController extends Controller
      */
     public function restockListData(Request $request)
     {
-        $query = RestockList::query();
+        $query = RestockList::query()->where('store_id', Auth::user()->store->id);
 
         // Handle global search
         if ($request->has('search')) {

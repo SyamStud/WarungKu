@@ -61,19 +61,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { onMounted, reactive, ref } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
 import Button from '@/components/ui/button/Button.vue';
 import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import DialogFooter from '@/Components/ui/dialog/DialogFooter.vue';
 import NavLink from '@/Components/NavLink.vue';
 
+const { props } = usePage();
+const user = reactive(props.auth.user);
+
+const isAdmin = ref(false);
+
+onMounted(() => {
+    if (user.roles[0].name === 'admin') {
+        isAdmin.value = true;
+    } else {
+        isAdmin.value = false;
+    }
+});
+
 const navLinks = [
-    { href: "/admin/dashboard", icon: "https://img.icons8.com/color/48/dashboard-layout.png", alt: "dashboard-layout", text: "Dashboard" },
+    isAdmin.value ? { href: "/admin/dashboard", icon: "https://img.icons8.com/color/48/dashboard-layout.png", alt: "dashboard-layout", text: "Dashboard" } : null,
     { href: "/pos", icon: "https://img.icons8.com/?size=100&id=13225&format=png&color=000000", alt: "pos", text: "Halaman Kasir" },
     { href: "/pos/debt-payments", icon: "https://img.icons8.com/?size=100&id=zblJvoWkP1B7&format=png&color=000000", alt: "debt-payments", text: "Pembayaran Hutang" },
     { href: "/settings", icon: "https://img.icons8.com/color/48/gear.png", alt: "gear", text: "Pengaturan" },
-];
+].filter(link => link !== null);
 
 const cancelButton = ref(null);
 const isLoading = ref(false);

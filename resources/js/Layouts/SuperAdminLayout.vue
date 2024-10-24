@@ -16,6 +16,19 @@
                             {{ tab.name }}
                         </button>
                     </li>
+
+                    <li class="relative">
+                        <Link href="/logout" method="POST">
+                        <button :class="[
+                            'text-sm px-6 py-3 transition-all duration-150 ease-in-out focus:outline-none hover:bg-gray-200 hover:text-gray-900 flex gap-2 items-center',
+                            activeTab === 'POS' ? 'bg-gray-100 !text-black' : 'text-white'
+                        ]">
+                            <img width="20" height="20"
+                                src="https://img.icons8.com/?size=100&id=13925&format=png&color=000000" alt="print" />
+                            Logout
+                        </button>
+                        </Link>
+                    </li>
                 </ul>
             </nav>
             <div class="relative hidden 2xl:block">
@@ -79,7 +92,7 @@
                     class="absolute 2xl:relative left-0 2xl:left-auto top-14 2xl:top-auto z-10 2xl:z-auto space-y-2 2xl:space-y-0 w-full 2xl:w-auto">
 
                     <!-- Mobile Toggle Tabs -->
-                    <li v-for="tab in tabs" :key="tab.name" class="relative w-full 2xl:w-auto">
+                    <li v-for="tab in tabs" :key="tab.name" class="relative w-full 2xl:w-auto mb-[-10px]">
                         <button @click="toggleActiveTab(tab.name)"
                             :class="['w-full text-sm px-6 py-3 focus:outline-none hover:bg-gray-200 hover:text-gray-900 flex gap-2 items-center 2xl:inline-block', activeMobileTab === tab.name ? 'bg-gray-100 text-black' : 'text-white']">
                             <template v-if="tab.imageSrc">
@@ -87,6 +100,7 @@
                             </template>
                             {{ tab.name }}
                         </button>
+
 
                         <!-- Show Tools when Tab is Active in Mobile -->
                         <div v-show="activeMobileTab === tab.name && isMenuOpen" class="bg-gray-300 p-2">
@@ -103,6 +117,19 @@
                                 </li>
                             </ul>
                         </div>
+                    </li>
+
+                    <li class="relative w-full 2xl:w-auto">
+                        <Link href="/logout" method="POST">
+                        <button :class="[
+                            'w-full text-sm px-6 py-3 transition-all duration-150 ease-in-out focus:outline-none hover:bg-gray-200 hover:text-gray-900 flex gap-2 items-center',
+                            activeTab === 'POS' ? 'bg-gray-100 !text-black' : 'text-white'
+                        ]">
+                            <img width="20" height="20"
+                                src="https://img.icons8.com/?size=100&id=13925&format=png&color=000000" alt="print" />
+                            Logout
+                        </button>
+                        </Link>
                     </li>
                 </ul>
             </nav>
@@ -176,13 +203,13 @@ const contentMarginClass = computed(() => {
 });
 
 const tabs = [
-    {
-        name: 'Dashboard',
-        imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000',
-        tools: [
-            { link: "/admin/dashboard", name: 'Dashboard', imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000' },
-        ]
-    },
+    // {
+    //     name: 'Dashboard',
+    //     imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000',
+    //     tools: [
+    //         { link: "/admin/dashboard", name: 'Dashboard', imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000' },
+    //     ]
+    // },
     {
         name: 'Toko',
         imageSrc: 'https://img.icons8.com/?size=100&id=18901&format=png&color=000000',
@@ -191,25 +218,25 @@ const tabs = [
             { link: "/super-admin/stores", name: 'Daftar Toko', imageSrc: 'https://img.icons8.com/?size=100&id=18901&format=png&color=000000' },
         ]
     },
-    {
-        name: 'Pengguna',
-        imageSrc: 'https://img.icons8.com/?size=100&id=13042&format=png&color=000000',
-        tools: [
-            { link: '/admin/customers', name: 'Pelanggan', imageSrc: 'https://img.icons8.com/?size=100&id=23301&format=png&color=000000' },
-            { link: '/admin/users', name: 'Admin & Kasir', imageSrc: 'https://img.icons8.com/?size=100&id=108294&format=png&color=000000' },
-        ]
-    },
-    {
-        name: 'Laporan',
-        imageSrc: 'https://img.icons8.com/?size=100&id=13532&format=png&color=000000',
-        tools: [
-            { link: "/admin/reports/transaction", name: 'Laporan Penjualan', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
-            { link: "/admin/reports/purchase", name: 'Laporan Pembelian', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
-        ]
-    }
+    // {
+    //     name: 'Pengguna',
+    //     imageSrc: 'https://img.icons8.com/?size=100&id=13042&format=png&color=000000',
+    //     tools: [
+    //         { link: '/admin/customers', name: 'Pelanggan', imageSrc: 'https://img.icons8.com/?size=100&id=23301&format=png&color=000000' },
+    //         { link: '/admin/users', name: 'Admin & Kasir', imageSrc: 'https://img.icons8.com/?size=100&id=108294&format=png&color=000000' },
+    //     ]
+    // },
+    // {
+    //     name: 'Laporan',
+    //     imageSrc: 'https://img.icons8.com/?size=100&id=13532&format=png&color=000000',
+    //     tools: [
+    //         { link: "/admin/reports/transaction", name: 'Laporan Penjualan', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
+    //         { link: "/admin/reports/purchase", name: 'Laporan Pembelian', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
+    //     ]
+    // }
 ];
 
-const activeTab = ref('Beranda');
+const activeTab = ref('Dashboard');
 
 const setActiveTab = (tabName) => {
     activeTab.value = tabName;

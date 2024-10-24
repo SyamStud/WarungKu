@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Models\StockMovement;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 
 class StockMovementController extends Controller
@@ -24,7 +25,7 @@ class StockMovementController extends Controller
      */
     public function stockMovementData(Request $request)
     {
-        $query = StockMovement::query()->with('productVariant')->orderBy('created_at', 'desc');
+        $query = StockMovement::query()->where('store_id', Auth::user()->store->id)->with('productVariant')->orderBy('created_at', 'desc');
 
         // Handle global search
         if ($request->has('search')) {

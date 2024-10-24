@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Unit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
@@ -33,6 +34,7 @@ class UnitController extends Controller
 
         Unit::create([
             'name' => strtoupper($request->input('name')),
+            'store_id' => Auth::user()->store->id,
         ]);
 
         return response()->json([
@@ -82,7 +84,7 @@ class UnitController extends Controller
      */
     public function unitData(Request $request)
     {
-        $query = Unit::query();
+        $query = Unit::query()->where('store_id', Auth::user()->store->id);
 
         // Handle global search
         if ($request->has('search')) {

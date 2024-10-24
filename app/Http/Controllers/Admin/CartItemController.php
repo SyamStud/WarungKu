@@ -6,6 +6,7 @@ use Inertia\Inertia;
 use App\Models\CartItem;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class CartItemController extends Controller
 {
@@ -35,7 +36,7 @@ class CartItemController extends Controller
      */
     public function cartItemData(Request $request)
     {
-        $query = CartItem::query()->with('cart', 'product');
+        $query = CartItem::query()->where('store_id', Auth::user()->store->id)->with('cart', 'product');
 
         // Handle global search
         if ($request->has('search')) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
@@ -34,7 +35,7 @@ class CustomerController extends Controller
             ]);
         }
 
-        Customer::create($request->all());
+        Customer::create(array_merge($request->all(), ['store_id' => Auth::user()->store->id]));
 
         return response()->json([
             'message' => 'Pelanggan berhasil ditambahkan',
@@ -73,7 +74,7 @@ class CustomerController extends Controller
      */
     public function customerData(Request $request)
     {
-        $query = Customer::query()->with('debts');
+        $query = Customer::query()->where('store_id', Auth::user()->store->id)->with('debts');
 
         // Handle global search
         if ($request->has('search')) {
@@ -138,7 +139,7 @@ class CustomerController extends Controller
             ]);
         }
 
-        $customer = Customer::where('name', $request->name)
+        $customer = Customer::where('name', $request->name)->where('store_id', Auth::user()->store->id)
             ->with([
                 'debts.debtItems' => function ($query) {
                     $query->where('status', '!=', 'paid')

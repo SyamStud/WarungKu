@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 
 class TransactionController extends Controller
@@ -25,7 +26,7 @@ class TransactionController extends Controller
      */
     public function transactionData(Request $request)
     {
-        $query = Transaction::query()->with('user')->orderBy('created_at', 'desc');
+        $query = Transaction::query()->where('store_id', Auth::user()->store->id)->with('user')->orderBy('created_at', 'desc');
 
         // Handle global search
         if ($request->has('search')) {
@@ -82,8 +83,6 @@ class TransactionController extends Controller
         ]);
     }
 
-
-
     public function getTransactionChartData(Request $request)
     {
         $range = $request->input('range', 'weekly');
@@ -132,6 +131,7 @@ class TransactionController extends Controller
     private function getData(Carbon $start, Carbon $end, string $format): array
     {
         $transactions = Transaction::selectRaw('DATE(created_at) as date, SUM(total_price) as count')
+            ->where('store_id', Auth::user()->store->id)
             ->whereBetween('created_at', [$start, $end])
             ->groupBy('date')
             ->orderBy('date')

@@ -236,7 +236,7 @@ const table = useVueTable({
 // Fungsi untuk mengambil data dari API
 const fetchData = async () => {
     try {
-        const response = await axios.get('/api/users', {
+        const response = await axios.get('/api/store-users', {
             params: {
                 search: globalFilter.value,
                 page: pagination.value.pageIndex + 1,

@@ -7,6 +7,7 @@ use App\Models\Discount;
 use Illuminate\Http\Request;
 use App\Models\DiscountProduct;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class DiscountProductController extends Controller
@@ -40,6 +41,7 @@ class DiscountProductController extends Controller
             'discount_id' => $request->discount_id,
             'product_variant_id' => $request->product_variant_id,
             'is_active' => $request->is_active,
+            'store_id' => Auth::user()->store->id,
         ]);
 
         return response()->json([
@@ -87,7 +89,7 @@ class DiscountProductController extends Controller
 
     public function discountProductData(Request $request)
     {
-        $query = DiscountProduct::query()->with(['discount', 'productVariant.product', 'productVariant.unit']);
+        $query = DiscountProduct::query()->where('store_id', Auth::user()->store->id)->with(['discount', 'productVariant.product', 'productVariant.unit']);
 
         // Handle global search
         if ($request->has('search')) {
