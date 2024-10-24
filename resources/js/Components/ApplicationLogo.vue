@@ -1,3 +1,3 @@
 <template>
-    <img src="/assets/logo.svg" alt="" srcset="">
+    <img src="/assets/logo.png" alt="" srcset="">
 </template>

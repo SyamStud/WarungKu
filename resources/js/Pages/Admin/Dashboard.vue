@@ -9,11 +9,28 @@ import { useFormatRupiah } from '@/Composables/useFormatRupiah';
 const { formatRupiah } = useFormatRupiah();
 
 // Array yang berisi URL gambar untuk digunakan pada carousel otomatis
-const carouselImages = [
-    'https://via.placeholder.com/800x400/FF6347/FFFFFF?text=Slide+1',
-    'https://via.placeholder.com/800x400/4682B4/FFFFFF?text=Slide+2',
-    'https://via.placeholder.com/800x400/9ACD32/FFFFFF?text=Slide+3',
-];
+const carouselImages = {
+  mobile: [
+    'http://127.0.0.1:8000/storage/mobile1.png',
+    '/images/mobile/slide2-640x360.jpg',
+    '/images/mobile/slide3-640x360.jpg'
+  ],
+  tablet: [
+    '/images/tablet/slide1-768x432.jpg',
+    '/images/tablet/slide2-768x432.jpg', 
+    '/images/tablet/slide3-768x432.jpg'
+  ],
+  laptop: [
+    '/images/laptop/slide1-1024x576.jpg',
+    '/images/laptop/slide2-1024x576.jpg',
+    '/images/laptop/slide3-1024x576.jpg'
+  ],
+  desktop: [
+    '/images/desktop/slide1-1280x720.jpg',
+    '/images/desktop/slide2-1280x720.jpg',
+    '/images/desktop/slide3-1280x720.jpg'
+  ]
+};
 
 // State untuk menyimpan ringkasan data dashboard
 const summary = ref({

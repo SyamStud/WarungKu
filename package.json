@@ -20,6 +20,7 @@
     },
     "dependencies": {
         "@inertiajs/inertia": "^0.11.1",
+        "@inertiajs/inertia-vue3": "^0.6.0",
         "@tanstack/vue-table": "^8.20.5",
         "@vee-validate/zod": "^4.13.2",
         "@vueuse/core": "^11.1.0",
@@ -39,7 +40,6 @@
         "vee-validate": "^4.13.2",
         "vue-chartjs": "^5.3.1",
         "vue-multiselect": "^3.0.0",
-        "vue-router": "^4.4.5",
         "zod": "^3.23.8"
     }
 }
