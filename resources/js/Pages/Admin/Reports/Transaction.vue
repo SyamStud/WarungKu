@@ -1,7 +1,7 @@
 <template>
     <AdminLayout>
         <div id="app" ref="appContainer">
-            <h1 class="text-3xl font-bold mb-10">Laporan Penjualan</h1>
+            <h1 class="text-2xl font-bold mb-10">Laporan Penjualan</h1>
             <!-- <Button @click="download">Download</Button> -->
             <ReportCalendar apiEndpoint="/api/transactions" dataKey="transactions" />
         </div>

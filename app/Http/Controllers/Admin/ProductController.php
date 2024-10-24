@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\ProductVariant;
 use App\Exports\ProductsExport;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Cache;
 use Barryvdh\Debugbar\Facades\Debugbar;
@@ -64,13 +65,20 @@ class ProductController extends Controller
             ]);
         }
 
-        $product = Product::create($request->except('status', 'varianInputs'));
+        $product = Product::create(array_merge(
+            $request->except('status', 'variantInputs'),
+            ['store_id' => Auth::user()->store->id]
+        ));
 
         $productVariants = collect($request->variantInputs)->map(function ($variant) use ($request) {
             return array_merge($variant, ['status' => $request->status]);
         });
 
-        $createdVariants = $product->productVariants()->createMany($productVariants->toArray());
+        $createdVariants = $product->productVariants()->createMany(
+            $productVariants->map(function ($variant) use ($product) {
+            return array_merge($variant, ['store_id' => $product->store_id]);
+            })->toArray()
+        );
 
         foreach ($createdVariants as $index => $variant) {
             $variant->stock = isset($request->variantInputs[$index]['stock']) ? $request->variantInputs[$index]['stock'] : 0;
@@ -99,6 +107,7 @@ class ProductController extends Controller
                 'quantity' => $variant->stock,
                 'cost' => $request->variantInputs[$index]['cost'],
                 'stock_status' => $status,
+                'store_id' => $product->store_id,
             ]);
         }
 
@@ -215,7 +224,7 @@ class ProductController extends Controller
 
     public function productData(Request $request)
     {
-        $query = Product::query()->with('category', 'productVariants');
+        $query = Product::query()->where('store_id', Auth::user()->store->id)->with('category', 'productVariants');
 
         // Handle global search
         if ($request->has('search')) {

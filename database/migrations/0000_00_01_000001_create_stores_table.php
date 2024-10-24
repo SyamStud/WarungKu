@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
             $table->string('website')->nullable();
-            $table->enum('status', ['active', 'pending','inactive'])->default('pending');
+            $table->enum('status', ['active', 'pending','inactive', 'rejected'])->default('pending');
+            $table->string('reason_of_rejection')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

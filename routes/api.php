@@ -15,11 +15,13 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DebtItemController;
 use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\SuperAdmin\StoreController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\StockMovementController;
 use App\Http\Controllers\Admin\DiscountProductController;
 use App\Http\Controllers\Admin\TransactionItemController;
 use App\Http\Controllers\Admin\DebtPaymentHistoryController;
+use App\Http\Controllers\SuperAdmin\StoreApplicationController;
 
 // User Routes
 Route::get('/users', [UserController::class, 'userData']);
@@ -68,3 +70,6 @@ Route::get('/purchases/{year}/{month}', [ReportController::class, 'getMonthlypur
 // Discount Routes
 Route::get('/discounts', [DiscountController::class, 'discountData']);
 Route::get('/discount-products', [DiscountProductController::class, 'discountProductData']);
+
+Route::get('/stores', [StoreController::class, 'storeData']);
+Route::get('/store-applications', [StoreApplicationController::class, 'storeApplicationData']);

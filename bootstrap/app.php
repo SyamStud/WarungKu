@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'check.mobile' => \App\Http\Middleware\CheckForMobileDevice::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'check.store' => \App\Http\Middleware\CheckStore::class,
+            'check.store.status' => \App\Http\Middleware\CheckStoreStatus::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

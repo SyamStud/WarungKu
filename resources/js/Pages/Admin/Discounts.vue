@@ -473,7 +473,7 @@ const handlePageChange = (newPageIndex) => {
                         </div>
 
                         <div class="flex gap-1 item-center w-full">
-                            <FormInput name="amount" label="Jumlah Diskon" type="number" />
+                            <FormInput name="amount" label="Jumlah" type="number" />
                             <div class="w-full mt-8">
                                 <FormField v-slot="{ componentField }" name="amount_type">
                                     <FormItem>

@@ -28,15 +28,18 @@ use App\Http\Controllers\{
     Admin\StockMovementController,
     Admin\DiscountProductController,
     Admin\TransactionItemController,
-    Admin\DebtPaymentHistoryController
+    Admin\DebtPaymentHistoryController,
+    StoreController,
+    SuperAdmin\StoreController as SuperStoreController,
 };
 use App\Http\Controllers\Admin\DebtController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\RestockController;
 use App\Http\Controllers\Admin\UnitController;
+use App\Http\Controllers\SuperAdmin\StoreApplicationController;
 
 // Email Verification Routes
-Route::get('/email/verify', fn() => view('auth.verify-email'))
+Route::get('/email/verify', fn() => view('auth.VerifyEmail'))
     ->middleware('auth')
     ->name('verification.notice');
 
@@ -49,10 +52,19 @@ Route::post('/email/verification-notification', fn(Request $request) => $request
     ->name('verification.send');
 
 // Authentication Routes
-Route::get('/', fn() => Inertia::render('Auth/Login'));
+Route::get('/', fn() => Inertia::render('Auth/Login'))->middleware('guest')->name('login');
 
 Route::get('/not-available-mobile', fn() => Inertia::render('NotAvailableMobile'))
     ->name('not-available-mobile');
+
+Route::get('/no-store', fn() => Inertia::render('NoStore'))
+    ->name('noStore')->middleware('check.store.status');
+
+Route::get('/register-store', fn() => Inertia::render('RegisterStore'))
+    ->name('registerStore')->middleware('check.store.status');
+
+Route::get('/waiting-approval', fn() => Inertia::render('WaitingApproval'))
+    ->name('waiting.approval')->middleware('check.store');
 
 // Profile Routes
 Route::middleware('auth')->group(function () {
@@ -61,8 +73,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::resource('/stores', StoreController::class);
 // Admin Routes
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->group(function () {
     // Admin Routes
     Route::middleware('role:admin')->group(function () {
         Route::prefix('admin')->group(function () {
@@ -73,8 +86,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Product Routes
             Route::get('/products/add-variant', [ProductController::class, 'addVariant'])->name('products.add.variant');
             Route::post('/products/add-variant', [ProductController::class, 'storeVariant'])->name('products.store.variant');
-            
+
             Route::get('/products/excel-export', [ProductController::class, 'exportExcel']);
+
             Route::resource('/products', ProductController::class);
 
             Route::get('/product-variants/export-excel', [ProductVariantController::class, 'exportExcel']);
@@ -155,6 +169,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Purchase Routes
     Route::resource('/purchases', PurchaseController::class);
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
+
+    Route::resource('/super-admin/store-applications', StoreApplicationController::class);
+    Route::resource('/super-admin/stores', SuperStoreController::class);
 });
 
 require __DIR__ . '/auth.php';

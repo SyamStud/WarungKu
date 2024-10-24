@@ -5,18 +5,6 @@
             <!-- Navigation Tabs -->
             <nav class="border-b bg-[#2A629A] shadow-md flex justify-between items-center">
                 <ul class="flex">
-                    <li class="relative">
-                        <Link href="/pos">
-                        <button :class="[
-                            'text-sm px-6 py-3 transition-all duration-150 ease-in-out focus:outline-none hover:bg-gray-200 hover:text-gray-900 flex gap-2 items-center',
-                            activeTab === 'POS' ? 'bg-gray-100 !text-black' : 'text-white'
-                        ]">
-                            <img width="20" height="20" src="https://img.icons8.com/color/48/print.png" alt="print" />
-                            Halaman Kasir
-                        </button>
-                        </Link>
-                    </li>
-
                     <li v-for="tab in tabs" :key="tab.name" class="relative">
                         <button @click="setActiveTab(tab.name)" :class="[
                             'text-sm px-6 py-3 transition-all duration-150 ease-in-out focus:outline-none hover:bg-gray-200 hover:text-gray-900 flex gap-2 items-center',
@@ -27,19 +15,6 @@
                             </template>
                             {{ tab.name }}
                         </button>
-                    </li>
-
-                    <li class="relative">
-                        <Link href="/settings">
-                        <button :class="[
-                            'text-sm px-6 py-3 transition-all duration-150 ease-in-out focus:outline-none hover:bg-gray-200 hover:text-gray-900 flex gap-2 items-center',
-                            activeTab === 'pengaturan' ? 'bg-gray-100 !text-black' : 'text-white'
-                        ]">
-                            <img width="20" height="20"
-                                src="https://img.icons8.com/?size=100&id=12784&format=png&color=000000" alt="print" />
-                            Pengaturan
-                        </button>
-                        </Link>
                     </li>
                 </ul>
             </nav>
@@ -89,7 +64,7 @@
         <div class="2xl:hidden flex flex-col w-full fixed top-0 z-50">
             <nav class="border-b bg-[#2A629A] shadow-md flex justify-between items-center p-4">
                 <div class="text-white font-bold text-lg">
-                    <Link href="/pos">POS</Link>
+                    <Link href="/pos">My POS System</Link>
                 </div>
 
                 <button @click="toggleMenu" class="2xl:hidden">
@@ -209,39 +184,11 @@ const tabs = [
         ]
     },
     {
-        name: 'Transaksi',
-        imageSrc: 'https://img.icons8.com/?size=100&id=13009&format=png&color=000000',
+        name: 'Toko',
+        imageSrc: 'https://img.icons8.com/?size=100&id=18901&format=png&color=000000',
         tools: [
-            { link: "/admin/carts", name: 'Transaksi Sementara', imageSrc: 'https://img.icons8.com/?size=100&id=18982&format=png&color=000000' },
-            { link: "/admin/cart-items", name: 'Item Transaksi Sementara', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
-            { link: "/admin/transactions", name: 'Transaksi', imageSrc: 'https://img.icons8.com/?size=100&id=63724&format=png&color=000000' },
-            { link: "/admin/transaction-items", name: 'Item Transaksi', imageSrc: 'https://img.icons8.com/?size=100&id=13123&format=png&color=000000' },
-            { link: "/admin/debts", name: 'Hutang', imageSrc: 'https://img.icons8.com/?size=100&id=tcIzvG8b1BjB&format=png&color=000000' },
-            { link: "/admin/debt-items", name: 'Item Hutang', imageSrc: 'https://img.icons8.com/?size=100&id=13229&format=png&color=000000' },
-            { link: "/admin/debt-payment-history", name: 'Riwayat Pembayaran Hutang', imageSrc: 'https://img.icons8.com/?size=100&id=NBus9BZohddY&format=png&color=000000' },
-        ]
-    },
-    {
-        name: 'Pembelian',
-        imageSrc: 'https://img.icons8.com/?size=100&id=BfXx00KJSKHH&format=png&color=000000',
-        tools: [
-            { link: "/admin/purchases", name: 'Restock Produk Supplier', imageSrc: 'https://img.icons8.com/?size=100&id=LbZI1V6lICp2&format=png&color=000000' },
-            { link: "/admin/restock-lists", name: 'List Belanja', imageSrc: 'https://img.icons8.com/?size=100&id=ZODLIcapQpqg&format=png&color=000000' },
-            { link: "/admin/suppliers", name: 'Supplier', imageSrc: 'https://img.icons8.com/?size=100&id=38216&format=png&color=000000' },
-        ]
-    },
-    {
-        name: 'Produk',
-        imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000',
-        tools: [
-            { link: '/admin/products', name: 'Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
-            { link: '/admin/product-variants', name: 'Variasi Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
-            { link: '/admin/restocks', name: 'Restock', imageSrc: 'https://img.icons8.com/?size=100&id=VWrzCw0rvxVx&format=png&color=000000' },
-            { link: '/admin/stock-movements', name: 'Riwayat Stok', imageSrc: 'https://img.icons8.com/?size=100&id=18971&format=png&color=000000' },
-            { link: '/admin/categories', name: 'Kategori', imageSrc: 'https://img.icons8.com/?size=100&id=XnHBz2LnhELw&format=png&color=000000' },
-            { link: '/admin/units', name: 'Unit', imageSrc: 'https://img.icons8.com/?size=100&id=12927&format=png&color=000000' },
-            { link: '/admin/discounts', name: 'Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=63761&format=png&color=000000' },
-            { link: '/admin/discount-products', name: 'Produk Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=yasXRs9W9T8i&format=png&color=000000' },
+            { link: "/super-admin/store-applications", name: 'Pengajuan Toko', imageSrc: 'https://img.icons8.com/?size=100&id=22244&format=png&color=000000' },
+            { link: "/super-admin/stores", name: 'Daftar Toko', imageSrc: 'https://img.icons8.com/?size=100&id=18901&format=png&color=000000' },
         ]
     },
     {

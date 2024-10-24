@@ -222,13 +222,13 @@ const exportExcel = async () => {
         <h1 class="text-2xl font-semibold text-gray-900">Daftar Hutang</h1>
         <!-- Input Pencarian -->
         <div class="flex flex-col md:flex-row justify-between">
-            <div class="flex gap-2 items-center">
-                <div class="flex gap-2 items-center">
+            <div class="mt-4 md:mt-0 flex md:flex-row flex-col gap-2 items-start md:items-center">
+                <div class="md:flex gap-2 items-start md:items-center md:space-y-0 space-y-2">
                     <Label>Pilih Rentang Export : </Label>
-                    <Popover>
-                        <PopoverTrigger as-child>
+                    <Popover class="w-full">
+                        <PopoverTrigger class="w-full" as-child>
                             <Button variant="outline" :class="cn(
-                                'w-[280px] justify-start text-left font-normal',
+                                'w-full md:w-[280px] justify-start text-left font-normal',
                                 !value && 'text-muted-foreground',
                             )">
                                 <img class="me-2" width="20" height="20"
@@ -248,7 +248,7 @@ const exportExcel = async () => {
                                 </template>
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent class="w-auto p-0">
+                        <PopoverContent class="w-full p-0">
                             <RangeCalendar v-model="value" initial-focus :number-of-months="2"
                                 @update:start-value="(startDate) => value.start = startDate" />
                         </PopoverContent>
