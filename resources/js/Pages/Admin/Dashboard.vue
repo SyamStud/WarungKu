@@ -9,28 +9,11 @@ import { useFormatRupiah } from '@/Composables/useFormatRupiah';
 const { formatRupiah } = useFormatRupiah();
 
 // Array yang berisi URL gambar untuk digunakan pada carousel otomatis
-const carouselImages = {
-  mobile: [
-    'http://127.0.0.1:8000/storage/mobile1.png',
-    '/images/mobile/slide2-640x360.jpg',
-    '/images/mobile/slide3-640x360.jpg'
-  ],
-  tablet: [
-    '/images/tablet/slide1-768x432.jpg',
-    '/images/tablet/slide2-768x432.jpg', 
-    '/images/tablet/slide3-768x432.jpg'
-  ],
-  laptop: [
-    '/images/laptop/slide1-1024x576.jpg',
-    '/images/laptop/slide2-1024x576.jpg',
-    '/images/laptop/slide3-1024x576.jpg'
-  ],
-  desktop: [
-    '/images/desktop/slide1-1280x720.jpg',
-    '/images/desktop/slide2-1280x720.jpg',
-    '/images/desktop/slide3-1280x720.jpg'
-  ]
-};
+const carouselImages = [
+    'http://10.1.39.78:8000/storage/slide/slide_1.png',
+    'http://10.1.39.78:8000/storage/slide/slide_2.png',
+    'http://10.1.39.78:8000/storage/slide/slide_3.png'
+];
 
 // State untuk menyimpan ringkasan data dashboard
 const summary = ref({
@@ -69,12 +52,29 @@ onMounted(() => {
 
 <template>
     <!-- Mengatur judul halaman -->
+
     <Head title="Beranda" />
 
     <AdminLayout>
         <div class="2xl:px-8">
             <!-- Komponen Carousel untuk menampilkan gambar secara otomatis -->
-            <AutoCarousel :images="carouselImages" :interval="4000" />
+            <AutoCarousel :images="carouselImages" :slides="[
+                {
+                    title: 'Selamat Datang',
+                    description: 'Temukan produk terbaik kami',
+                    logo: 'http://10.1.39.78:8000/storage/slide/logo/logo_1.png'
+                },
+                {
+                    title: 'Penawaran Khusus',
+                    description: 'Dapatkan penawaran eksklusif hari ini',
+                    logo: 'http://10.1.39.78:8000/storage/slide/logo/logo_1.png'
+                },
+                {
+                    title: 'Koleksi Terbaru',
+                    description: 'Lihat koleksi terbaru kami',
+                    logo: 'http://10.1.39.78:8000/storage/slide/logo/logo_1.png'
+                }
+            ]" />
 
             <!-- Section Ringkasan Informasi -->
             <div

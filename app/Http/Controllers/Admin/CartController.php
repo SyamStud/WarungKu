@@ -680,7 +680,7 @@ class CartController extends Controller
 
         $stockMovement = $this->decreaseStock($cartItems);
 
-        // $this->print($cart, $cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
+        $this->print($cart, $cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
 
         try {
             return DB::transaction(function () use ($cart, $cartItems, $request) {
@@ -910,8 +910,8 @@ class CartController extends Controller
         $printer = new Printer($connector, $profile);
 
         // Nama dan informasi toko
-        $tokoName = $globalSettings['shop_name']->value . "\n";
-        $tokoAddress = $globalSettings['shop_address']->value . "\n";
+        $tokoName = strtoupper(Auth::user()->store->name) . "\n";
+        $tokoAddress = Auth::user()->store->address . "\n";
 
         // Informasi struk
         $kasir = "Kasir: " . Auth::user()->name;
@@ -921,9 +921,9 @@ class CartController extends Controller
         // Pengaturan format
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->setTextSize(2, 2);
-        $printer->text($tokoName . "\n");
+        $printer->text($tokoName);
         $printer->setTextSize(1, 1);
-        $printer->text($tokoAddress . "\n\n");
+        $printer->text("\n". $tokoAddress . "\n\n");
 
         $printer->setJustification(Printer::JUSTIFY_LEFT);
         $printer->text($kasir . "\n");
@@ -958,12 +958,13 @@ class CartController extends Controller
         $printer->text(str_repeat("-", 47) . "\n");
 
         // Total
-        $printer->text(str_pad("Total", 30) . str_pad(number_format($cart->total_price, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
-        $printer->text(str_pad("Diskon", 30) . str_pad($cart->discount > 0 ? '- ' : '' . number_format($cart->discount, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
-        $printer->text(str_pad("PPN", 30) . str_pad(number_format($cart->tax, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
+        $printer->text(str_pad("Total Belanja", 30) . str_pad(number_format($cart->total_price, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
+        $discount = $cart->discount > 0 ? '(-' . number_format($cart->discount, 0, ',', '.') . ')' : '0';
+        $printer->text(str_pad("Diskon", 30) . str_pad($discount, 16, ' ', STR_PAD_LEFT) . " \n");
+        $printer->text(str_pad("PPN (" . $globalSettings['tax_percentage']->value . "%)", 30) . str_pad(number_format($cart->tax, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         $printer->text(str_repeat("-", 47) . "\n");
         $printer->setEmphasis(true);
-        $printer->text(str_pad("Total Belanja", 30) . str_pad(number_format($cart->grand_total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
+        $printer->text(str_pad("Total Akhir", 30) . str_pad(number_format($cart->grand_total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         $printer->setEmphasis(false);
         $printer->feed();
         $printer->text(str_pad($method == 'debt' ? 'Catat Hutang' : $method, 30) . str_pad(number_format($payment, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");

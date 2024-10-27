@@ -56,11 +56,17 @@
                         </div>
                     </div>
 
-                    <Link :href="route('registerStore')">
-                    <Button class="mt-10 bg-blue-500 rounded-full p-6">
-                        Buat Toko Sekarang
-                    </Button>
-                    </Link>
+                    <div class="flex flex-col">
+                        <Link :href="route('registerStore')">
+                        <Button class="mt-10 bg-blue-500 rounded-full p-6">
+                            Buat Toko Sekarang
+                        </Button>
+                        </Link>
+
+                        <Link class="mt-5 text-sm underline" :href="route('logout')" method="POST">
+                        Logout
+                        </Link>
+                    </div>
                 </div>
             </div>
         </div>

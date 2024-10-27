@@ -36,6 +36,7 @@ use App\Http\Controllers\Admin\DebtController;
 use App\Http\Controllers\Admin\ProductVariantController;
 use App\Http\Controllers\Admin\RestockController;
 use App\Http\Controllers\Admin\UnitController;
+use App\Http\Controllers\SuperAdmin\AdsController;
 use App\Http\Controllers\SuperAdmin\StoreApplicationController;
 
 // Email Verification Routes
@@ -178,6 +179,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/super-admin/dashboard', fn() => Inertia::render('SuperAdmin/Dashboard'))->name('dashboard.superadmin');
     Route::resource('/super-admin/store-applications', StoreApplicationController::class);
     Route::resource('/super-admin/stores', SuperStoreController::class);
+    Route::resource('/super-admin/ads/slides', AdsController::class);
 });
 
 require __DIR__ . '/auth.php';

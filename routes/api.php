@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DebtItemController;
 use App\Http\Controllers\Admin\DiscountController;
 use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\SuperAdmin\AdsController;
 use App\Http\Controllers\SuperAdmin\StoreController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\StockMovementController;
@@ -75,3 +76,5 @@ Route::get('/discount-products', [DiscountProductController::class, 'discountPro
 
 Route::get('/stores', [StoreController::class, 'storeData']);
 Route::get('/store-applications', [StoreApplicationController::class, 'storeApplicationData']);
+
+Route::get('/ads', [AdsController::class, 'adsData']);

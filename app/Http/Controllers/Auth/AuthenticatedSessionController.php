@@ -41,7 +41,7 @@ class AuthenticatedSessionController extends Controller
         } elseif (Auth::user()->hasRole('admin')) {
             return redirect()->intended(route('dashboard', [], false));
         } else {
-            return redirect()->intended(route('home', [], false)); // Default route if no role matches
+            return redirect()->intended(route('noStore', [], false)); // Default route if no role matches
         }
     }
 

@@ -203,13 +203,13 @@ const contentMarginClass = computed(() => {
 });
 
 const tabs = [
-    // {
-    //     name: 'Dashboard',
-    //     imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000',
-    //     tools: [
-    //         { link: "/admin/dashboard", name: 'Dashboard', imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000' },
-    //     ]
-    // },
+    {
+        name: 'Dashboard',
+        imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000',
+        tools: [
+            { link: "/super-admin/dashboard", name: 'Dashboard', imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000' },
+        ]
+    },
     {
         name: 'Toko',
         imageSrc: 'https://img.icons8.com/?size=100&id=18901&format=png&color=000000',
@@ -218,22 +218,29 @@ const tabs = [
             { link: "/super-admin/stores", name: 'Daftar Toko', imageSrc: 'https://img.icons8.com/?size=100&id=18901&format=png&color=000000' },
         ]
     },
-    // {
-    //     name: 'Pengguna',
-    //     imageSrc: 'https://img.icons8.com/?size=100&id=13042&format=png&color=000000',
-    //     tools: [
-    //         { link: '/admin/customers', name: 'Pelanggan', imageSrc: 'https://img.icons8.com/?size=100&id=23301&format=png&color=000000' },
-    //         { link: '/admin/users', name: 'Admin & Kasir', imageSrc: 'https://img.icons8.com/?size=100&id=108294&format=png&color=000000' },
-    //     ]
-    // },
-    // {
-    //     name: 'Laporan',
-    //     imageSrc: 'https://img.icons8.com/?size=100&id=13532&format=png&color=000000',
-    //     tools: [
-    //         { link: "/admin/reports/transaction", name: 'Laporan Penjualan', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
-    //         { link: "/admin/reports/purchase", name: 'Laporan Pembelian', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
-    //     ]
-    // }
+    {
+        name: 'Iklan',
+        imageSrc: 'https://img.icons8.com/?size=100&id=13757&format=png&color=000000',
+        tools: [
+            { link: "/super-admin/ads/slides", name: 'Iklan Slide', imageSrc: 'https://img.icons8.com/?size=100&id=ywXnIjEbliQd&format=png&color=000000' },
+            { link: "/super-admin/ads/receipts", name: 'Iklan Struk', imageSrc: 'https://img.icons8.com/?size=100&id=pyTMIrisYjm1&format=png&color=000000' },
+        ]
+    },
+    {
+        name: 'Pengguna',
+        imageSrc: 'https://img.icons8.com/?size=100&id=13042&format=png&color=000000',
+        tools: [
+            { link: '/admin/users', name: 'Admin & Kasir', imageSrc: 'https://img.icons8.com/?size=100&id=108294&format=png&color=000000' },
+        ]
+    },
+    {
+        name: 'Laporan',
+        imageSrc: 'https://img.icons8.com/?size=100&id=13532&format=png&color=000000',
+        tools: [
+            { link: "/admin/reports/transaction", name: 'Laporan Penjualan', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
+            { link: "/admin/reports/purchase", name: 'Laporan Pembelian', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
+        ]
+    }
 ];
 
 const activeTab = ref('Dashboard');
