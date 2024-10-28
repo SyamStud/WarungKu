@@ -4,16 +4,17 @@ import { Head } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
 import AutoCarousel from '@/Components/AutoCarousel.vue';
 import { useFormatRupiah } from '@/Composables/useFormatRupiah';
+import { Link } from 'lucide-vue-next';
 
 // Mengambil fungsi formatRupiah untuk memformat angka ke dalam format Rupiah
 const { formatRupiah } = useFormatRupiah();
 
+const adsData = ref([]);
+
 // Array yang berisi URL gambar untuk digunakan pada carousel otomatis
-const carouselImages = [
-    'http://10.1.39.78:8000/storage/slide/slide_1.png',
-    'http://10.1.39.78:8000/storage/slide/slide_2.png',
-    'http://10.1.39.78:8000/storage/slide/slide_3.png'
-];
+const carouselImages = ref([]);
+const slides = ref([]);
+const isLoading = ref(false);
 
 // State untuk menyimpan ringkasan data dashboard
 const summary = ref({
@@ -42,12 +43,48 @@ const fetchData = async () => {
     }
 };
 
-// Memanggil fetchData saat komponen dipasang (mounted)
-onMounted(() => {
-    fetchData();
+const fetchAds = async () => {
+    try {
+        isLoading.value = true;
+        const response = await axios.get('/api/ads');
 
-    console.log('Dashboard component is mounted', summary.value);
-});
+        adsData.value = response.data.data;
+
+        carouselImages.value = adsData.value.map((ad) => `/storage/${ad.image}`);
+        slides.value = adsData.value.map((ad) => ({
+            logo: "/storage/" + ad.logo,
+            title: ad.title,
+            description: ad.description,
+            link: ad.link,
+        }));
+
+        isLoading.value = false;
+    } catch (error) {
+        console.error('Error fetching ads data:', error);
+    }
+};
+
+// Fungsi untuk menginisialisasi data
+const initializeData = async () => {
+    isLoading.value = true
+    try {
+        // Menggunakan Promise.all untuk menjalankan kedua request secara paralel
+        await Promise.all([
+            fetchData(),
+            fetchAds()
+        ])
+    } catch (error) {
+        console.error('Error initializing data:', error)
+        // Opsional: tambahkan handling error seperti menampilkan toast/notification
+    } finally {
+        isLoading.value = false
+    }
+}
+
+// Menjalankan fetch data saat komponen dimount
+onMounted(() => {
+    initializeData()
+})
 </script>
 
 <template>
@@ -58,23 +95,7 @@ onMounted(() => {
     <AdminLayout>
         <div class="2xl:px-8">
             <!-- Komponen Carousel untuk menampilkan gambar secara otomatis -->
-            <AutoCarousel :images="carouselImages" :slides="[
-                {
-                    title: 'Selamat Datang',
-                    description: 'Temukan produk terbaik kami',
-                    logo: 'http://10.1.39.78:8000/storage/slide/logo/logo_1.png'
-                },
-                {
-                    title: 'Penawaran Khusus',
-                    description: 'Dapatkan penawaran eksklusif hari ini',
-                    logo: 'http://10.1.39.78:8000/storage/slide/logo/logo_1.png'
-                },
-                {
-                    title: 'Koleksi Terbaru',
-                    description: 'Lihat koleksi terbaru kami',
-                    logo: 'http://10.1.39.78:8000/storage/slide/logo/logo_1.png'
-                }
-            ]" />
+            <AutoCarousel v-if="!isLoading" :images="carouselImages" :slides="slides" />
 
             <!-- Section Ringkasan Informasi -->
             <div

@@ -166,6 +166,7 @@ Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->gr
     // Settings Routes
     Route::resource('/userSettings', UserSettingController::class);
     Route::resource('/globalSettings', SettingController::class);
+    Route::post('/settings/storeSettings', [SettingController::class, 'updateStoreSettings']);
     Route::get('/settings/getSettings', [SettingController::class, 'getSettings']);
     Route::post('/settings/updateSettings', [SettingController::class, 'updateSettings']);
     Route::resource('/settings', SettingController::class);
@@ -179,6 +180,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/super-admin/dashboard', fn() => Inertia::render('SuperAdmin/Dashboard'))->name('dashboard.superadmin');
     Route::resource('/super-admin/store-applications', StoreApplicationController::class);
     Route::resource('/super-admin/stores', SuperStoreController::class);
+
+    Route::get('/super-admin/ads/receipts', [AdsController::class, 'indexReceipt']);
+    Route::post('/super-admin/ads/receipts', [AdsController::class, 'storeReceipt']);
+
     Route::resource('/super-admin/ads/slides', AdsController::class);
 });
 

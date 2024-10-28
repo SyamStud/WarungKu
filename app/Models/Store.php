@@ -124,4 +124,9 @@ class Store extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function storeSettings()
+    {
+        return $this->hasMany(StoreSetting::class);
+    }
 }

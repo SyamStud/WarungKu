@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Ads;
 use App\Models\Cart;
 use App\Models\Debt;
 use Inertia\Inertia;
@@ -19,6 +20,7 @@ use App\Models\ProductVariant;
 use App\Models\DiscountProduct;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\StoreSetting;
 use Illuminate\Support\Facades\Auth;
 use Mike42\Escpos\CapabilityProfile;
 use Illuminate\Support\Facades\Cache;
@@ -902,11 +904,12 @@ class CartController extends Controller
 
     public function print($cart, $items, $transactionCode, $payment, $method)
     {
-        $globalSettings = Setting::all()->keyBy('key');
+        $ads = Ads::where('type', 'receipt')->first();
+        $storeSettings = StoreSetting::where('store_id', Auth::user()->store_id)->get()->keyBy('key');
 
         // Menghubungkan ke printer dengan nama printer
         $profile = CapabilityProfile::load('simple');
-        $connector = new WindowsPrintConnector($globalSettings['printer_name']->value);
+        $connector = new WindowsPrintConnector($storeSettings['printer_name']->value);
         $printer = new Printer($connector, $profile);
 
         // Nama dan informasi toko
@@ -923,7 +926,7 @@ class CartController extends Controller
         $printer->setTextSize(2, 2);
         $printer->text($tokoName);
         $printer->setTextSize(1, 1);
-        $printer->text("\n". $tokoAddress . "\n\n");
+        $printer->text("\n" . $tokoAddress . "\n\n");
 
         $printer->setJustification(Printer::JUSTIFY_LEFT);
         $printer->text($kasir . "\n");
@@ -933,7 +936,7 @@ class CartController extends Controller
 
         // Header kolom barang
         $printer->setEmphasis(true);
-        $printer->text(str_pad("Barang", 30) . str_pad("Total", 16, ' ', STR_PAD_LEFT) . " \n"); // Header dengan margin kanan
+        $printer->text(str_pad("Barang", 30) . str_pad("Subtotal", 16, ' ', STR_PAD_LEFT) . " \n"); // Header dengan margin kanan
         $printer->setEmphasis(false);
         $printer->text(str_repeat("-", 47) . "\n"); // Garis pemisah lebih lebar
 
@@ -958,10 +961,10 @@ class CartController extends Controller
         $printer->text(str_repeat("-", 47) . "\n");
 
         // Total
-        $printer->text(str_pad("Total Belanja", 30) . str_pad(number_format($cart->total_price, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
+        $printer->text(str_pad("Subtotal", 30) . str_pad(number_format($cart->total_price, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         $discount = $cart->discount > 0 ? '(-' . number_format($cart->discount, 0, ',', '.') . ')' : '0';
         $printer->text(str_pad("Diskon", 30) . str_pad($discount, 16, ' ', STR_PAD_LEFT) . " \n");
-        $printer->text(str_pad("PPN (" . $globalSettings['tax_percentage']->value . "%)", 30) . str_pad(number_format($cart->tax, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
+        $printer->text(str_pad("PPN (" . $storeSettings['tax_percentage']->value . "%)", 30) . str_pad(number_format($cart->tax, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
         $printer->text(str_repeat("-", 47) . "\n");
         $printer->setEmphasis(true);
         $printer->text(str_pad("Total Akhir", 30) . str_pad(number_format($cart->grand_total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n");
@@ -976,11 +979,13 @@ class CartController extends Controller
         // Ucapan terima kasih
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->text("Terima Kasih Atas Kunjungan Anda!\n");
-        // $printer->text("Barang yang sudah dibeli tidak dapat\n");
-        // $printer->text("dikembalikan.\n");
         $printer->feed();
-        $printer->text("CSR By PT. SUCOFINDO CILACAP\n");
-        $printer->text("--- SUCOFINDO untuk UMKM ---\n");
+
+        if ($ads) {
+            $printer->text(strtoupper($ads->sponsor_type) . " BY " . strtoupper($ads->sponsor_name) . "\n");
+            $printer->text($ads->sponsor_description . "\n");
+        }
+
         $printer->feed(3); // Jarak sebelum potong kertas
         $printer->cut();
         $printer->close();
@@ -1039,10 +1044,10 @@ class CartController extends Controller
 
     public function calculateTax($totalPrice)
     {
-        $is_tax = Setting::where('key', 'is_tax')->first();
+        $is_tax = StoreSetting::where('key', 'is_tax')->where('store_id', Auth::user()->store->id)->first();
 
         if ($is_tax->value == '1') {
-            $tax = Setting::where('key', 'tax_percentage')->first();
+            $tax = StoreSetting::where('key', 'tax_percentage')->where('store_id', Auth::user()->store->id)->first();
             $taxAmount = $totalPrice * ($tax->value / 100);
         } else {
             $taxAmount = 0;

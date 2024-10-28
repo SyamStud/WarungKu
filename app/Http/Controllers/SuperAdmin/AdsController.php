@@ -215,4 +215,46 @@ class AdsController extends Controller
             ],
         ]);
     }
+
+    public function indexReceipt()
+    {
+        return Inertia::render('SuperAdmin/AdsReceipt');
+    }
+
+    public function storeReceipt(Request $request)
+    {
+        $validation = Validator::make($request->all(), [
+            'sponsorType' => 'required',
+            'sponsorName' => 'required',
+            'sponsorDescription' => 'required',
+        ]);
+
+        if ($validation->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validation->errors()->first(),
+            ]);
+        }
+
+        $ads = Ads::where('type', 'receipt')->first();
+
+        if ($ads) {
+            $ads->sponsor_type = $request->sponsorType;
+            $ads->sponsor_name = $request->sponsorName;
+            $ads->sponsor_description = $request->sponsorDescription;
+            $ads->save();
+        } else {
+            $ads = new Ads();
+            $ads->sponsor_type = $request->sponsorType;
+            $ads->sponsor_name = $request->sponsorName;
+            $ads->sponsor_description = $request->sponsorDescription;
+            $ads->type = 'receipt';
+            $ads->save();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Receipt berhasil ditambahkan',
+        ]);
+    }
 }

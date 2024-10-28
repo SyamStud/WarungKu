@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 use App\Models\Setting;
+use App\Models\StoreSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -35,15 +36,15 @@ class SettingController extends Controller
      */
     public function store(Request $request)
     {
-        if ($request->has('shop_name') || $request->has('shop_address')) {
-            Setting::updateOrCreate(
-                ['key' => 'shop_name'],
-                ['value' => $request->shop_name]
+        if ($request->has('store_name') || $request->has('store_address')) {
+            StoreSetting::updateOrCreate(
+                ['store_id' => Auth::user()->store->id, 'key' => 'store_name'],
+                ['value' => $request->store_name]
             );
 
-            Setting::updateOrCreate(
-                ['key' => 'shop_address'],
-                ['value' => $request->shop_address]
+            StoreSetting::updateOrCreate(
+                ['store_id' => Auth::user()->store->id, 'key' => 'store_address'],
+                ['value' => $request->store_address]
             );
         } else {
             $validator = Validator::make($request->all(), [
@@ -70,6 +71,32 @@ class SettingController extends Controller
         ]);
     }
 
+    public function updateStoreSettings(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'key' => 'required',
+            'value' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first()
+            ]);
+        }
+
+        StoreSetting::updateOrCreate(
+            ['store_id' => Auth::user()->store->id, 'key' => $request->key],
+            ['value' => $request->value]
+        );
+
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Pengaturan Berhasil Diperbarui'
+        ]);
+    }
+
     /**
      * Update the specified resource in storage.
      */
@@ -82,11 +109,13 @@ class SettingController extends Controller
     {
         $settings = Setting::all();
         $userSettings = Auth::user()->settings;
+        $storeSettings = Auth::user()->store->storeSettings;
 
         return response()->json([
             'status' => 'success',
             'global_settings' => $settings,
             'user_settings' => $userSettings,
+            'store_settings' => $storeSettings
         ]);
     }
 }

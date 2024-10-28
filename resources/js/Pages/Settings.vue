@@ -24,16 +24,15 @@ import Label from '@/components/ui/label/Label.vue';
 const Toast = useToast();
 
 // Mendefinisikan state untuk customer, isLoading, globalSettings, dan userSettings
-const customer = ref({});
 const isLoading = ref(false);
 const globalSettings = ref({});
 const userSettings = ref({});
-const test = ref(true);
+const storeSettings = ref({});
 
 // Mendefinisikan skema validasi menggunakan zod
 const formSchema = toTypedSchema(z.object({
-    shop_name: z.string().min(2).max(50),
-    shop_address: z.string().min(5).max(255),
+    store_name: z.string().min(2).max(50),
+    store_address: z.string().min(5).max(255),
     sound_product_not_found: z.boolean(),
     sound_payment_method: z.boolean(),
     sound_alert_qris_payment: z.boolean(),
@@ -46,8 +45,8 @@ const formSchema = toTypedSchema(z.object({
 const form = useForm({
     validationSchema: formSchema,
     initialValues: {
-        shop_name: globalSettings.value.shop_name,
-        shop_address: globalSettings.value.shop_address,
+        store_name: storeSettings.value.store_name,
+        store_address: storeSettings.value.store_address,
         sound_product_not_found: userSettings.value.sound_product_not_found,
         sound_payment_method: userSettings.value.sound_payment_method,
         sound_alert_qris_payment: userSettings.value.sound_alert_qris_payment,
@@ -62,15 +61,13 @@ const { props } = usePage();
 
 // Menggunakan lifecycle hook onMounted untuk melakukan fetch data saat komponen dimuat
 onMounted(async () => {
-    console.log('userSettings', props.userSettings); // Data user settings
-    console.log('user', props.auth); // Data user yang login
     isLoading.value = true;
     await fetchData();
 
     // Set nilai awal setelah data di-fetch
     form.setValues({
-        shop_name: globalSettings.value.shop_name,
-        shop_address: globalSettings.value.shop_address,
+        store_name: storeSettings.value.store_name,
+        store_address: storeSettings.value.store_address,
         sound_product_not_found: userSettings.value.sound_product_not_found,
         sound_payment_method: userSettings.value.sound_payment_method,
         sound_alert_qris_payment: userSettings.value.sound_alert_qris_payment,
@@ -157,12 +154,45 @@ const changeGlobalSettings = async (key, value) => {
     };
 };
 
+const changeStoreSettings = async (key, value) => {
+    try {
+        storeSettings.value[key] = value;
+
+        const response = await axios.post('/settings/storeSettings', { key, value });
+
+        if (response.data.status === 'success') {
+            Toast.fire({
+                icon: "success",
+                title: response.data.message,
+            });
+        } else {
+            Toast.fire({
+                icon: "error",
+                title: 'Pengaturan gagal diubah',
+            });
+        }
+    } catch (error) {
+        console.error('Error updating global settings:', error);
+    };
+};
+
 // Fungsi untuk melakukan fetch data settings dari server
 const fetchData = async () => {
     try {
         const response = await axios.get('/settings/getSettings');
 
         globalSettings.value = response.data.global_settings.reduce((acc, setting) => {
+            if (setting.value === "1") {
+                acc[setting.key] = true;
+            } else if (setting.value === "0") {
+                acc[setting.key] = false;
+            } else {
+                acc[setting.key] = setting.value;
+            }
+            return acc;
+        }, {});
+
+        storeSettings.value = response.data.store_settings.reduce((acc, setting) => {
             if (setting.value === "1") {
                 acc[setting.key] = true;
             } else if (setting.value === "0") {
@@ -183,6 +213,8 @@ const fetchData = async () => {
             }
             return acc;
         }, {});
+
+        console.log('storeSettings', storeSettings.value);
     } catch (error) {
         console.error('Error fetching settings:', error);
     }
@@ -199,7 +231,7 @@ const fetchData = async () => {
         </template>
 
         <div class="pt-20" v-if="!isLoading">
-            <div class="py-5">
+            <!-- <div class="py-5">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6 text-gray-900">
@@ -210,9 +242,9 @@ const fetchData = async () => {
                             </p>
 
                             <form @submit.prevent="onSubmit" class="mt-6 space-y-6">
-                                <FormInput name="shop_name" label="Nama Toko" type="text" />
+                                <FormInput name="store_name" label="Nama Toko" type="text" />
 
-                                <FormField v-slot="{ field }" name="shop_address">
+                                <FormField v-slot="{ field }" name="store_address">
                                     <FormItem>
                                         <FormLabel>Alamat Toko</FormLabel>
                                         <FormControl>
@@ -231,7 +263,7 @@ const fetchData = async () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <div>
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -246,16 +278,16 @@ const fetchData = async () => {
                                     </p>
                                 </div>
 
-                                <Switch :checked="globalSettings.is_tax" :modelValue="globalSettings.is_tax"
-                                    @update:checked="changeGlobalSettings('is_tax', $event)" />
+                                <Switch :checked="storeSettings.is_tax" :modelValue="storeSettings.is_tax"
+                                    @update:checked="changeStoreSettings('is_tax', $event)" />
                             </div>
 
-                            <div v-if="globalSettings.is_tax" class="mt-5">
+                            <div v-if="storeSettings.is_tax" class="mt-5">
                                 <Label class="mt-4" for="tax_percentage">Persentase Pajak</Label>
-                                <Input v-model="globalSettings.tax_percentage" class="mt-2" name="tax" type="number" />
+                                <Input v-model="storeSettings.tax_percentage" class="mt-2" name="tax" type="number" />
 
                                 <Button class="w-full mt-5"
-                                    @click="changeGlobalSettings('tax_percentage', globalSettings.tax_percentage)"
+                                    @click="changeStoreSettings('tax_percentage', storeSettings.tax_percentage)"
                                     :disabled="isLoading">
                                     {{ isLoading ? 'Saving...' : 'Simpan Pengaturan' }}
                                 </Button>
@@ -281,10 +313,10 @@ const fetchData = async () => {
 
                             <div class="mt-5">
                                 <Label class="mt-4" for="printer_name">Nama Printer</Label>
-                                <Input v-model="globalSettings.printer_name" class="mt-2" name="tax" type="text" />
+                                <Input v-model="storeSettings.printer_name" class="mt-2" name="tax" type="text" />
 
                                 <Button class="w-full mt-5"
-                                    @click="changeGlobalSettings('printer_name', globalSettings.printer_name)"
+                                    @click="changeStoreSettings('printer_name', storeSettings.printer_name)"
                                     :disabled="isLoading">
                                     {{ isLoading ? 'Saving...' : 'Simpan Pengaturan' }}
                                 </Button>

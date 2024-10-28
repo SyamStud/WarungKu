@@ -13,12 +13,16 @@ return new class extends Migration
     {
         Schema::create('ads', function (Blueprint $table) {
             $table->id();
-            $table->string('title');
-            $table->string('description');
-            $table->string('image');
-            $table->string('logo');
-            $table->string('link');
+            $table->string('title')->nullable();
+            $table->string('description')->nullable();
+            $table->string('image')->nullable();
+            $table->string('logo')->nullable();
+            $table->string('link')->nullable();
+            $table->string('sponsor_type')->nullable();
+            $table->string('sponsor_name')->nullable();
+            $table->string('sponsor_description')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->enum('type', ['slide', 'receipt'])->default('slide');
             $table->timestamps();
         });
     }
