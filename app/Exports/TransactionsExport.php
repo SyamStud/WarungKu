@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Transaction;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -27,7 +28,7 @@ class TransactionsExport implements FromCollection, WithHeadings, WithStyles, Wi
      */
     public function collection()
     {
-        return Transaction::whereBetween('created_at', [$this->startDate, $this->endDate])
+        return Transaction::where('store_id', Auth::user()->store->id)->whereBetween('created_at', [$this->startDate, $this->endDate])
             ->get()
             ->map(function ($stock) {
                 return [

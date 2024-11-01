@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -13,7 +14,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithStyles, WithCo
 {
     public function collection()
     {
-        return Product::with('category:id,name')
+        return Product::where('store_id', Auth::user()->store->id)->with('category:id,name')
             ->select('sku', 'name', 'category_id', 'created_at', 'updated_at')
             ->get()
             ->map(function ($product) {

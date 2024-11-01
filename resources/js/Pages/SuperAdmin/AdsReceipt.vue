@@ -85,20 +85,30 @@ const handleSubmit = async () => {
     }
 }
 
-onMounted(() => {
+const fetchAds = async () => {
+    const response = await axios.get('/api/ads');
+
+
+    const ads = response.data.data.filter(ad => ad.type === 'receipt');
+    console.log(ads);
+
     form.setValues({
-        sponsorType: 'csr',
-        sponsorName: 'PT. NAMA PERUSAHAAN',
-        sponsorDescription: 'Deskripsi Program'
+        sponsorType: ads.length > 0 ? ads[0].sponsor_type : 'csr',
+        sponsorName: ads.length > 0 ? ads[0].sponsor_name : 'PT. NAMA PERUSAHAAN',
+        sponsorDescription: ads.length > 0 ? ads[0].sponsor_description : 'Deskripsi Program',
     })
+}
+
+onMounted(() => {
+    fetchAds();
 })
 </script>
 
 <template>
     <SuperAdminLayout>
-        <div class="flex">
+        <div class="flex md:flex-row flex-col gap-8 md:gap-0">
             <!-- Preview Struk (Left Side) -->
-            <div class="w-1/2 p-6">
+            <div class="md:w-1/2 md:p-6">
                 <div class="bg-white rounded-lg border-2 border-gray-200 p-6 max-w-md mx-auto">
                     <!-- Detail Toko -->
                     <div class="text-center mb-4">
@@ -164,9 +174,9 @@ onMounted(() => {
             </div>
 
             <!-- Form (Right Side) -->
-            <div class="w-1/2 p-6">
+            <div class="md:w-1/2 md:p-6">
                 <div class="bg-white rounded-lg border-2 border-gray-200 p-6">
-                    <h2 class="text-2xl font-bold mb-6">Pengaturan Teks Sponsor/Kredit</h2>
+                    <h2 class="text-lg text-center md:text-start md:text-2xl font-bold mb-6">Pengaturan Teks Sponsor/Kredit</h2>
 
                     <form @submit.prevent="handleSubmit" class="space-y-6">
                         <!-- Basic Information -->

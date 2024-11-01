@@ -40,6 +40,11 @@ class StoreApplicationController extends Controller
         } else {
             $store->update(['status' => 'active']);
 
+            $user = $store->users->first();
+            
+            $user->removeRole('registered-user');
+            $user->assignRole('admin');
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Toko berhasil disetujui'

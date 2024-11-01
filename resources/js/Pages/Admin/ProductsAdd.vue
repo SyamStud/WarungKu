@@ -78,7 +78,7 @@ const form = useForm({
         sku: '',
         name: '',
         status: 'active',
-        variantInputs: [{ quantity: '1', unit_id: '1', price: 0, cost: 0, stock: '' }]
+        variantInputs: [{ quantity: '1', unit_id: '', price: 0, cost: 0, stock: '' }]
     },
 });
 
@@ -172,9 +172,11 @@ onMounted(async () => {
     if (!isScan.value) {
         await generateSKU();
     }
-    formReady.value = true;
 
+    
     await fetchOptions();
+    formReady.value = true;
+    form.setFieldValue('variantInputs.[0].unit_id', units.value[0].id.toString());
 });
 
 // Watch untuk perubahan pada sku dan memperbarui form

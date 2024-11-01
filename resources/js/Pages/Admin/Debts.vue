@@ -35,11 +35,10 @@ let isLoading = ref(false);  // Menunjukkan status loading saat penghapusan utan
 const deleteDebt = async () => {
     if (selectedDebt.value) {
         try {
-            console.log('Deleting debt:', selectedDebt.value);  // Log data utang yang akan dihapus
-            // Melakukan request penghapusan data ke API
             const response = await axios.post(`/admin/debts/delete`, {
                 customer_id: selectedDebt.value.id,
             });
+
             console.log('Delete response:', response.data);  // Log response untuk debugging
 
             // Jika ada error dari server, tampilkan pesan error melalui Toast
@@ -206,7 +205,7 @@ const exportExcel = async () => {
     const endDate = formatDate(endDateObj);
     console.log(startDate, endDate);
 
-    window.location.href = `/admin/stock-movements/export-excel?start_date=${startDate}&end_date=${endDate}`;
+    window.location.href = `/admin/debts/export-excel?start_date=${startDate}&end_date=${endDate}`;
 }
 </script>
 

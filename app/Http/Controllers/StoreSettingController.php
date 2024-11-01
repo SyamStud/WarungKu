@@ -3,11 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\StoreSetting;
+use Barryvdh\Debugbar\Facades\Debugbar;
+use Barryvdh\Debugbar\Twig\Extension\Debug;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Inertia\Inertia;
 
 class StoreSettingController extends Controller
 {
+    public function index()
+    {
+        return Inertia::render('Admin/StoreSettings');
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -57,7 +65,14 @@ class StoreSettingController extends Controller
      */
     public function update(Request $request, StoreSetting $storeSetting)
     {
-        //
+        $storeSetting->store_name = $request->store_name;
+        $storeSetting->store_address = $request->store_address;
+        $storeSetting->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Pengaturan berhasil diperbarui'
+        ]);
     }
 
     /**

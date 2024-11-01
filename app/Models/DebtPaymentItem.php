@@ -25,7 +25,7 @@ class DebtPaymentItem extends Model
 
     public function debtItem()
     {
-        return $this->belongsTo(DebtItem::class);
+        return $this->belongsTo(DebtItem::class)->withTrashed();
     }
 
     public function store()

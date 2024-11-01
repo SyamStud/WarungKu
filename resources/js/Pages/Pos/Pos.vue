@@ -842,7 +842,7 @@ tr:hover {
     </AlertDialog>
 
 
-    <AlertDialog v-model:open="isShopConfig">
+    <!-- <AlertDialog v-model:open="isShopConfig">
         <AlertDialogContent>
             <AlertDialogHeader class="text-center space-y-2">
                 <div class="text-center space-y-4">
@@ -854,9 +854,6 @@ tr:hover {
                     <div class="bg-red-50 p-4 rounded-lg">
                         <div class="w-max mx-auto text-start">
                             <ul class="list-disc list-inside">
-                                <li v-if="!storeSettings.store_name" class="text-gray-700 font-semibold">Nama Toko</li>
-                                <li v-if="!storeSettings.store_address" class="text-gray-700 font-semibold">Alamat Toko
-                                </li>
                                 <li v-if="!storeSettings.printer_name" class="text-gray-700 font-semibold">Nama Printer
                                 </li>
                             </ul>
@@ -878,7 +875,7 @@ tr:hover {
                 </Link>
             </AlertDialogFooter>
         </AlertDialogContent>
-    </AlertDialog>
+    </AlertDialog> -->
 
 
     <!-- Revoke Modal -->

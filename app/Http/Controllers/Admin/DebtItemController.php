@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\DebtItemsExport;
 use Inertia\Inertia;
 use App\Models\DebtItem;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\Debugbar\Facades\Debugbar;
 
 class DebtItemController extends Controller
@@ -94,5 +96,19 @@ class DebtItemController extends Controller
                 'to' => $to,
             ],
         ]);
+    }
+
+    public function exportExcel()
+    {
+        // Tangkap tanggal dari query string
+        $startDate = request('start_date');
+        $endDate = request('end_date');
+
+        // Pastikan tanggal diberikan
+        if (!$startDate || !$endDate) {
+            return response()->json(['error' => 'Start date and end date are required'], 400);
+        }
+
+        return Excel::download(new DebtItemsExport($startDate, $endDate), 'item-hutang-' . now() . '.xlsx');
     }
 }

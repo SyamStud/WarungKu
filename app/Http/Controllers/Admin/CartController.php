@@ -276,7 +276,7 @@ class CartController extends Controller
             'transaction_code' => 'required|string',
         ]);
 
-        $cart = Cart::where('user_id', Auth::id())->where('transaction_code', $request->transaction_code)->first();
+        $cart = Cart::where('user_id', Auth::id())->where('store_id', Auth::user()->store->id)->where('transaction_code', $request->transaction_code)->first();
 
         if (!$cart) {
             return response()->json([
@@ -659,6 +659,7 @@ class CartController extends Controller
             'payment_method' => 'required|string|in:cash,qris,debt',
         ]);
 
+        // VALIDASI CART
         $cart = Cart::where('user_id', Auth::id())
             ->where('transaction_code', $request->transaction_code)
             ->where('store_id', Auth::user()->store_id)
@@ -671,6 +672,7 @@ class CartController extends Controller
             ], 404);
         }
 
+        // VALIDASI CART ITEM
         $cartItems = CartItem::where('cart_id', $cart->id)->where('store_id', Auth::user()->store_id)->get();
 
         if ($cartItems->isEmpty()) {
@@ -680,136 +682,98 @@ class CartController extends Controller
             ], 400);
         }
 
+        // PENGURANGAN STOCK
         $stockMovement = $this->decreaseStock($cartItems);
 
-        $this->print($cart, $cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
+        // $this->print($cart, $cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
+        // try {
 
-        try {
-            return DB::transaction(function () use ($cart, $cartItems, $request) {
-                $transaction = Transaction::create([
-                    'user_id' => Auth::id(),
-                    'transaction_code' => $cart->transaction_code,
-                    'total_price' => $cart->total_price,
-                    'discount' => $cart->discount,
-                    'tax' => $cart->tax,
-                    'grand_total' => $cart->grand_total,
-                    'total_payment' => $request->total_payment,
-                    'total_change' => $request->total_payment - ($cart->grand_total),
-                    'payment_method' => $request->payment_method,
-                    'total_profit' => 0,
-                    'store_id' => Auth::user()->store_id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+        return DB::transaction(function () use ($cart, $cartItems, $request) {
 
-                foreach ($cartItems as $cartItem) {
-                    $remainingQuantity = $cartItem->quantity;
-                    $totalProfit = 0;
+            // CREATE TRANSACTION
+            $transaction = Transaction::create([
+                'user_id' => Auth::id(),
+                'transaction_code' => $cart->transaction_code,
+                'total_price' => $cart->total_price,
+                'discount' => $cart->discount,
+                'tax' => $cart->tax,
+                'grand_total' => $cart->grand_total,
+                'total_payment' => $request->total_payment,
+                'total_change' => $request->total_payment - ($cart->grand_total),
+                'payment_method' => $request->payment_method,
+                'total_profit' => 0,
+                'store_id' => Auth::user()->store_id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-                    while ($remainingQuantity > 0) {
+
+            // CREATE TRANSACTION ITEM
+            foreach ($cartItems as $cartItem) {
+                $remainingQuantity = $cartItem->quantity;
+                $totalProfit = 0;
+
+                while ($remainingQuantity > 0) {
+
+                    // MENCARI STOCK TERSEDIA
+                    $stockUsed = Restock::where('product_variant_id', $cartItem->product_variant_id)
+                        ->where('quantity', '>', 0)
+                        ->where('status', '!=', 'sold-out')
+                        ->where('store_id', Auth::user()->store_id)
+                        ->orderBy('created_at', 'asc')
+                        ->first();
+
+                    // KETIKA TIDAK ADA STOCK TERSEDIA
+                    if (!$stockUsed) {
+
+                        // MENCARI STOCK TERBARU
                         $stockUsed = Restock::where('product_variant_id', $cartItem->product_variant_id)
-                            ->where('quantity', '>', 0)
-                            ->where('status', '!=', 'sold-out')
                             ->where('store_id', Auth::user()->store_id)
-                            ->orderBy('created_at', 'asc')
+                            ->orderBy('created_at', 'desc')
                             ->first();
 
-                        // KETIKA STOCK KOSONG
-                        if (!$stockUsed) {
-                            $stockUsed = Restock::where('product_variant_id', $cartItem->product_variant_id)
-                                ->where('store_id', Auth::user()->store_id)
-                                ->orderBy('created_at', 'desc')
-                                ->first();
+                        // MENCARI STOCK OVERDRAWN YANG DIBUAT HARI INI
+                        $existingStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
+                            ->where('cost', 0)
+                            ->whereDate('created_at', now()->toDateString())
+                            ->where('store_id', Auth::user()->store_id)
+                            ->first();
 
-                            $existingStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
-                                ->where('cost', 0)
-                                ->whereDate('created_at', now()->toDateString())
-                                ->where('store_id', Auth::user()->store_id)
-                                ->first();
-
-                            if ($existingStock) {
-                                $stockUsed->difference += $remainingQuantity;
-                                $stockUsed->status = 'overdrawn';
-                                $stockUsed->save();
-                            } else {
-                                $stockUsed = Restock::create([
-                                    'product_variant_id' => $cartItem->product_variant_id,
-                                    'quantity' => 0,
-                                    'difference' => $remainingQuantity,
-                                    'cost' => 0,
-                                    'status' => 'overdrawn',
-                                    'store_id' => Auth::user()->store_id,
-                                ]);
-                            }
-
-                            $profit = 0;
-                            $totalProfit += $profit;
-
-                            $transactionItem = DB::table('transaction_items')->insertGetId([
-                                'transaction_id' => $transaction->id,
-                                'product_id' => $cartItem->product_id,
+                        // JIKA SUDAH ADA STOCK OVERDRAWN YANG DIBUAT HARI INI
+                        if ($existingStock) {
+                            $stockUsed->difference += $remainingQuantity;
+                            $stockUsed->status = 'overdrawn';
+                            $stockUsed->save();
+                        } else {
+                            $stockUsed = Restock::create([
                                 'product_variant_id' => $cartItem->product_variant_id,
-                                'quantity' => $remainingQuantity,
-                                'price' => $cartItem->price,
-                                'discount' => $cartItem->discount,
-                                'discounted_price' => $cartItem->discounted_price,
-                                'total_price' => $cartItem->price * $remainingQuantity,
-                                'discounted_total_price' => $cartItem->discounted_price * $remainingQuantity,
-                                'profit' => $profit,
-                                'restock_id' => $stockUsed->id,
+                                'quantity' => 0,
+                                'difference' => $remainingQuantity,
+                                'cost' => 0,
+                                'status' => 'overdrawn',
                                 'store_id' => Auth::user()->store_id,
-                                'created_at' => now(),
-                                'updated_at' => now(),
                             ]);
-
-                            break;
                         }
 
-                        $quantityFromThisStock = min($remainingQuantity, $stockUsed->quantity);
-                        $profit = $cartItem->discounted_price * $quantityFromThisStock - ($stockUsed->cost * $quantityFromThisStock);
+                        $profit = 0;
                         $totalProfit += $profit;
 
                         $transactionItem = DB::table('transaction_items')->insertGetId([
                             'transaction_id' => $transaction->id,
                             'product_id' => $cartItem->product_id,
                             'product_variant_id' => $cartItem->product_variant_id,
-                            'quantity' => $quantityFromThisStock,
+                            'quantity' => $remainingQuantity,
                             'price' => $cartItem->price,
                             'discount' => $cartItem->discount,
                             'discounted_price' => $cartItem->discounted_price,
-                            'total_price' => $cartItem->price * $quantityFromThisStock,
-                            'discounted_total_price' => $cartItem->discounted_price * $quantityFromThisStock,
+                            'total_price' => $cartItem->price * $remainingQuantity,
+                            'discounted_total_price' => $cartItem->discounted_price * $remainingQuantity,
                             'profit' => $profit,
                             'restock_id' => $stockUsed->id,
                             'store_id' => Auth::user()->store_id,
                             'created_at' => now(),
                             'updated_at' => now(),
                         ]);
-
-                        $stockUsed->quantity -= $quantityFromThisStock;
-                        if ($stockUsed->quantity == 0) {
-                            $stockUsed->status = 'sold-out';
-                        } else if ($stockUsed->quantity < 0) {
-                            $stockUsed->status = 'overdrawn';
-                        } else {
-                            $differenceStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
-                                ->where('difference', '>', 0)
-                                ->where('status', '!=', 'audit-completed')
-                                ->where('store_id', Auth::user()->store_id)
-                                ->get();
-
-                            if ($differenceStock->count() > 0) {
-                                foreach ($differenceStock as $diffStock) {
-                                    $diffStock->status = 'audit-needed';
-                                    $diffStock->save();
-                                }
-                            }
-
-                            $stockUsed->status = 'in-use';
-                        }
-                        $stockUsed->save();
-
-                        $remainingQuantity -= $quantityFromThisStock;
 
                         if ($request->payment_method == 'debt') {
                             $debt = Debt::where('transaction_id', $transaction->id)->where('store_id', Auth::user()->store_id)->first();
@@ -823,6 +787,8 @@ class CartController extends Controller
                                 ]);
                             }
 
+                            $quantityFromThisStock = min($remainingQuantity, $stockUsed->difference);
+
                             DebtItem::create([
                                 'debt_id' => $debt->id,
                                 'transaction_item_id' => $transactionItem,
@@ -831,40 +797,111 @@ class CartController extends Controller
                                 'store_id' => Auth::user()->store_id,
                             ]);
                         }
+
+                        break;
                     }
 
-                    $transaction->total_profit += $totalProfit;
-                }
+                    $quantityFromThisStock = min($remainingQuantity, $stockUsed->quantity);
+                    $profit = $cartItem->discounted_price * $quantityFromThisStock - ($stockUsed->cost * $quantityFromThisStock);
+                    $totalProfit += $profit;
 
-                $transaction->save();
+                    $transactionItem = DB::table('transaction_items')->insertGetId([
+                        'transaction_id' => $transaction->id,
+                        'product_id' => $cartItem->product_id,
+                        'product_variant_id' => $cartItem->product_variant_id,
+                        'quantity' => $quantityFromThisStock,
+                        'price' => $cartItem->price,
+                        'discount' => $cartItem->discount,
+                        'discounted_price' => $cartItem->discounted_price,
+                        'total_price' => $cartItem->price * $quantityFromThisStock,
+                        'discounted_total_price' => $cartItem->discounted_price * $quantityFromThisStock,
+                        'profit' => $profit,
+                        'restock_id' => $stockUsed->id,
+                        'store_id' => Auth::user()->store_id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
 
-                if ($request->payment_method == 'debt') {
-                    if ($cart->tax > 0) {
+                    $stockUsed->quantity -= $quantityFromThisStock;
+                    if ($stockUsed->quantity == 0) {
+                        $stockUsed->status = 'sold-out';
+                    } else if ($stockUsed->quantity < 0) {
+                        $stockUsed->status = 'overdrawn';
+                    } else {
+                        $differenceStock = Restock::where('product_variant_id', $cartItem->product_variant_id)
+                            ->where('difference', '>', 0)
+                            ->where('status', '!=', 'audit-completed')
+                            ->where('store_id', Auth::user()->store_id)
+                            ->get();
+
+                        if ($differenceStock->count() > 0) {
+                            foreach ($differenceStock as $diffStock) {
+                                $diffStock->status = 'audit-needed';
+                                $diffStock->save();
+                            }
+                        }
+
+                        $stockUsed->status = 'in-use';
+                    }
+
+                    $stockUsed->save();
+
+                    $remainingQuantity -= $quantityFromThisStock;
+
+                    if ($request->payment_method == 'debt') {
                         $debt = Debt::where('transaction_id', $transaction->id)->where('store_id', Auth::user()->store_id)->first();
+                        if (!$debt) {
+                            $debt = Debt::create([
+                                'customer_id' => $request->customer_id,
+                                'transaction_id' => $transaction->id,
+                                'total_amount' => $cart->grand_total,
+                                'remaining_amount' => $cart->grand_total,
+                                'store_id' => Auth::user()->store_id,
+                            ]);
+                        }
 
                         DebtItem::create([
                             'debt_id' => $debt->id,
-                            'total_amount' => $cart->tax,
-                            'remaining_amount' => $cart->tax,
+                            'transaction_item_id' => $transactionItem,
+                            'total_amount' => $cartItem->discounted_price * $quantityFromThisStock,
+                            'remaining_amount' => $cartItem->discounted_price * $quantityFromThisStock,
                             'store_id' => Auth::user()->store_id,
                         ]);
                     }
                 }
 
-                $cart->delete();
+                $transaction->total_profit += $totalProfit;
+            }
 
-                return response()->json([
-                    'message' => 'Transaction stored successfully',
-                    'status' => 'success',
-                ]);
-            });
-        } catch (\Exception $e) {
-            // Jika ada error, rollback transaksi dan kirim pesan error
+            $transaction->save();
+
+            if ($request->payment_method == 'debt') {
+                if ($cart->tax > 0) {
+                    $debt = Debt::where('transaction_id', $transaction->id)->where('store_id', Auth::user()->store_id)->first();
+
+                    DebtItem::create([
+                        'debt_id' => $debt->id,
+                        'total_amount' => $cart->tax,
+                        'remaining_amount' => $cart->tax,
+                        'store_id' => Auth::user()->store_id,
+                    ]);
+                }
+            }
+
+            $cart->delete();
+
             return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-            ], 400);
-        }
+                'message' => 'Transaction stored successfully',
+                'status' => 'success',
+            ]);
+        });
+        // } catch (\Exception $e) {
+        //     // Jika ada error, rollback transaksi dan kirim pesan error
+        //     return response()->json([
+        //         'status' => 'error',
+        //         'message' => $e->getMessage(),
+        //     ], 400);
+        // }
     }
 
 
@@ -1045,6 +1082,10 @@ class CartController extends Controller
     public function calculateTax($totalPrice)
     {
         $is_tax = StoreSetting::where('key', 'is_tax')->where('store_id', Auth::user()->store->id)->first();
+
+        if (!$is_tax) {
+            return 0;
+        }
 
         if ($is_tax->value == '1') {
             $tax = StoreSetting::where('key', 'tax_percentage')->where('store_id', Auth::user()->store->id)->first();

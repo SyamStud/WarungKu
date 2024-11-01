@@ -199,6 +199,10 @@ class AdsController extends Controller
                 'logo' => $ads->logo,
                 'link' => $ads->link,
                 'status' => $ads->status,
+                'type' => $ads->type,
+                'sponsor_type' => $ads->sponsor_type,
+                'sponsor_name' => $ads->sponsor_name,
+                'sponsor_description' => $ads->sponsor_description,
                 'created_at' => $ads->created_at->format('d F Y'),
             ];
         });

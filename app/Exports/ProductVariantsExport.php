@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\ProductVariant;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -16,7 +17,7 @@ class ProductVariantsExport implements FromCollection, WithHeadings, WithStyles,
      */
     public function collection()
     {
-        return ProductVariant::with('product.category:id,name', 'unit:id,name')
+        return ProductVariant::where('store_id', Auth::user()->store->id)->with('product.category:id,name', 'unit:id,name')
             ->get()
             ->map(function ($variant) {
                 return [

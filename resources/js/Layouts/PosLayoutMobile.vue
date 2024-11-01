@@ -14,7 +14,7 @@
                     </button>
 
                     <!-- Logo (if you have one) -->
-                    <div class="text-xl font-bold text-gray-800 lg:hidden">WarungKu</div>
+                    <div class="text-xl font-bold text-gray-800 lg:hidden">UMKMPos</div>
 
                     <!-- Main Navigation Links -->
                     <nav

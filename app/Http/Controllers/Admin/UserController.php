@@ -19,7 +19,15 @@ class UserController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Admin/Users');
+        $user = Auth::user();
+
+        if ($user->hasRole('admin')) {
+            return Inertia::render('Admin/Users');
+        } elseif ($user->hasRole('super-admin')) {
+            return Inertia::render('SuperAdmin/Users');
+        } else {
+            abort(403, 'Unauthorized action.');
+        }
     }
 
     /**

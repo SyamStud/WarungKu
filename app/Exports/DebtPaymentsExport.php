@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Restock;
+use App\Models\DebtPaymentItem;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -10,25 +10,33 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 
-class RestocksExport implements FromCollection, WithHeadings, WithStyles, WithColumnFormatting
+class DebtPaymentsExport implements FromCollection, WithHeadings, WithStyles, WithColumnFormatting
 {
+    protected $startDate;
+    protected $endDate;
+
+    // Terima tanggal dari controller
+    public function __construct($startDate, $endDate)
+    {
+        $this->startDate = $startDate . ' 00:00:00';
+        $this->endDate = $endDate . ' 23:59:59';
+    }
+
     /**
      * @return \Illuminate\Support\Collection
      */
     public function collection()
     {
-        return Restock::where('store_id', Auth::user()->store->id)->where('status', '!=', 'sold-out')
-        ->with('productVariant.product', 'productVariant.unit:id,name')
+        return DebtPaymentItem::where('store_id', Auth::user()->store->id)->whereBetween('created_at', [$this->startDate, $this->endDate])
             ->get()
-            ->map(function ($restock) {
+            ->map(function ($debtPayment) {
                 return [
-                    'name' => $restock->productVariant->product->name,
-                    'variants' => $restock->productVariant->quantity . " " . $restock->productVariant->unit->name,
-                    'quantity' => $restock->quantity ,
-                    'difference' => $restock->difference,
-                    'cost' => $restock->cost,
-                    'status' => $restock->status,
-                    'created_at' => $restock->created_at->format('d F Y H:i:s'),
+                    'name' => $debtPayment->debtItem->debt->customer->name,
+                    'product' => $debtPayment->debtItem->transactionItem ? $debtPayment->debtItem->transactionItem->product->name : 'TAX',
+                    'total_debt' => $debtPayment->debtItem->total_amount,
+                    'total_payment' => $debtPayment->amount,
+                    'remaining_debt' => $debtPayment->remaining_debt,
+                    'created_at' => $debtPayment->created_at->format('d F Y H:i:s'),
                 ];
             });
     }
@@ -36,20 +44,19 @@ class RestocksExport implements FromCollection, WithHeadings, WithStyles, WithCo
     public function headings(): array
     {
         return [
-            'Name',
-            'Variasi',
-            'Kuantitas',
-            'Selisih',
-            'Harga Beli',
-            'Status',
-            'Tanggal Dibuat',
+            'Nama Pelanggan',
+            'Produk',
+            'Total Hutang',
+            'Total Pembayaran',
+            'Sisa Hutang',
+            'Tanggal Pembayaran',
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
         // Menentukan gaya untuk header
-        $sheet->getStyle('A1:G1')->applyFromArray([
+        $sheet->getStyle('A1:F1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'], // Warna font putih
@@ -61,7 +68,7 @@ class RestocksExport implements FromCollection, WithHeadings, WithStyles, WithCo
         ]);
 
         // Menyesuaikan lebar kolom berdasarkan isi data
-        foreach (range('A', 'G') as $column) {
+        foreach (range('A', 'F') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
     }

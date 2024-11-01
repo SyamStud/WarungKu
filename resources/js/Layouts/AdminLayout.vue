@@ -30,19 +30,6 @@
                     </li>
 
                     <li class="relative">
-                        <Link href="/settings">
-                        <button :class="[
-                            'text-sm px-6 py-3 transition-all duration-150 ease-in-out focus:outline-none hover:bg-gray-200 hover:text-gray-900 flex gap-2 items-center',
-                            activeTab === 'pengaturan' ? 'bg-gray-100 !text-black' : 'text-white'
-                        ]">
-                            <img width="20" height="20"
-                                src="https://img.icons8.com/?size=100&id=12784&format=png&color=000000" alt="print" />
-                            Pengaturan
-                        </button>
-                        </Link>
-                    </li>
-
-                    <li class="relative">
                         <Link href="/logout" method="POST">
                         <button :class="[
                             'text-sm px-6 py-3 transition-all duration-150 ease-in-out focus:outline-none hover:bg-gray-200 hover:text-gray-900 flex gap-2 items-center',
@@ -284,6 +271,14 @@ const tabs = [
         tools: [
             { link: "/admin/reports/transaction", name: 'Laporan Penjualan', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
             { link: "/admin/reports/purchase", name: 'Laporan Pembelian', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
+        ]
+    },
+    {
+        name: 'Pengaturan',
+        imageSrc: 'https://img.icons8.com/?size=100&id=12784&format=png&color=000000',
+        tools: [
+            { link: "/admin/store-settings", name: 'Pengaturan Toko', imageSrc: 'https://img.icons8.com/?size=100&id=18901&format=png&color=000000' },
+            { link: "/settings", name: 'Pengaturan Pengguna', imageSrc: 'https://img.icons8.com/?size=100&id=13042&format=png&color=000000' },
         ]
     }
 ];

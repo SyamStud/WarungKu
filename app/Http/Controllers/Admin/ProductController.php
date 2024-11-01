@@ -9,6 +9,7 @@ use App\Models\ProductVariant;
 use App\Exports\ProductsExport;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Cache;
 use Barryvdh\Debugbar\Facades\Debugbar;
@@ -214,7 +215,11 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        Gate::authorize('delete', $product);
+
         $product->delete();
+
+        $product->productVariants()->delete();
 
         return response()->json([
             'message' => 'Produk berhasil dihapus',

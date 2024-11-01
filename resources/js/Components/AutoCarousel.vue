@@ -52,8 +52,8 @@
         </div>
 
         <!-- Previous Button -->
-        <button
-            class=" absolute top-1/2 left-2 transform -translate-y-1/2 text-white p-2 rounded-full focus:outline-none z-10 hover:bg-black/20 transition-colors duration-200"
+        <button v-if="images.length > 1"
+            class="absolute top-1/2 left-2 transform -translate-y-1/2 text-white p-2 rounded-full focus:outline-none z-10 hover:bg-black/20 transition-colors duration-200"
             @click.prevent="prevSlide">
             <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -61,8 +61,8 @@
         </button>
 
         <!-- Next Button -->
-        <button
-            class=" absolute top-1/2 right-2 transform -translate-y-1/2 text-white p-2 rounded-full focus:outline-none z-10 hover:bg-black/20 transition-colors duration-200"
+        <button v-if="images.length > 1"
+            class="absolute top-1/2 right-2 transform -translate-y-1/2 text-white p-2 rounded-full focus:outline-none z-10 hover:bg-black/20 transition-colors duration-200"
             @click.prevent="nextSlide">
             <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -70,7 +70,8 @@
         </button>
 
         <!-- Dots Indicator -->
-        <div class="hidden md:flex absolute bottom-4 left-1/2 transform -translate-x-1/2 space-x-2">
+        <div v-if="images.length > 1"
+            class="hidden md:flex absolute bottom-4 left-1/2 transform -translate-x-1/2 space-x-2">
             <button v-for="(_, index) in images" :key="index" @click.prevent="setSlide(index)"
                 class="w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-200 focus:outline-none" :class="[
                     currentSlide === index

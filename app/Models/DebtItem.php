@@ -23,7 +23,7 @@ class DebtItem extends Model
     ];
 
     public function debt(){
-        return $this->belongsTo(Debt::class);
+        return $this->belongsTo(Debt::class)->withTrashed();
     }
 
     public function transactionItem()

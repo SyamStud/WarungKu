@@ -25,56 +25,58 @@ use App\Http\Controllers\Admin\TransactionItemController;
 use App\Http\Controllers\Admin\DebtPaymentHistoryController;
 use App\Http\Controllers\SuperAdmin\StoreApplicationController;
 
-// User Routes
-Route::get('/store-users', [UserController::class, 'userData']);
-Route::get('/users', [UserController::class, 'allUserData']);
-Route::get('/users/chartData', [UserController::class, 'getUserChartData']);
+Route::middleware('auth:sanctum')->group(function () {
+    // User Routes
+    Route::get('/store-users', [UserController::class, 'userData']);
+    Route::get('/users', [UserController::class, 'allUserData']);
+    Route::get('/users/chartData', [UserController::class, 'getUserChartData']);
 
-// Category and Product Routes
-Route::get('/categories', [CategoryController::class, 'categoryData']);
-Route::get('/products', [ProductController::class, 'productData'])->middleware('auth:sanctum');
-Route::get('/productVariants', [ProductController::class, 'productVariantData']);
-Route::post('/products/check-sku', [ProductController::class, 'checkSKU'])->middleware('auth:sanctum');
-Route::post('/products/get', [ProductController::class, 'getProduct']);
-Route::post('/products/getVariantByName', [ProductController::class, 'getProductByName']);
+    // Category and Product Routes
+    Route::get('/categories', [CategoryController::class, 'categoryData']);
+    Route::get('/products', [ProductController::class, 'productData']);
+    Route::get('/productVariants', [ProductController::class, 'productVariantData']);
+    Route::post('/products/check-sku', [ProductController::class, 'checkSKU']);
+    Route::post('/products/get', [ProductController::class, 'getProduct']);
+    Route::post('/products/getVariantByName', [ProductController::class, 'getProductByName']);
 
-// Stock Routes
-Route::get('/restocks', [RestockController::class, 'restockData']);
-Route::get('/stock-movements', [StockMovementController::class, 'stockMovementData']);
+    // Stock Routes
+    Route::get('/restocks', [RestockController::class, 'restockData']);
+    Route::get('/stock-movements', [StockMovementController::class, 'stockMovementData']);
 
-// Cart and Cart Item Routes
-Route::get('/carts', [CartController::class, 'cartData']);
-Route::post('/carts/addProducts', [CartController::class, 'addProducts']);
-Route::get('/cart-items', [CartItemController::class, 'cartItemData']);
+    // Cart and Cart Item Routes
+    Route::get('/carts', [CartController::class, 'cartData']);
+    Route::post('/carts/addProducts', [CartController::class, 'addProducts']);
+    Route::get('/cart-items', [CartItemController::class, 'cartItemData']);
 
-// Transaction Routes
-Route::get('/transactions', [TransactionController::class, 'transactionData']);
-Route::get('/transactions/chartData', [TransactionController::class, 'getTransactionChartData']);
-Route::get('/transaction-items', [TransactionItemController::class, 'transactionItemData']);
+    // Transaction Routes
+    Route::get('/transactions', [TransactionController::class, 'transactionData']);
+    Route::get('/transactions/chartData', [TransactionController::class, 'getTransactionChartData']);
+    Route::get('/transaction-items', [TransactionItemController::class, 'transactionItemData']);
 
-// Customer and Debt Routes
-Route::get('/customers', [CustomerController::class, 'customerData']);
-Route::get('/debt-items', [DebtItemController::class, 'debtItemData']);
-Route::get('/debt-payment-history', [DebtPaymentHistoryController::class, 'getDebtPaymentHistory']);
+    // Customer and Debt Routes
+    Route::get('/customers', [CustomerController::class, 'customerData']);
+    Route::get('/debt-items', [DebtItemController::class, 'debtItemData']);
+    Route::get('/debt-payment-history', [DebtPaymentHistoryController::class, 'getDebtPaymentHistory']);
 
-// Unit Routes
-Route::get('/units', [UnitController::class, 'unitData']);
+    // Unit Routes
+    Route::get('/units', [UnitController::class, 'unitData']);
 
-// Supplier and Purchase Routes
-Route::get('/suppliers', [SupplierController::class, 'supplierData']);
-Route::get('/purchases', [PurchaseController::class, 'purchaseData']);
-Route::get('/purchases/chartData', [PurchaseController::class, 'getPurchaseChartData']);
-Route::get('restock-lists', [RestockListController::class, 'restockListData']);
+    // Supplier and Purchase Routes
+    Route::get('/suppliers', [SupplierController::class, 'supplierData']);
+    Route::get('/purchases', [PurchaseController::class, 'purchaseData']);
+    Route::get('/purchases/chartData', [PurchaseController::class, 'getPurchaseChartData']);
+    Route::get('restock-lists', [RestockListController::class, 'restockListData']);
 
-// Report Routes
-Route::get('/transactions/{year}/{month}', [ReportController::class, 'getMonthlytransaction']);
-Route::get('/purchases/{year}/{month}', [ReportController::class, 'getMonthlypurchase']);
+    // Report Routes
+    Route::get('/transactions/{year}/{month}', [ReportController::class, 'getMonthlytransaction']);
+    Route::get('/purchases/{year}/{month}', [ReportController::class, 'getMonthlypurchase']);
 
-// Discount Routes
-Route::get('/discounts', [DiscountController::class, 'discountData']);
-Route::get('/discount-products', [DiscountProductController::class, 'discountProductData']);
+    // Discount Routes
+    Route::get('/discounts', [DiscountController::class, 'discountData']);
+    Route::get('/discount-products', [DiscountProductController::class, 'discountProductData']);
 
-Route::get('/stores', [StoreController::class, 'storeData']);
-Route::get('/store-applications', [StoreApplicationController::class, 'storeApplicationData']);
+    Route::get('/stores', [StoreController::class, 'storeData']);
+    Route::get('/store-applications', [StoreApplicationController::class, 'storeApplicationData']);
+    Route::get('/ads', [AdsController::class, 'adsData']);
+});
 
-Route::get('/ads', [AdsController::class, 'adsData']);

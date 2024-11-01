@@ -48,7 +48,7 @@ const fetchAds = async () => {
         isLoading.value = true;
         const response = await axios.get('/api/ads');
 
-        adsData.value = response.data.data;
+        adsData.value = response.data.data.filter(ad => ad.type === 'slide');
 
         carouselImages.value = adsData.value.map((ad) => `/storage/${ad.image}`);
         slides.value = adsData.value.map((ad) => ({

@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\TransactionItem;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -27,7 +28,7 @@ class TransactionItemsExport implements FromCollection, WithHeadings, WithStyles
      */
     public function collection()
     {
-        return TransactionItem::whereBetween('created_at', [$this->startDate, $this->endDate])
+        return TransactionItem::where('store_id', Auth::user()->store->id)->whereBetween('created_at', [$this->startDate, $this->endDate])
             ->with(['productVariant.product', 'restock' ,'productVariant.unit:id,name', 'transaction'])
             ->get()
             ->map(function ($stock) {

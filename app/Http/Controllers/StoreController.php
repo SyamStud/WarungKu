@@ -73,7 +73,17 @@ class StoreController extends Controller
      */
     public function show(Store $store)
     {
-        //
+        return response()->json([
+            'data' => [
+                'id' => $store->id,
+                'name' => $store->name,
+                'address' => $store->address,
+                'phone' => $store->phone,
+                'email' => $store->email,
+                'website' => $store->website,
+                'created_at' => $store->created_at->format('d M Y H:i'),
+            ],
+        ]);
     }
 
     /**
@@ -89,7 +99,18 @@ class StoreController extends Controller
      */
     public function update(Request $request, Store $store)
     {
-        //
+        $store->update([
+            'name' => $request->store_name,
+            'address' => $request->store_address,
+            'phone' => $request->store_phone,
+            'email' => $request->store_email,
+            'website' => $request->store_website,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Store updated successfully',
+        ]);
     }
 
     /**

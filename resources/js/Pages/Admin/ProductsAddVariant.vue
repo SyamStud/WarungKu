@@ -88,7 +88,7 @@ const onSubmit = async () => {
 
         console.log('values', values);
 
-        const response = await axios.post('/admin/product-sariants', values);
+        const response = await axios.post('/admin/product-variants', values);
 
         if (response.data.status === 'error') {
             errors.value = response.data.message;
@@ -96,7 +96,7 @@ const onSubmit = async () => {
 
             Toast.fire({
                 icon: "error",
-                title: "Error saat menambahkan produk",
+                title: response.data.message,
             });
         } else {
             Toast.fire({
@@ -148,6 +148,8 @@ onMounted(async () => {
     formReady.value = true;
 
     await fetchOptions();
+
+    form.setFieldValue('variantInputs.[0].unit_id', units.value[0].id.toString());
 });
 
 // Watcher untuk memantau perubahan pada sku dan memperbarui form

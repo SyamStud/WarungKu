@@ -73,7 +73,7 @@
                             <th class="py-2 px-4 text-left">Variasi</th>
                             <th class="py-2 px-4 text-left">Harga</th>
                             <th class="py-2 px-4 text-left">Kuantitas</th>
-                            <th class="py-2 px-4 text-left">Subtotal</th>
+                            <th class="py-2 px-4 text-left">Hutang Tersisa</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -83,11 +83,11 @@
                                 day:
                                     'numeric', month: 'long', year: 'numeric'
                             }) }}</td>
-                            <td class="py-2 px-4">{{ item.product ? item.product.name : 'TAX'}}</td>
-                            <td class="py-2 px-4">{{ item.variant ? item.variant : 'TAX'}}</td>
+                            <td class="py-2 px-4">{{ item.product ? item.product.name : 'TAX' }}</td>
+                            <td class="py-2 px-4">{{ item.variant ? item.variant : 'TAX' }}</td>
                             <td class="py-2 px-4">{{ formatRupiah(item.price) }}</td>
                             <td class="py-2 px-4">{{ item.quantity }}</td>
-                            <td class="py-2 px-4">{{ formatRupiah(item.price * item.quantity) }}</td>
+                            <td class="py-2 px-4">{{ formatRupiah(item.remaining_amount) }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -251,7 +251,8 @@
                         <td class="p-2 border-b">{{ customer.name }}</td>
                         <td class="p-2 border-b">{{ customer.phone }}</td>
                         <td class="p-2 border-b">{{ customer.address }}</td>
-                        <td class="p-2 border-b">{{ totalDebt }}</td>
+                        <td class="p-2 border-b">{{ formatRupiah(customer.debts.reduce((acc, debt) => acc +
+                            debt.remaining_amount, 0)) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -424,6 +425,8 @@ const handleAddDebtor = async () => {
     if (response.data.data.length > 0) {
         isCustomerModalOpen.value = true;
         searchingCustomer.value = response.data.data;
+
+        console.log('Customer:', response.data.data);
     } else {
         errorAudio.play();
 
@@ -441,19 +444,22 @@ const handleSelect = (customer) => {
     isCustomerModalOpen.value = false;
     console.log('111:', customer.debts);
     debtItems.value = customer.debts.flatMap(debt => {
+        console.log('Debt:', debt);
         return debt.debt_items.map(item => {
             if (!item.transaction_item) {
                 return {
                     quantity: 1,
                     transaction_code: item.transaction_code,
-                    created_at: item.created_at,  
+                    created_at: item.created_at,
                     variant: `TAX`,
                     price: item.total_amount,
+                    remaining_amount: item.remaining_amount,
                 };
             }
 
             return {
                 ...item.transaction_item.product_variant,
+                remaining_amount: item.remaining_amount,
                 quantity: item.transaction_item.quantity,
                 transaction_code: item.transaction_item.transaction.transaction_code,
                 created_at: item.transaction_item.transaction.created_at,
@@ -461,6 +467,8 @@ const handleSelect = (customer) => {
             };
         });
     });
+
+    console.log('DebtItems:', debtItems.value);
 
     totalDebt.value = customer.debts.reduce((acc, debt) => {
         return acc + debt.remaining_amount;

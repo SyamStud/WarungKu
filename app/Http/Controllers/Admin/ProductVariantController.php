@@ -11,6 +11,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductVariantsExport;
+use Barryvdh\Debugbar\Facades\Debugbar;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 
 class ProductVariantController extends Controller
@@ -50,6 +52,19 @@ class ProductVariantController extends Controller
             ]);
         }
 
+        foreach ($request->variantInputs as $inputs) {
+            Debugbar::info($inputs);
+
+            $isExist = ProductVariant::where('product_id', $request->product_id)->where('unit_id', $inputs['unit_id'])->exists();
+
+            if ($isExist) {
+                return response()->json([
+                    'message' => 'Variasi Produk sudah ada',
+                    'status' => 'error',
+                ]);
+            }
+        }
+
         $product = Product::find($request->product_id);
 
         $productVariants = collect($request->variantInputs)->map(function ($variant) use ($request) {
@@ -58,8 +73,8 @@ class ProductVariantController extends Controller
 
         $createdVariants = $product->productVariants()->createMany(
             $productVariants->map(function ($variant) use ($request) {
-            $variant['store_id'] = Auth::user()->store->id;
-            return $variant;
+                $variant['store_id'] = Auth::user()->store->id;
+                return $variant;
             })->toArray()
         );
 
@@ -102,22 +117,6 @@ class ProductVariantController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(ProductVariant $productVariant)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(ProductVariant $productVariant)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, ProductVariant $productVariant)
@@ -154,6 +153,8 @@ class ProductVariantController extends Controller
      */
     public function destroy(ProductVariant $productVariant)
     {
+        Gate::authorize('delete', $productVariant);
+
         $productVariant->delete();
 
         return response()->json([

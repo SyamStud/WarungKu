@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Pos;
 
+use App\Models\Ads;
 use App\Models\Debt;
 use Inertia\Inertia;
 use App\Models\Customer;
+use App\Models\DebtItem;
 use Mike42\Escpos\Printer;
 use App\Models\DebtPayment;
+use App\Models\StoreSetting;
 use Illuminate\Http\Request;
 use App\Models\DebtPaymentItem;
 use App\Http\Controllers\Controller;
@@ -72,9 +75,13 @@ class DebtPaymentController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
-        // $remainingDebt = $customer->total_debt - $payment->amount;
+        $remainingDebt = $customer->debts->sum('remaining_amount') - $payment->amount;
 
-        // $this->printDebtReceipt($request->payment_code, $debtItems, $request->payment_amount, $remainingDebt, $customer->name);
+        $debtItems = DebtItem::whereHas('debt', function ($query) use ($request) {
+            $query->where('customer_id', $request->customer_id);
+        })->where('remaining_amount', '>', 0)->get();
+
+        $this->printDebtReceipt($request->payment_code, $debtItems, $request->payment_amount, $remainingDebt, $customer->name);
 
         $remainingPayment = $payment->amount;
 
@@ -132,17 +139,20 @@ class DebtPaymentController extends Controller
 
     public function printDebtReceipt($paymentCode, $debtItems, $paymentAmount, $remainingDebt, $customerName)
     {
+        $ads = Ads::where('type', 'receipt')->first();
+        $storeSettings = StoreSetting::where('store_id', Auth::user()->store_id)->get()->keyBy('key');
+
         // Menghubungkan ke printer dengan nama printer
         $profile = CapabilityProfile::load('simple');
-        $connector = new WindowsPrintConnector("TP806");
+        $connector = new WindowsPrintConnector($storeSettings['printer_name']->value);
         $printer = new Printer($connector, $profile);
 
         // Nama dan informasi toko
-        $tokoName = "WARUNG AFIQ";
-        $tokoAddress = "Jl. Raya No.123, Jakarta\n";
+        $tokoName = strtoupper(Auth::user()->store->name) . "\n";
+        $tokoAddress = Auth::user()->store->address . "\n";
 
         // Informasi struk
-        $kasir = "Kasir: Budi";
+        $kasir = "Kasir: " . Auth::user()->name;
         $tanggal = date("d-m-Y H:i:s");
         $nomorStruk = "Nomor: " . $paymentCode;
 
@@ -162,7 +172,7 @@ class DebtPaymentController extends Controller
 
         // Header kolom barang yang dihutang
         $printer->setEmphasis(true);
-        $printer->text(str_pad("Item Hutang", 30) . str_pad("Hutang Tersisa", 16, ' ', STR_PAD_LEFT) . " \n");
+        $printer->text(str_pad("Daftar Hutang", 30) . str_pad("Hutang Tersisa", 16, ' ', STR_PAD_LEFT) . " \n");
         // $printer->text(str_pad("Barang", 30) . str_pad("Hutang", 16, ' ', STR_PAD_LEFT) . " \n"); // Header dengan margin kanan
         $printer->setEmphasis(false);
         $printer->text(str_repeat("-", 47) . "\n"); // Garis pemisah lebih lebar
@@ -170,10 +180,15 @@ class DebtPaymentController extends Controller
         $totalDebt = 0;
         foreach ($debtItems as $item) {
             // Nama barang dicetak di baris pertama
-            $printer->text($item->transactionItem->product->name . "\n");
+            $printer->text($item->transactionItem ? $item->transactionItem->product->name . "\n" : 'TAX' . "\n");
 
-            // Detail barang: Qty x Harga, Total Hutang
-            $qty = "  " . $item->transactionItem->quantity . " pcs x " . number_format($item->transactionItem->price, 0, ',', '.'); // Indentasi tambahan
+            if ($item->transactionItem) {
+                // Detail barang: Qty x Harga, Total Hutang
+                $qty = "  " . $item->transactionItem->quantity . " pcs x " . number_format($item->transactionItem->price, 0, ',', '.'); // Indentasi tambahan
+            } else {
+                $qty = "PPN (" . $storeSettings['tax_percentage']->value . "%)";
+            }
+
             $subtotal = number_format($item->remaining_amount, 0, ',', '.'); // Total hutang untuk barang
 
             // Menampilkan detail hutang dengan margin kanan
@@ -208,7 +223,13 @@ class DebtPaymentController extends Controller
         // Ucapan terima kasih dan keterangan
         $printer->setJustification(Printer::JUSTIFY_CENTER);
         $printer->text("Terima Kasih Atas Pembayaran Hutang Anda!\n");
-        $printer->text("Pastikan sisa hutang dibayarkan sesuai\ndengan kesepakatan.\n\n");
+        $printer->feed();
+
+        if ($ads) {
+            $printer->text(strtoupper($ads->sponsor_type) . " BY " . strtoupper($ads->sponsor_name) . "\n");
+            $printer->text($ads->sponsor_description . "\n");
+        }
+
         $printer->feed(3); // Jarak sebelum potong kertas
         $printer->cut();
         $printer->close();

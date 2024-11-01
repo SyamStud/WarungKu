@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\DebtPaymentsExport;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Models\DebtPaymentItem;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DebtPaymentHistoryController extends Controller
 {
@@ -84,5 +86,19 @@ class DebtPaymentHistoryController extends Controller
                 'to' => $to,
             ],
         ]);
+    }
+
+    public function exportExcel()
+    {
+        // Tangkap tanggal dari query string
+        $startDate = request('start_date');
+        $endDate = request('end_date');
+
+        // Pastikan tanggal diberikan
+        if (!$startDate || !$endDate) {
+            return response()->json(['error' => 'Start date and end date are required'], 400);
+        }
+
+        return Excel::download(new DebtPaymentsExport($startDate, $endDate), 'pembayaran-hutang-' . now() . '.xlsx');
     }
 }

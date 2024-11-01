@@ -30,6 +30,7 @@ use App\Http\Controllers\{
     Admin\TransactionItemController,
     Admin\DebtPaymentHistoryController,
     StoreController,
+    StoreSettingController,
     SuperAdmin\StoreController as SuperStoreController,
 };
 use App\Http\Controllers\Admin\DebtController;
@@ -75,6 +76,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::resource('/stores', StoreController::class);
+
 // Admin Routes
 Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->group(function () {
     // Admin Routes
@@ -122,10 +124,14 @@ Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->gr
 
             Route::resource('/discounts', DiscountController::class);
             Route::resource('/customers', CustomerController::class);
+
+            Route::get('/debt-items/export-excel', [DebtItemController::class, 'exportExcel']);
             Route::resource('/debt-items', DebtItemController::class);
             Route::resource('/units', UnitController::class);
-            Route::resource('/debts', DebtController::class);
+
+            Route::get('/debts/export-excel', [DebtController::class, 'exportExcel']);
             Route::post('/debts/delete', [DebtController::class, 'destroy']);
+            Route::resource('/debts', DebtController::class);
 
             // Supplier Routes
             Route::post('/suppliers/getByName', [SupplierController::class, 'getByName']);
@@ -136,7 +142,10 @@ Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->gr
             Route::get('/reports/purchase', [ReportController::class, 'purchaseIndex']);
 
             // Debt Payment History
+            Route::get('/debt-payments-history/export-excel', [DebtPaymentHistoryController::class, 'exportExcel']);
             Route::get('/debt-payment-history', [DebtPaymentHistoryController::class, 'index']);
+
+            Route::resource('/store-settings', StoreSettingController::class);
         });
     });
 
@@ -185,6 +194,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/super-admin/ads/receipts', [AdsController::class, 'storeReceipt']);
 
     Route::resource('/super-admin/ads/slides', AdsController::class);
+    Route::resource('/super-admin/users', UserController::class);
 });
 
 require __DIR__ . '/auth.php';

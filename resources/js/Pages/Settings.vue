@@ -20,6 +20,20 @@ import Spinner from '@/Components/Spinner.vue';
 import Input from '@/Components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
 
+// Mengambil props dari usePage
+const { props } = usePage();
+const user = ref(props.auth.user);
+
+const isAdmin = ref(false);
+
+onMounted(() => {
+    if (user.value.roles[0].name === 'admin') {
+        isAdmin.value = true;
+    } else {
+        isAdmin.value = false;
+    }
+});
+
 // Menggunakan composable useToast untuk menampilkan notifikasi
 const Toast = useToast();
 
@@ -28,6 +42,7 @@ const isLoading = ref(false);
 const globalSettings = ref({});
 const userSettings = ref({});
 const storeSettings = ref({});
+
 
 // Mendefinisikan skema validasi menggunakan zod
 const formSchema = toTypedSchema(z.object({
@@ -56,8 +71,7 @@ const form = useForm({
     },
 });
 
-// Mengambil props dari usePage
-const { props } = usePage();
+
 
 // Menggunakan lifecycle hook onMounted untuk melakukan fetch data saat komponen dimuat
 onMounted(async () => {
@@ -265,7 +279,7 @@ const fetchData = async () => {
                 </div>
             </div> -->
 
-            <div>
+            <!-- <div v-if="isAdmin">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6 text-gray-900">
@@ -297,7 +311,7 @@ const fetchData = async () => {
                 </div>
             </div>
 
-            <div>
+            <div v-if="isAdmin">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-5">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6 text-gray-900">
@@ -324,7 +338,7 @@ const fetchData = async () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <div class="pb-12 mt-5">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

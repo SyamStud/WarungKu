@@ -158,7 +158,7 @@ const exportExcel = async () => {
     const endDate = formatDate(endDateObj);
     console.log(startDate, endDate);
 
-    window.location.href = `/admin/stock-movements/export-excel?start_date=${startDate}&end_date=${endDate}`;
+    window.location.href = `/admin/debt-items/export-excel?start_date=${startDate}&end_date=${endDate}`;
 }
 </script>
 
@@ -215,7 +215,7 @@ const exportExcel = async () => {
                 </Button>
 
             </div>
-            
+
             <div class="flex items-center py-4 w-full md:w-72">
                 <Input placeholder="Cari Item Hutang..." v-model="globalFilter" class="w-full max-w-full md:max-w-sm"
                     @input="debouncedFetchData" />

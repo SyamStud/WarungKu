@@ -21,6 +21,20 @@ import Input from '@/Components/ui/input/Input.vue';
 import Label from '@/components/ui/label/Label.vue';
 import PosLayoutMobile from '@/Layouts/PosLayoutMobile.vue';
 
+// Mengambil props dari usePage
+const { props } = usePage();
+const user = ref(props.auth.user);
+
+const isAdmin = ref(false);
+
+onMounted(() => {
+    if (user.value.roles[0].name === 'admin') {
+        isAdmin.value = true;
+    } else {
+        isAdmin.value = false;
+    }
+});
+
 // Menggunakan composable useToast untuk menampilkan notifikasi
 const Toast = useToast();
 
@@ -57,8 +71,6 @@ const form = useForm({
     },
 });
 
-// Mengambil props dari usePage
-const { props } = usePage();
 
 // Menggunakan lifecycle hook onMounted untuk melakukan fetch data saat komponen dimuat
 onMounted(async () => {
@@ -231,7 +243,7 @@ const fetchData = async () => {
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard</h2>
         </template>
 
-        <div class="pt-20" v-if="!isLoading">
+        <div class="md:pt-20" v-if="!isLoading">
             <!-- <div class="py-5">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -266,7 +278,7 @@ const fetchData = async () => {
                 </div>
             </div> -->
 
-            <div>
+            <!-- <div v-if="isAdmin">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6 text-gray-900">
@@ -298,7 +310,7 @@ const fetchData = async () => {
                 </div>
             </div>
 
-            <div>
+            <div v-if="isAdmin">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-5">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6 text-gray-900">
@@ -325,7 +337,7 @@ const fetchData = async () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <div class="pb-12 mt-5">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

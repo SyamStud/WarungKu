@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\StockMovement;
+use App\Models\Debt;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 
-class StockMovementsExport implements FromCollection, WithHeadings, WithStyles, WithColumnFormatting
+class DebtsExport implements FromCollection, WithHeadings, WithStyles, WithColumnFormatting
 {
     protected $startDate;
     protected $endDate;
@@ -27,17 +27,20 @@ class StockMovementsExport implements FromCollection, WithHeadings, WithStyles, 
      */
     public function collection()
     {
-        return StockMovement::where('store_id', Auth::user()->store->id)->whereBetween('created_at', [$this->startDate, $this->endDate])
-            ->with('productVariant.product', 'productVariant.unit:id,name')
+        return Debt::where('store_id', Auth::user()->store->id)->whereBetween('created_at', [$this->startDate, $this->endDate])
             ->get()
-            ->map(function ($stock) {
+            ->map(function ($debt) {
                 return [
-                    'name' => $stock->productVariant->product->name,
-                    'variants' => $stock->productVariant->quantity . " " . $stock->productVariant->unit->name,
-                    'quantity' => $stock->quantity,
-                    'reference' => $stock->reference,
-                    'type' => $stock->type,
-                    'created_at' => $stock->created_at->format('d F Y H:i:s'),
+                    'name' => $debt->customer->name,
+                    'phone' => $debt->customer->phone,
+                    'address' => $debt->customer->address,
+                    'total_amount' => $debt->total_amount,
+                    'paid_amount' => $debt->paid_amount,
+                    'remaining_amount' => $debt->remaining_amount,
+                    'status' => $debt->status,
+                    'last_payment_at' => $debt->last_payment_at,
+                    'settled_at' => $debt->settled_at,
+                    'created_at' => $debt->created_at->format('d F Y H:i:s'),
                 ];
             });
     }
@@ -45,19 +48,23 @@ class StockMovementsExport implements FromCollection, WithHeadings, WithStyles, 
     public function headings(): array
     {
         return [
-            'Name',
-            'Variasi',
-            'Kuantitas',
-            'Keterengan',
-            'Tipe',
-            'Tanggal Dibuat',
+            'Nama',
+            'Telepon',
+            'Alamat',
+            'Total Hutang',
+            'Total Bayar',
+            'Sisa Hutang',
+            'Status',
+            'Terakhir Bayar',
+            'Tanggal Lunas',
+            'Dibuat',
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
         // Menentukan gaya untuk header
-        $sheet->getStyle('A1:H1')->applyFromArray([
+        $sheet->getStyle('A1:J1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'], // Warna font putih
@@ -69,7 +76,7 @@ class StockMovementsExport implements FromCollection, WithHeadings, WithStyles, 
         ]);
 
         // Menyesuaikan lebar kolom berdasarkan isi data
-        foreach (range('A', 'H') as $column) {
+        foreach (range('A', 'J') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
     }
