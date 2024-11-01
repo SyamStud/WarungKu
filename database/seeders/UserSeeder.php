@@ -56,7 +56,6 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
             'created_at' => now(),
             'updated_at' => now(),
-            'store_id' => 1,
         ]);
 
         $settings = [

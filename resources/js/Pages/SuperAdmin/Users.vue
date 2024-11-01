@@ -303,9 +303,7 @@ const handlePageChange = (newPageIndex) => {
             <!-- Table  -->
             <div class="rounded-md border">
                 <Table>
-                    <TableHeaderWrapper :columns="columns" :sorting="sorting" @sort="sortBy">
-                        <TableHead>Foto</TableHead>
-                    </TableHeaderWrapper>
+                    <TableHeaderWrapper :columns="columns" :sorting="sorting" @sort="sortBy" />
 
                     <TableBody>
                         <TableRow v-for="(row, index) in table.getRowModel().rows" :key="row.id">
@@ -317,12 +315,6 @@ const handlePageChange = (newPageIndex) => {
                             <!-- Kolom-kolom lainnya -->
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
                                 {{ cell.getValue() }}
-                            </TableCell>
-
-                            <TableCell>
-                                <div class="flex gap-2">
-                                    <Button @click="() => openPhotoModal(row.original)">Lihat</Button>
-                                </div>
                             </TableCell>
 
                             <!-- Kolom untuk aksi -->

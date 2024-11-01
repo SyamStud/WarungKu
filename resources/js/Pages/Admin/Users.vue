@@ -372,9 +372,6 @@ const handlePageChange = (newPageIndex) => {
                                                 <SelectItem value="admin">
                                                     Admin
                                                 </SelectItem>
-                                                <SelectItem value="super-admin">
-                                                    Super Admin
-                                                </SelectItem>
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
@@ -433,9 +430,6 @@ const handlePageChange = (newPageIndex) => {
                                                 </SelectItem>
                                                 <SelectItem value="admin">
                                                     Admin
-                                                </SelectItem>
-                                                <SelectItem value="super-admin">
-                                                    Super Admin
                                                 </SelectItem>
                                             </SelectGroup>
                                         </SelectContent>

@@ -302,7 +302,7 @@ const exportExcel = async () => {
     const endDate = formatDate(endDateObj);
     console.log(startDate, endDate);
 
-    window.location.href = `/admin/stock-movements/export-excel?start_date=${startDate}&end_date=${endDate}`;
+    window.location.href = `/super-admin/store-applications/export-excel?start_date=${startDate}&end_date=${endDate}`;
 }
 </script>
 

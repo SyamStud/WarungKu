@@ -304,7 +304,7 @@ const exportExcel = async () => {
 
         <!-- Button Tambah Toko dan Input Pencarian -->
         <div class="flex flex-col md:flex-row justify-between">
-            <a href="/admin/products/excel-export">
+            <a href="/super-admin/stores/export-excel">
                 <Button class="w-full md:w-max mt-4 bg-green-700 hover:bg-green-700 flex items-center gap-3">
                     <img class="w-5" src="https://img.icons8.com/?size=100&id=11594&format=png&color=FFFFFF" alt="">
                     Export Excel

@@ -184,10 +184,13 @@ Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->gr
     Route::resource('/purchases', PurchaseController::class);
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
-
+Route::middleware(['auth', 'verified', 'role:super-admin'])->group(function () {
     Route::get('/super-admin/dashboard', fn() => Inertia::render('SuperAdmin/Dashboard'))->name('dashboard.superadmin');
+
+    Route::get('/super-admin/store-applications/export-excel', [StoreApplicationController::class, 'exportExcel']);
     Route::resource('/super-admin/store-applications', StoreApplicationController::class);
+
+    Route::get('/super-admin/stores/export-excel', [SuperStoreController::class, 'exportExcel']);
     Route::resource('/super-admin/stores', SuperStoreController::class);
 
     Route::get('/super-admin/ads/receipts', [AdsController::class, 'indexReceipt']);

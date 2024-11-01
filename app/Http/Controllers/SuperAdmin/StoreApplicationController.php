@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
+use App\Exports\StoreApplicationExport;
 use Inertia\Inertia;
 use App\Models\Store;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\Debugbar\Facades\Debugbar;
 
 class StoreApplicationController extends Controller
@@ -41,7 +43,7 @@ class StoreApplicationController extends Controller
             $store->update(['status' => 'active']);
 
             $user = $store->users->first();
-            
+
             $user->removeRole('registered-user');
             $user->assignRole('admin');
 
@@ -133,5 +135,20 @@ class StoreApplicationController extends Controller
                 'to' => $to,
             ],
         ]);
+    }
+
+    public function exportExcel()
+    {
+        // Tangkap tanggal dari query string
+        $startDate = request('start_date');
+        $endDate = request('end_date');
+
+        // Pastikan tanggal diberikan
+        if (!$startDate || !$endDate) {
+            return response()->json(['error' => 'Start date and end date are required'], 400);
+        }
+
+        // Panggil export menggunakan Maatwebsite Excel atau metode lainnya
+        return Excel::download(new StoreApplicationExport($startDate, $endDate), 'pengajuan-toko-' . now() . '.xlsx');
     }
 }

@@ -239,7 +239,7 @@ const tabs = [
         imageSrc: 'https://img.icons8.com/?size=100&id=BfXx00KJSKHH&format=png&color=000000',
         tools: [
             { link: "/admin/purchases", name: 'Restock Produk Supplier', imageSrc: 'https://img.icons8.com/?size=100&id=LbZI1V6lICp2&format=png&color=000000' },
-            { link: "/admin/restock-lists", name: 'List Belanja', imageSrc: 'https://img.icons8.com/?size=100&id=ZODLIcapQpqg&format=png&color=000000' },
+            // { link: "/admin/restock-lists", name: 'List Belanja', imageSrc: 'https://img.icons8.com/?size=100&id=ZODLIcapQpqg&format=png&color=000000' },
             { link: "/admin/suppliers", name: 'Supplier', imageSrc: 'https://img.icons8.com/?size=100&id=38216&format=png&color=000000' },
         ]
     },

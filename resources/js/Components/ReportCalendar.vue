@@ -178,11 +178,11 @@ const fetchData = async () => {
 };
 
 const handleDayClick = (date, dayData) => {
-    if (window.innerWidth < 768) { // Hanya tampilkan modal di tampilan mobile
-        selectedDate.value = formatDate(date);  // Gunakan `formatDate` yang baru
-        selectedData.value = dayData;
-        showModal.value = true;
-    }
+    // if (window.innerWidth < 768) { // Hanya tampilkan modal di tampilan mobile
+    selectedDate.value = formatDate(date);  // Gunakan `formatDate` yang baru
+    selectedData.value = dayData;
+    showModal.value = true;
+    // }
 };
 
 onMounted(fetchData);

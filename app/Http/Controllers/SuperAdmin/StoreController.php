@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\SuperAdmin;
 
-use App\Http\Controllers\Controller;
+use App\Exports\StoresExport;
+use Inertia\Inertia;
 use App\Models\Store;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Validator;
-use Inertia\Inertia;
 
 class StoreController extends Controller
 {
@@ -167,5 +169,10 @@ class StoreController extends Controller
                 'to' => $to,
             ],
         ]);
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(new StoresExport(), 'toko-' . now() . '.xlsx');
     }
 }

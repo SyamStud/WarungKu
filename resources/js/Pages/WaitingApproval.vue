@@ -279,12 +279,13 @@ const formatDate = (date) => {
 };
 
 const refreshStatus = () => {
+    router.visit("/waiting-approval");
+
     if (user.store.status == "active") {
         router.visit("/admin/dashboard");
     }
 };
 
-// Misalnya, jika user.store.status harus merespons perubahan
 watch(
     () => user.store.status,
     (newStatus) => {
@@ -293,10 +294,6 @@ watch(
         }
     }
 );
-
-const contactSupport = () => {
-    // Implement contact support logic
-};
 
 const cancelRegistration = async () => {
     const response = await axios.post(

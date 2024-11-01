@@ -10,6 +10,7 @@ import { ref } from "vue";
 const steps = ["Informasi Pemilik", "Informasi Dasar", "Informasi Pelengkap"];
 const currentStep = ref(0);
 const errors = ref({});
+const isLoading = ref(false);
 
 
 // Initialize form values
@@ -58,6 +59,7 @@ const validateStep = () => {
 
 // Handle form submit
 const submit = async () => {
+    isLoading.value = true;
     if (!validateStep()) {
         console.error("Form validation failed:", errors.value);
         return;
@@ -65,9 +67,9 @@ const submit = async () => {
 
     try {
         const response = await axios.post("/stores", formValues.value);
-        console.log("Form submitted with:", formValues.value);
 
         router.visit('/waiting-approval');
+        isLoading.value = false;
     } catch (error) {
         console.error("Error submitting form:", error);
     }
@@ -138,7 +140,7 @@ const handleInputChange = (event) => {
                 <div class="flex justify-center mt-2">
                     <span class="text-sm font-medium text-gray-900">{{
                         steps[currentStep]
-                    }}</span>
+                        }}</span>
                 </div>
             </div>
 
@@ -228,8 +230,11 @@ const handleInputChange = (event) => {
                             Selanjutnya
                         </button>
                         <button type="submit" v-if="currentStep === steps.length - 1"
-                            class="ml-auto inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            Daftarkan Toko
+                            :class="[
+                                'ml-auto inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
+                                isLoading ? 'bg-gray-400 text-gray-700 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+                            ]" :disabled="isLoading">
+                            {{ isLoading ? 'Mohon Tunggu...' : 'Daftarkan Toko' }}
                         </button>
                     </div>
                 </form>
