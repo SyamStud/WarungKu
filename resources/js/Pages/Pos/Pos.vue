@@ -1,6 +1,6 @@
 <script setup>
 import PosLayout from '@/Layouts/PosLayout.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 
 defineProps({
     canLogin: {
@@ -10,13 +10,6 @@ defineProps({
         type: Boolean,
     }
 });
-
-function handleImageError() {
-    document.getElementById('screenshot-container')?.classList.add('!hidden');
-    document.getElementById('docs-card')?.classList.add('!row-span-1');
-    document.getElementById('docs-card-content')?.classList.add('!flex-row');
-    document.getElementById('background')?.classList.add('!hidden');
-}
 
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
 import VueMultiselect, { Multiselect } from 'vue-multiselect';
@@ -84,7 +77,11 @@ import SelectValue from '@/Components/ui/select/SelectValue.vue';
 import SelectContent from '@/Components/ui/select/SelectContent.vue';
 import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
 import SelectItem from '@/Components/ui/select/SelectItem.vue';
+import { usePrintService } from '@/Composables/usePrintService';
 // import useTerbilang from '@/Composables/useTerbilang';
+
+const { props } = usePage();
+const userSettings = ref(props.userSettings);
 
 const isAddModalOpen = ref(false);
 
@@ -131,6 +128,8 @@ onMounted(() => {
     fetchCart();
     fetchCustomer();
     fetchSettings();
+
+    console.log('user', userSettings.value);
 });
 
 onUnmounted(() => {
@@ -158,7 +157,9 @@ const revokeTransaction = () => {
         isLoading.value = false;
         generateTransactionCode();
 
-        useSpeak('Transaksi dibatalkan');
+        if (userSettings.value.sound_cancel_transaction == '1') {
+            useSpeak('Transaksi dibatalkan');
+        }
     }).catch(error => {
         console.error('Error revoking transaction:', error);
     });
@@ -271,13 +272,22 @@ const updateVariant = (itemId, variantId) => {
         id: itemId,
         variant_id: variantId,
         transaction_code: transactionCode.value
-    }).then(response => {
-        if (response.data && response.data.data) {
+    }).then(async response => {
+        if (response.data.status == 'error') {
+            Toast.fire({
+                icon: "error",
+                title: response.data.message,
+                position: 'bottom-right',
+            });
+
+            const userCart = await axios.get('/pos/carts/getUserCart');
+            cartItems.value = userCart.data.data;
+            grandTotal.value = userCart.data.grand_total > 0 ? userCart.data.grand_total : 0;
+            cart.value = userCart.data.cart;
+        } else if (response.data && response.data.data) {
             cartItems.value = response.data.data;
             grandTotal.value = response.data.grand_total;
             cart.value = response.data.cart;
-
-            console.log('cartItems', cartItems.value);
         }
     }).catch(error => {
         console.error('Error updating variant:', error);
@@ -306,6 +316,14 @@ const updateQuantity = (id, quantity) => {
             quantity: quantity,
             transaction_code: transactionCode.value
         }).then(response => {
+            if (response.data.status == 'error') {
+                Toast.fire({
+                    icon: "error",
+                    title: response.data.message,
+                    position: 'bottom-right',
+                });
+            }
+
             grandTotal.value = response.data.grand_total;
             cartItems.value = response.data.data.original.data;
             cart.value = response.data.cart;
@@ -440,7 +458,13 @@ const addToCart = async (identifier, variant_id = 0) => {
             variant_id: variant_id
         });
 
-        if (response.data && response.data.data) {
+        if (response.data.status == 'error') {
+            Toast.fire({
+                icon: "error",
+                title: response.data.message,
+                position: 'bottom-right',
+            });
+        } else if (response.data && response.data.data) {
             console.log('response', response.data.data);
 
             cartItems.value = response.data.data;
@@ -451,8 +475,10 @@ const addToCart = async (identifier, variant_id = 0) => {
             searchingProduct.value = response.data.product;
             isAddModalOpen.value = true;
         } else {
-            errorAudio.play();
-            useSpeak('Produk tidak ditemukan');
+            if (userSettings.value.sound_product_not_found == '1') {
+                errorAudio.play();
+                useSpeak('Produk tidak ditemukan');
+            }
 
             Toast.fire({
                 icon: "error",
@@ -521,6 +547,16 @@ const selectedPayment = ref(null);
 const selectPaymentMethod = (method) => {
     selectedPayment.value = method;
 
+    if (userSettings.value.sound_payment_method == '1') {
+        if (method == 'cash') {
+            useSpeak('Metode pembayaran, tunai');
+        } else if (method == 'debt') {
+            useSpeak('Metode pembayaran, hutang');
+        } else {
+            useSpeak('Metode pembayaran, ' + method);
+        }
+    }
+
     if (selectedPayment.value !== 'cash') {
         bayar.value = grandTotal.value;
     } else {
@@ -557,7 +593,10 @@ const onSubmit = async () => {
 
         if (response.data) {
             fetchCart();
-            useSpeak('Transaksi berhasil');
+
+            if (userSettings.value.sound_success_transaction == '1') {
+                useSpeak('Transaksi berhasil');
+            }
 
             Toast.fire({
                 icon: "success",
@@ -567,12 +606,18 @@ const onSubmit = async () => {
 
             if (selectedPayment.value === 'cash') {
                 isChangeModalOpen.value = true;
-                useSpeak('Kembali, ' + useTerbilang(kembali.value));
+                if (userSettings.value.sound_change == '1') {
+                    useSpeak('Kembali, ' + useTerbilang(kembali.value));
+                }
             }
 
             bayar.value = '';
             computedBayarValue.value = '';
             selectedPayment.value = null;
+
+            console.log('Data Transaksi', response.data.data);
+
+            cetakStruk(response.data.data);
         }
 
         isPaymentModalOpen.value = false;
@@ -625,6 +670,46 @@ watch(cart, (value) => {
         }
     }
 });
+
+
+
+const {
+    printServerUrl,
+    defaultPrinter,
+    setupPrintServer,
+    getPrinters,
+    setDefaultPrinter,
+    print,
+} = usePrintService();
+
+async function setupPrinter() {
+    await setupPrintServer();
+}
+
+async function cetakStruk(data) {
+
+    const dataPenjualan = { data };
+
+
+
+    const response = await axios.post('/generate', dataPenjualan);
+
+    if (response.data.status === 'success') {
+        // const printWindow = window.open('', '_blank');
+        // printWindow.document.open();
+        // printWindow.document.write(response.data.content);
+        // printWindow.document.close();
+        // printWindow.focus();
+        // printWindow.print();
+        // printWindow.close();
+        // console.log('response', response.data.content);
+        setupPrinter();
+        // print(response.data.content, defaultPrinter.value);
+    } else {
+        throw new Error(response.data);
+    }
+
+}
 </script>
 
 <style scope src="vue-multiselect/dist/vue-multiselect.css"></style>

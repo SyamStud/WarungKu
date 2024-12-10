@@ -1,14 +1,12 @@
 // SplashScreen.vue
 <script setup>
 import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import ApplicationLogo from './ApplicationLogo.vue';
 import { Progress } from '@/Components/ui/progress';
 import { watchEffect } from 'vue';
 
 const progress = ref(13);
 const isVisible = ref(true);
-const router = useRouter();
 
 watchEffect((cleanupFn) => {
     const timer1 = setTimeout(() => (progress.value = 66), 500);

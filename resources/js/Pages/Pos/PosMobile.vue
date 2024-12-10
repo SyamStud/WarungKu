@@ -725,6 +725,7 @@ const selectedPayment = ref(null);
 
 const selectPaymentMethod = (method) => {
     selectedPayment.value = method;
+    useSpeak('Metode pembayaran ' + method);
 
     if (selectedPayment.value !== 'cash') {
         bayar.value = grandTotal.value;

@@ -200,4 +200,10 @@ Route::middleware(['auth', 'verified', 'role:super-admin'])->group(function () {
     Route::resource('/super-admin/users', UserController::class);
 });
 
+
+Route::post('/generate', [CartController::class, 'generateReceipt']);
+
+Route::get('/test', function () {
+    return Inertia::render('Test');
+});
 require __DIR__ . '/auth.php';

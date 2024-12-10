@@ -14,13 +14,14 @@ use App\Models\DebtItem;
 use App\Models\Discount;
 use Mike42\Escpos\Printer;
 use App\Models\Transaction;
+use App\Models\StoreSetting;
 use Illuminate\Http\Request;
 use App\Models\StockMovement;
 use App\Models\ProductVariant;
 use App\Models\DiscountProduct;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Models\StoreSetting;
 use Illuminate\Support\Facades\Auth;
 use Mike42\Escpos\CapabilityProfile;
 use Illuminate\Support\Facades\Cache;
@@ -185,6 +186,19 @@ class CartController extends Controller
             ], 404);
         }
 
+        if ($cartItem->productVariant->stock < $request->quantity) {
+
+            $cart = Cart::find($cartItem->cart_id);
+
+            return response()->json([
+                'message' => 'Stok tidak mencukupi',
+                'status' => 'error',
+                'grand_total' => $cart->grand_total,
+                'data' => $this->getUserCart(),
+                'cart' => $cart,
+            ]);
+        }
+
         $productDiscount = $this->getProductDiscount($cartItem->product_variant_id, $request->quantity);
 
         $cartItem->discounted_price = $productDiscount
@@ -328,6 +342,13 @@ class CartController extends Controller
             ->first();
 
         if ($existingItem) {
+            if ($existingItem->productVariant->stock < $cartItem->quantity) {
+                return response()->json([
+                    'message' => 'Stok tidak mencukupi',
+                    'status' => 'error',
+                ]);
+            }
+
             $existingItem->quantity += $cartItem->quantity;
 
             $productDiscount = $this->getProductDiscount($request->variant_id, $existingItem->quantity);
@@ -349,6 +370,13 @@ class CartController extends Controller
 
             $cartItem->delete();
         } else {
+            if ($newVariant->stock < $cartItem->quantity) {
+                return response()->json([
+                    'message' => 'Stok tidak mencukupi',
+                    'status' => 'error',
+                ]);
+            }
+
             $productDiscount = $this->getProductDiscount($request->variant_id, $cartItem->quantity);
             $productDiscountAmount = 0;
 
@@ -510,13 +538,20 @@ class CartController extends Controller
 
         if ($request->variant_id != 0) {
             $product = DB::table('products')
-                ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.status', 'product_variants.quantity', 'units.name as unit_name')
+                ->select('products.id', 'products.sku', 'products.name', 'product_variants.id as variant_id', 'product_variants.price', 'product_variants.status', 'product_variants.quantity', 'product_variants.stock', 'units.name as unit_name')
                 ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
                 ->join('units', 'product_variants.unit_id', '=', 'units.id')
                 ->where('products.sku', $request->identifier)
                 ->where('product_variants.id', $request->variant_id)
                 ->where('products.store_id', Auth::user()->store_id)
                 ->first();
+        }
+
+        if ($product->stock < 1) {
+            return response()->json([
+                'message' => 'Stok tidak mencukupi',
+                'status' => 'error',
+            ]);
         }
 
         return DB::transaction(function () use ($request, $product) {
@@ -548,6 +583,13 @@ class CartController extends Controller
                 ->first();
 
             if ($cartItem) {
+                if ($product->stock < $cartItem->quantity + 1) {
+                    return response()->json([
+                        'message' => 'Stok tidak mencukupi',
+                        'status' => 'error',
+                    ]);
+                }
+
                 DB::table('cart_items')
                     ->where('id', $cartItem->id)
                     ->update([
@@ -673,7 +715,7 @@ class CartController extends Controller
         }
 
         // VALIDASI CART ITEM
-        $cartItems = CartItem::where('cart_id', $cart->id)->where('store_id', Auth::user()->store_id)->get();
+        $cartItems = CartItem::where('cart_id', $cart->id)->where('store_id', Auth::user()->store_id)->with('product')->get();
 
         if ($cartItems->isEmpty()) {
             return response()->json([
@@ -685,10 +727,18 @@ class CartController extends Controller
         // PENGURANGAN STOCK
         $stockMovement = $this->decreaseStock($cartItems);
 
+        $transactionData = [
+            'cart' => $cart,
+            'cartItems' => $cartItems,
+            'transaction_code' => $request->transaction_code,
+            'total_payment' => $request->total_payment,
+            'payment_method' => $request->payment_method,
+        ];
+
         // $this->print($cart, $cartItems, $request->transaction_code, $request->total_payment, $request->payment_method);
         // try {
 
-        return DB::transaction(function () use ($cart, $cartItems, $request) {
+        return DB::transaction(function () use ($cart, $cartItems, $request, $transactionData) {
 
             // CREATE TRANSACTION
             $transaction = Transaction::create([
@@ -893,6 +943,7 @@ class CartController extends Controller
             return response()->json([
                 'message' => 'Transaction stored successfully',
                 'status' => 'success',
+                'data' => $transactionData,
             ]);
         });
         // } catch (\Exception $e) {
@@ -1027,6 +1078,200 @@ class CartController extends Controller
         $printer->cut();
         $printer->close();
     }
+
+    public function generateReceipt(Request $request)
+    {
+        $cart = (object) $request->data['cart'];
+        $items = collect($request->data['cartItems'])->map(function ($item) {
+            $item = (object) $item;
+            $item->product = (object) $item->product;
+            return $item;
+        });
+
+        Debugbar::info($items);
+
+        $transactionCode = $request->data['transaction_code'];
+        $payment = $request->data['total_payment'];
+        $method = $request->data['payment_method'];
+
+        $ads = Ads::where('type', 'receipt')->first();
+        $storeSettings = StoreSetting::where('store_id', Auth::user()->store_id)
+            ->get()
+            ->keyBy('key');
+
+        Log::info(Auth::user()->store->name);
+        // Generate receipt content
+        $content = "";
+
+        $content .= "\x1B\x61\x01";
+        $content .= "\x1B\x21\x30";
+
+        $content .=  Auth::user()->store->name . "\n";
+
+        $content .= "\x1B\x21\x00";
+        $content .= "\x1B\x61\x00";
+
+        $content .= str_pad(Auth::user()->store->address, 48, " ", STR_PAD_BOTH) . "\n\n";
+
+        // Info transaksi
+        $content .= "Kasir: " . Auth::user()->name . "\n";
+        $content .= "Tanggal: " . date("d-m-Y H:i:s") . "\n";
+        $content .= "Nomor: " . $transactionCode . "\n";
+        $content .= str_repeat("-", 47) . "\n";
+
+        // Header items dengan format yang sama seperti referensi
+        $content .= str_pad("Barang", 30) . str_pad("Subtotal", 16, ' ', STR_PAD_LEFT) . " \n";
+        $content .= str_repeat("-", 47) . "\n";
+
+        // Items dengan format yang sama
+        foreach ($items as $item) {
+            // Nama barang di baris pertama
+            $content .= $item->product->name . "\n";
+
+            // Detail quantity dan harga dengan indentasi
+            $qty = "  " . $item->quantity . " pcs x " . number_format($item->price, 0, ',', '.');
+            $subtotal = number_format($item->quantity * $item->price, 0, ',', '.');
+            $content .= str_pad($qty, 30) . str_pad($subtotal, 16, ' ', STR_PAD_LEFT) . " \n";
+        }
+
+        // Totals dengan format yang sama
+        $content .= str_repeat("-", 47) . "\n";
+        $content .= str_pad("Subtotal", 30) . str_pad(number_format($cart->total_price, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n";
+
+        // Discount
+        $discount = $cart->discount > 0 ? '(-' . number_format($cart->discount, 0, ',', '.') . ')' : '0';
+        $content .= str_pad("Diskon", 30) . str_pad($discount, 16, ' ', STR_PAD_LEFT) . " \n";
+
+        // Tax
+        $content .= str_pad("PPN (" . $storeSettings['tax_percentage']->value . "%)", 30) . str_pad(number_format($cart->tax, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n";
+
+        // Grand Total
+        $content .= str_repeat("-", 47) . "\n";
+        $content .= "\x1B\x45\x01";
+        $content .= str_pad("Total Akhir", 30) . str_pad(number_format($cart->grand_total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n\n";
+        $content .= "\x1B\x45\x00";
+
+        // Payment info
+        $payment_method = $method == 'debt' ? 'Catat Hutang' : $method;
+        $content .= str_pad($payment_method, 30) . str_pad(number_format($payment, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n";
+
+        if ($method == 'cash') {
+            $content .= str_pad("Kembali", 30) . str_pad(number_format($payment - $cart->grand_total, 0, ',', '.'), 16, ' ', STR_PAD_LEFT) . " \n";
+        }
+
+        // Footer
+        $content .= str_repeat("-", 47) . "\n\n";
+        $content .= str_pad("Terima Kasih Atas Kunjungan Anda!", 47, " ", STR_PAD_BOTH) . "\n\n";
+
+        // Ads jika ada
+        if ($ads) {
+            $content .= str_pad(strtoupper($ads->sponsor_type) . " BY " . strtoupper($ads->sponsor_name), 47, " ", STR_PAD_BOTH) . "\n";
+            $content .= str_pad($ads->sponsor_description, 47, " ", STR_PAD_BOTH);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'content' => $content
+        ]);
+    }
+
+    public function printToBrowser(Request $request)
+    {
+        $cart = (object) $request->data['cart'];
+        $items = collect($request->data['cartItems'])->map(function ($item) {
+            return (object) $item;
+        });
+        $transactionCode = $request->data['transaction_code'];
+        $payment = $request->data['total_payment'];
+        $method = $request->data['payment_method'];
+
+        $ads = Ads::where('type', 'receipt')->first();
+        $storeSettings = StoreSetting::where('store_id', Auth::user()->store_id)->get()->keyBy('key');
+
+        $storeName = strtoupper(Auth::user()->store->name);
+        $storeAddress = Auth::user()->store->address;
+
+        $html = '<div style="font-family: monospace; width: 100%; max-width: 72mm; margin: 0 auto;">';
+
+        // Header toko
+        $html .= '<div style="text-align: center; line-height: 1.2;">';
+        $html .= "<h2 style='margin: 0; font-weight: bold;'>$storeName</h2>";
+        $html .= "<p style='margin: 0; font-weight: normal;'>$storeAddress</p>";
+        $html .= '<hr style="border: none; border-top: 1px solid black; margin: 4px 0;">';
+        $html .= '</div>';
+
+        // Informasi transaksi
+        $html .= '<div style="line-height: 1.2; font-size: 12px;">';
+        $html .= "<p style='margin: 0;'>Kasir: " . Auth::user()->name . "</p>";
+        $html .= "<p style='margin: 0;'>Tanggal: " . date("d-m-Y H:i:s") . "</p>";
+        $html .= "<p style='margin: 0;'>Nomor: $transactionCode</p>";
+        $html .= '<hr style="border: none; border-top: 1px solid black; margin: 4px 0;">';
+        $html .= '</div>';
+
+        // Daftar Barang
+        $html .= '<table style="width: 100%; font-size: 12px; line-height: 1.2;">';
+        $html .= '<tr><th style="text-align: left; font-weight: normal;">Barang</th><th style="text-align: right; font-weight: normal;">Subtotal</th></tr>';
+        $total = 0;
+
+        $items = [
+            (object) [
+                'product' => (object) [
+                    'name' => 'Kopi Hitam'
+                ],
+                'quantity' => 2,
+                'price' => 10000
+            ],
+            (object) [
+                'product' => (object) [
+                    'name' => 'Kopi Susu'
+                ],
+                'quantity' => 1,
+                'price' => 15000
+            ]
+        ];
+
+        foreach ($items as $item) {
+            $subtotal = $item->quantity * $item->price;
+            $total += $subtotal;
+            $html .= "<tr>";
+            $html .= "<td style='font-weight: normal;'>" . $item->product->name . "</td>";
+            $html .= "<td style='text-align: right; font-weight: normal;'>Rp " . number_format($subtotal, 0, ',', '.') . "</td>";
+            $html .= "</tr>";
+            $html .= "<tr><td colspan='2' style='font-size: 10px; color: #666; font-weight: normal;'>  {$item->quantity} pcs x Rp " . number_format($item->price, 0, ',', '.') . "</td></tr>";
+        }
+        $html .= '</table>';
+        $html .= '<hr style="border: none; border-top: 1px solid black; margin: 4px 0;">';
+
+        // Total dan pembayaran
+        $html .= '<table style="width: 100%; font-size: 12px; line-height: 1.2;">';
+        $html .= "<tr><td style='font-weight: normal;'>Subtotal</td><td style='text-align: right; font-weight: normal;'>Rp " . number_format($cart->total_price, 0, ',', '.') . "</td></tr>";
+        $html .= "<tr><td style='font-weight: normal;'>Diskon</td><td style='text-align: right; font-weight: normal;'>Rp " . number_format($cart->discount, 0, ',', '.') . "</td></tr>";
+        $html .= "<tr><td style='font-weight: normal;'>PPN ({$storeSettings['tax_percentage']->value}%)</td><td style='text-align: right; font-weight: normal;'>Rp " . number_format($cart->tax, 0, ',', '.') . "</td></tr>";
+        $html .= "<tr><td style='font-weight: bold;'>Total Akhir</td><td style='text-align: right; font-weight: bold;'>Rp " . number_format($cart->grand_total, 0, ',', '.') . "</td></tr>";
+        if ($method == 'cash') {
+            $html .= "<tr><td style='font-weight: normal;'>Kembali</td><td style='text-align: right; font-weight: normal;'>Rp " . number_format($payment - $cart->grand_total, 0, ',', '.') . "</td></tr>";
+        }
+        $html .= '</table>';
+        $html .= '<hr style="border: none; border-top: 1px solid black; margin: 4px 0;">';
+
+        // Ucapan terima kasih
+        $html .= '<div style="text-align: center; line-height: 1.2;">';
+        $html .= '<p style="font-weight: normal; margin: 0;">Terima Kasih Atas Kunjungan Anda!</p>';
+        if ($ads) {
+            $html .= '<p style="font-weight: normal; margin: 0;">' . strtoupper($ads->sponsor_type) . ' BY ' . strtoupper($ads->sponsor_name) . '</p>';
+            $html .= '<p style="font-weight: normal; margin: 0;">' . $ads->sponsor_description . '</p>';
+        }
+        $html .= '</div>';
+
+        $html .= '</div>';
+
+
+        return response([
+            'status' => 'success',
+            'content' => $html
+        ]);
+    }
+
 
     /**
      * Mendapatkan diskon per produk berdasarkan ID produk.

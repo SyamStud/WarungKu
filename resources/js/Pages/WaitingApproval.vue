@@ -279,7 +279,7 @@ const formatDate = (date) => {
 };
 
 const refreshStatus = () => {
-    router.visit("/waiting-approval");
+    router.visit("/waiting-approval"); 
 
     if (user.store.status == "active") {
         router.visit("/admin/dashboard");

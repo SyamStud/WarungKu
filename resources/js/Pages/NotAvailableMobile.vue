@@ -20,7 +20,7 @@
                 <p class="mt-4">Silakan kunjungi situs kami menggunakan komputer atau laptop untuk mengakses halaman ini.</p>
             </div>
             <div class="text-center">
-                <button @click="kembaliKeHalamanUtama"
+                <button
                     class="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
                     Kembali ke Halaman Utama
                 </button>
@@ -31,29 +31,6 @@
 
 <script setup>
 import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-
-const kembaliKeHalamanUtama = () => {
-    if (router) {
-        router.push({ name: 'home' }).catch(() => {
-            console.warn("Navigasi gagal, periksa rute 'home' di router Anda.")
-        })
-    }
-}
-
-onMounted(() => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-
-    if (!isMobile) {
-        if (router) {
-            router.push({ name: 'konten-desktop' }).catch(() => {
-                console.warn("Navigasi gagal, periksa rute 'konten-desktop' di router Anda.")
-            })
-        }
-    }
-})
 </script>
 
 <style scoped>
