@@ -43,6 +43,14 @@ class HandleInertiaRequests extends Middleware
                 }
                 return [];
             },
+            'storeSettings' => function () use ($request) {
+                if ($request->user()) {
+                    return \App\Models\StoreSetting::where('id', $request->user()->store_id)
+                        ->pluck('value', 'key')
+                        ->toArray();
+                }
+                return [];
+            },
         ];
     }
 }

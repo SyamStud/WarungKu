@@ -11,41 +11,19 @@ defineProps({
     }
 });
 
-import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
-import VueMultiselect, { Multiselect } from 'vue-multiselect';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { Multiselect } from 'vue-multiselect';
 import ProductTable from '@/Components/ProductTable.vue';
 import axios from 'axios';
 import Input from '@/Components/ui/input/Input.vue';
-import { Label } from '@/components/ui/label'
-import {
-    Sheet,
-    SheetClose,
-    SheetContent,
-    SheetDescription,
-    SheetFooter,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from '@/Components/ui/sheet'
 import Button from '@/Components/ui/button/Button.vue';
 import Separator from '@/Components/ui/separator/Separator.vue';
 import DialogWrapper from '@/Components/ui/dialog/DialogWrapper.vue';
 import DialogFooter from '@/Components/ui/dialog/DialogFooter.vue';
 import useSpeak from '@/Composables/useSpeak';
 import { useToast } from '@/Composables/useToast';
-import { add } from 'lodash';
-import { get } from '@vueuse/core';
 import useTerbilang from '@/Composables/useTerbilang';
 import FormInput from '@/Components/ui/form/FormInput.vue';
-import {
-    Menubar,
-    MenubarContent,
-    MenubarItem,
-    MenubarMenu,
-    MenubarSeparator,
-    MenubarShortcut,
-    MenubarTrigger,
-} from '@/Components/ui/menubar'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -58,14 +36,6 @@ import {
     AlertDialogTrigger,
 } from '@/Components/ui/alert-dialog'
 
-import { Link } from '@inertiajs/vue3';
-import NavigationMenu from '@/Components/ui/navigation-menu/NavigationMenu.vue';
-import NavigationMenuList from '@/Components/ui/navigation-menu/NavigationMenuList.vue';
-import NavigationMenuItem from '@/Components/ui/navigation-menu/NavigationMenuItem.vue';
-import NavigationMenuTrigger from '@/Components/ui/navigation-menu/NavigationMenuTrigger.vue';
-import NavigationMenuContent from '@/Components/ui/navigation-menu/NavigationMenuContent.vue';
-import NavigationMenuLink from '@/Components/ui/navigation-menu/NavigationMenuLink.vue';
-import { navigationMenuTriggerStyle } from '@/Components/ui/navigation-menu';
 import { FormField } from '@/Components/ui/form';
 import FormItem from '@/Components/ui/form/FormItem.vue';
 import FormLabel from '@/Components/ui/form/FormLabel.vue';
@@ -78,7 +48,6 @@ import SelectContent from '@/Components/ui/select/SelectContent.vue';
 import SelectGroup from '@/Components/ui/select/SelectGroup.vue';
 import SelectItem from '@/Components/ui/select/SelectItem.vue';
 import { usePrintService } from '@/Composables/usePrintService';
-// import useTerbilang from '@/Composables/useTerbilang';
 
 const { props } = usePage();
 const userSettings = ref(props.userSettings);
@@ -112,8 +81,6 @@ const searchingProduct = ref(null);
 
 const isLimitTransaction = ref(false);
 
-
-
 const openRevokeModal = () => {
     isRevokeModalOpen.value = true;
 };
@@ -128,8 +95,6 @@ onMounted(() => {
     fetchCart();
     fetchCustomer();
     fetchSettings();
-
-    console.log('user', userSettings.value);
 });
 
 onUnmounted(() => {
@@ -180,7 +145,7 @@ const fetchCart = async () => {
         if (cartItems.value.length > 0) {
             transactionCode.value = response.data.transaction_code;
         } else {
-            transactionCode.value = generateTransactionCode();
+            transactionCode.value = generateTransactionCode() + '-' + (response.data.number_of_transaction + 1);
         }
     } catch (error) {
         console.error('Error fetching user cart:', error);
@@ -214,15 +179,12 @@ const updateIdCustomer = (value) => {
 const generateTransactionCode = () => {
     const now = () => {
         const date = new Date();
-        return date.getFullYear().toString().slice(-2) +
-            date.getDate().toString().padStart(2, '0') +
+        return date.getDate().toString().padStart(2, '0') +
             (date.getMonth() + 1).toString().padStart(2, '0') +
-            date.getDate().toString().padStart(2, '0') +
-            date.getHours().toString().padStart(2, '0') +
-            date.getMinutes().toString().padStart(2, '0');
+            date.getFullYear().toString().slice(-2);
     };
 
-    return "TRX" + now() + "-" + Math.random().toString(36).substr(2, 5).toUpperCase();
+    return now();
 };
 
 const successAudio = new Audio('/success.mp3');
@@ -704,7 +666,7 @@ async function cetakStruk(data) {
         // printWindow.close();
         // console.log('response', response.data.content);
         setupPrinter();
-        // print(response.data.content, defaultPrinter.value);
+        print(response.data.content, storeSettings.value.printer_name);
     } else {
         throw new Error(response.data);
     }
@@ -758,7 +720,7 @@ tr:hover {
                                 <span class="text-[0.8rem] text-gray-500 font-medium">Diskon :</span>
                                 <span class="ms-2 text-[0.8rem] text-gray-500 font-semibold">- {{
                                     formatRupiah(cart.discount)
-                                    }}</span>
+                                }}</span>
 
                                 <!-- Garis Bawah Diskon -->
                                 <div class="col-span-2 border border-b border-gray-300 my-1"></div>

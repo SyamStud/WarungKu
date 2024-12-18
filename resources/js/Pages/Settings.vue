@@ -6,7 +6,7 @@ import FormItem from '@/Components/ui/form/FormItem.vue';
 import FormLabel from '@/Components/ui/form/FormLabel.vue';
 import FormMessage from '@/Components/ui/form/FormMessage.vue';
 import Textarea from '@/Components/ui/textarea/Textarea.vue';
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm } from 'vee-validate';
 import { onMounted, ref } from 'vue';
@@ -245,6 +245,8 @@ const fetchData = async () => {
         </template>
 
         <div class="pt-20" v-if="!isLoading">
+
+
             <!-- <div class="py-5">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -340,9 +342,12 @@ const fetchData = async () => {
                 </div>
             </div> -->
 
-            <div class="pb-12 mt-5">
+            <div class="pb-12">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+
+                    <Link class="px-3 py-3 bg-gray-900 rounded-md text-white text-sm font-semibold" href="/profile">Pengaturan Akun</Link>
+
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-10">
                         <div class="p-6 text-gray-900">
                             <h2 class="text-2xl font-bold text-gray-900 mb-4">Pengaturan Suara</h2>
 

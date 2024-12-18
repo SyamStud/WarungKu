@@ -18,6 +18,7 @@ class RoleSeeder extends Seeder
         $admin = Role::create(['name' => 'admin']);
         $cashier = Role::create(['name' => 'cashier']);
         $registeredUser = Role::create(['name' => 'registered-user']);
+        $inputStaff = Role::create(['name' => 'input-staff']);
 
         $permission = Permission::create(['name' => 'delete own data']);
         $admin->givePermissionTo($permission);

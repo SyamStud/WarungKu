@@ -95,7 +95,7 @@ onMounted(() => {
     <AdminLayout>
         <div class="2xl:px-8">
             <!-- Komponen Carousel untuk menampilkan gambar secara otomatis -->
-            <AutoCarousel v-if="!isLoading" :images="carouselImages" :slides="slides" />
+            <!-- <AutoCarousel v-if="!isLoading" :images="carouselImages" :slides="slides" /> -->
 
             <!-- Section Ringkasan Informasi -->
             <div

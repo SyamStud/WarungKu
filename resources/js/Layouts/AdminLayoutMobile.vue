@@ -3,7 +3,7 @@
         <div class="flex flex-col w-full fixed top-0 z-50">
             <nav class="border-b bg-[#2A629A] shadow-md flex justify-between items-center p-4">
                 <div class="text-white font-bold text-lg">
-                    <Link href="/pos">My POS System</Link>
+                    <Link :href="isInputStaff ? '#' : '/pos'">My POS System</Link>
                 </div>
 
                 <button @click="toggleMenu" class="md:hidden">
@@ -94,6 +94,12 @@ import { Link, usePage } from '@inertiajs/vue3';
 
 const page = usePage();
 
+const { props } = usePage();
+const user = reactive(props.auth.user);
+
+const isAdmin = ref(false);
+const isInputStaff = ref(false);
+
 const isToolbarOpen = ref(true);
 const isToolbarName = ref(true);
 const isMenuOpen = ref(false); // State for mobile menu
@@ -116,66 +122,82 @@ const contentMarginClass = computed(() => {
 });
 
 
-const tabs = [
-    {
-        name: 'Dashboard',
-        imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000',
-        tools: [
-            { link: "/admin/dashboard", name: 'Dashboard', imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000' },
-        ]
-    },
-    {
-        name: 'Transaksi',
-        imageSrc: 'https://img.icons8.com/?size=100&id=13009&format=png&color=000000',
-        tools: [
-            { link: "/admin/carts", name: 'Transaksi Sementara', imageSrc: 'https://img.icons8.com/?size=100&id=18982&format=png&color=000000' },
-            { link: "/admin/cart-items", name: 'Item Transaksi Sementara', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
-            { link: "/admin/transactions", name: 'Transaksi', imageSrc: 'https://img.icons8.com/?size=100&id=63724&format=png&color=000000' },
-            { link: "/admin/transaction-items", name: 'Item Transaksi', imageSrc: 'https://img.icons8.com/?size=100&id=13123&format=png&color=000000' },
-            { link: "/admin/debts", name: 'Hutang', imageSrc: 'https://img.icons8.com/?size=100&id=tcIzvG8b1BjB&format=png&color=000000' },
-            { link: "/admin/debt-items", name: 'Item Hutang', imageSrc: 'https://img.icons8.com/?size=100&id=13229&format=png&color=000000' },
-            { link: "/admin/debt-payment-history", name: 'Riwayat Pembayaran Hutang', imageSrc: 'https://img.icons8.com/?size=100&id=NBus9BZohddY&format=png&color=000000' },
-        ]
-    },
-    {
-        name: 'Pembelian',
-        imageSrc: 'https://img.icons8.com/?size=100&id=BfXx00KJSKHH&format=png&color=000000',
-        tools: [
-            { link: "/admin/purchases", name: 'Restock Produk Supplier', imageSrc: 'https://img.icons8.com/?size=100&id=LbZI1V6lICp2&format=png&color=000000' },
-            { link: "/admin/restock-lists", name: 'List Belanja', imageSrc: 'https://img.icons8.com/?size=100&id=ZODLIcapQpqg&format=png&color=000000' },
-            { link: "/admin/suppliers", name: 'Supplier', imageSrc: 'https://img.icons8.com/?size=100&id=38216&format=png&color=000000' },
-        ]
-    },
-    {
-        name: 'Produk',
-        imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000',
-        tools: [
-            { link: '/admin/products', name: 'Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
-            { link: '/admin/stocks', name: 'Stok', imageSrc: 'https://img.icons8.com/?size=100&id=VWrzCw0rvxVx&format=png&color=000000' },
-            { link: '/admin/stock-movements', name: 'Riwayat Stok', imageSrc: 'https://img.icons8.com/?size=100&id=18971&format=png&color=000000' },
-            { link: '/admin/categories', name: 'Kategori', imageSrc: 'https://img.icons8.com/?size=100&id=XnHBz2LnhELw&format=png&color=000000' },
-            { link: '/admin/units', name: 'Unit', imageSrc: 'https://img.icons8.com/?size=100&id=12927&format=png&color=000000' },
-            { link: '/admin/discounts', name: 'Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=63761&format=png&color=000000' },
-            { link: '/admin/discount-products', name: 'Produk Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=yasXRs9W9T8i&format=png&color=000000' },
-        ]
-    },
-    {
-        name: 'Pengguna',
-        imageSrc: 'https://img.icons8.com/?size=100&id=13042&format=png&color=000000',
-        tools: [
-            { link: '/admin/customers', name: 'Pelanggan', imageSrc: 'https://img.icons8.com/?size=100&id=23301&format=png&color=000000' },
-            { link: '/admin/users', name: 'Admin & Kasir', imageSrc: 'https://img.icons8.com/?size=100&id=108294&format=png&color=000000' },
-        ]
-    },
-    {
-        name: 'Laporan',
-        imageSrc: 'https://img.icons8.com/?size=100&id=13532&format=png&color=000000',
-        tools: [
-            { link: "/admin/reports/transaction", name: 'Laporan Penjualan', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
-            { link: "/admin/reports/purchase", name: 'Laporan Pembelian', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
-        ]
+const tabs = computed(() => {
+    if (isInputStaff.value) {
+        return [
+            {
+                name: 'Produk',
+                imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000',
+                tools: [
+                    { link: '/admin/products', name: 'Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
+                    { link: '/admin/product-variants', name: 'Variasi Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
+                    { link: '/admin/categories', name: 'Kategori', imageSrc: 'https://img.icons8.com/?size=100&id=XnHBz2LnhELw&format=png&color=000000' },
+                    { link: '/admin/units', name: 'Unit', imageSrc: 'https://img.icons8.com/?size=100&id=12927&format=png&color=000000' },
+                ]
+            }
+        ];
     }
-];
+    return [
+        {
+            name: 'Dashboard',
+            imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000',
+            tools: [
+                { link: "/admin/dashboard", name: 'Dashboard', imageSrc: 'https://img.icons8.com/?size=100&id=PuBdQTrFqm0K&format=png&color=000000' },
+            ]
+        },
+        {
+            name: 'Transaksi',
+            imageSrc: 'https://img.icons8.com/?size=100&id=13009&format=png&color=000000',
+            tools: [
+                { link: "/admin/carts", name: 'Transaksi Sementara', imageSrc: 'https://img.icons8.com/?size=100&id=18982&format=png&color=000000' },
+                { link: "/admin/cart-items", name: 'Item Transaksi Sementara', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
+                { link: "/admin/transactions", name: 'Transaksi', imageSrc: 'https://img.icons8.com/?size=100&id=63724&format=png&color=000000' },
+                { link: "/admin/transaction-items", name: 'Item Transaksi', imageSrc: 'https://img.icons8.com/?size=100&id=13123&format=png&color=000000' },
+                { link: "/admin/debts", name: 'Hutang', imageSrc: 'https://img.icons8.com/?size=100&id=tcIzvG8b1BjB&format=png&color=000000' },
+                { link: "/admin/debt-items", name: 'Item Hutang', imageSrc: 'https://img.icons8.com/?size=100&id=13229&format=png&color=000000' },
+                { link: "/admin/debt-payment-history", name: 'Riwayat Pembayaran Hutang', imageSrc: 'https://img.icons8.com/?size=100&id=NBus9BZohddY&format=png&color=000000' },
+            ]
+        },
+        {
+            name: 'Produk',
+            imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000',
+            tools: [
+                { link: '/admin/products', name: 'Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
+                { link: '/admin/product-variants', name: 'Variasi Produk', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
+                { link: '/admin/restocks', name: 'Restock', imageSrc: 'https://img.icons8.com/?size=100&id=VWrzCw0rvxVx&format=png&color=000000' },
+                { link: '/admin/stock-movements', name: 'Riwayat Stok', imageSrc: 'https://img.icons8.com/?size=100&id=18971&format=png&color=000000' },
+                { link: '/admin/categories', name: 'Kategori', imageSrc: 'https://img.icons8.com/?size=100&id=XnHBz2LnhELw&format=png&color=000000' },
+                { link: '/admin/units', name: 'Unit', imageSrc: 'https://img.icons8.com/?size=100&id=12927&format=png&color=000000' },
+                { link: '/admin/discounts', name: 'Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=63761&format=png&color=000000' },
+                { link: '/admin/discount-products', name: 'Produk Diskon', imageSrc: 'https://img.icons8.com/?size=100&id=yasXRs9W9T8i&format=png&color=000000' },
+            ]
+        },
+        {
+            name: 'Pengguna',
+            imageSrc: 'https://img.icons8.com/?size=100&id=13042&format=png&color=000000',
+            tools: [
+                { link: '/admin/customers', name: 'Pelanggan', imageSrc: 'https://img.icons8.com/?size=100&id=23301&format=png&color=000000' },
+                { link: '/admin/users', name: 'Admin & Pegawai', imageSrc: 'https://img.icons8.com/?size=100&id=108294&format=png&color=000000' },
+            ]
+        },
+        {
+            name: 'Laporan',
+            imageSrc: 'https://img.icons8.com/?size=100&id=13532&format=png&color=000000',
+            tools: [
+                { link: "/admin/reports/transaction", name: 'Laporan Penjualan', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
+                { link: "/admin/reports/purchase", name: 'Laporan Pembelian', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
+            ]
+        },
+        {
+            name: 'Pengaturan',
+            imageSrc: 'https://img.icons8.com/?size=100&id=12784&format=png&color=000000',
+            tools: [
+                { link: "/admin/store-settings", name: 'Pengaturan Toko', imageSrc: 'https://img.icons8.com/?size=100&id=18901&format=png&color=000000' },
+                { link: "/settings", name: 'Pengaturan Pengguna', imageSrc: 'https://img.icons8.com/?size=100&id=13042&format=png&color=000000' },
+            ]
+        }
+    ];
+});
 
 const activeTab = ref('Beranda');
 
@@ -185,12 +207,12 @@ const setActiveTab = (tabName) => {
 };
 
 const activeTabTools = computed(() => {
-    const currentTab = tabs.find(tab => tab.name === activeTab.value);
+    const currentTab = tabs.value.find(tab => tab.name === activeTab.value);
     return currentTab ? currentTab.tools : [];
 });
 
 const handleToolClick = (tool) => {
-    const parentTab = tabs.find(tab => tab.tools.some(t => t.name === tool.name));
+    const parentTab = tabs.value.find(tab => tab.tools.some(t => t.name === tool.name));
     if (parentTab) {
         setActiveTab(parentTab.name);
     }
@@ -205,7 +227,22 @@ onMounted(() => {
     }
 
     path.value = page.url;
-    console.log(path.value);
+    
+    if (user.roles[0].name === 'admin') {
+        isAdmin.value = true;
+    } else {
+        isAdmin.value = false;
+    }
+
+    if (user.roles[0].name === 'input-staff') {
+        isInputStaff.value = true;
+    } else {
+        isInputStaff.value = false;
+    }
+
+    if (isInputStaff.value) {
+        activeTab.value = 'Produk';
+    }
 });
 
 watch(() => page.url, () => {

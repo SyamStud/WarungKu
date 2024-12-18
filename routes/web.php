@@ -80,23 +80,26 @@ Route::resource('/stores', StoreController::class);
 // Admin Routes
 Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->group(function () {
     // Admin Routes
-    Route::middleware('role:admin')->group(function () {
-        Route::prefix('admin')->group(function () {
-            // Dashboard Routes
+    Route::prefix('admin')->group(function () {
+
+        Route::middleware('role:admin|input-staff')->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
             Route::get('/dashboard/dashboardSummary', [DashboardController::class, 'dashboardSummary']);
 
             // Product Routes
             Route::get('/products/add-variant', [ProductController::class, 'addVariant'])->name('products.add.variant');
             Route::post('/products/add-variant', [ProductController::class, 'storeVariant'])->name('products.store.variant');
-
             Route::get('/products/excel-export', [ProductController::class, 'exportExcel']);
-
             Route::resource('/products', ProductController::class);
 
             Route::get('/product-variants/export-excel', [ProductVariantController::class, 'exportExcel']);
             Route::resource('/product-variants', ProductVariantController::class);
 
+            Route::resource('/categories', CategoryController::class);
+            Route::resource('/units', UnitController::class);
+        });
+
+        Route::middleware('role:admin')->group(function () {
             // Purchase Routes
             Route::resource('/purchases', PurchaseController::class);
             Route::resource('/restock-lists', RestockListController::class)->middleware('check.mobile');
@@ -104,7 +107,6 @@ Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->gr
 
             // Other Admin Routes
             Route::resource('/users', UserController::class);
-            Route::resource('/categories', CategoryController::class);
             Route::post('/restocks/audit', [RestockController::class, 'audit']);
 
             Route::get('/restocks/excel-export', [RestockController::class, 'exportExcel']);
@@ -127,7 +129,6 @@ Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->gr
 
             Route::get('/debt-items/export-excel', [DebtItemController::class, 'exportExcel']);
             Route::resource('/debt-items', DebtItemController::class);
-            Route::resource('/units', UnitController::class);
 
             Route::get('/debts/export-excel', [DebtController::class, 'exportExcel']);
             Route::post('/debts/delete', [DebtController::class, 'destroy']);
@@ -150,28 +151,31 @@ Route::middleware(['auth', 'verified', 'check.store', 'check.store.status'])->gr
     });
 
 
-    // POS Routes
-    Route::post('/customers/getCustomer', [CustomerController::class, 'getCustomer']);
-    Route::post('/products/getBySku', [ProductController::class, 'getProduct']);
-    Route::post('/products/getByName', [ProductController::class, 'getProductByName']);
-    Route::post('/products/getVariantByName', [ProductController::class, 'getProductVariantByName']);
+    Route::middleware('role:admin|cashier')->group(function () {
+        // POS Routes
+        Route::post('/customers/getCustomer', [CustomerController::class, 'getCustomer']);
+        Route::post('/products/getBySku', [ProductController::class, 'getProduct']);
+        Route::post('/products/getByName', [ProductController::class, 'getProductByName']);
+        Route::post('/products/getVariantByName', [ProductController::class, 'getProductVariantByName']);
 
-    // Route::get('/pos', [PosController::class, 'index'])->name('pos');
+        // Route::get('/pos', [PosController::class, 'index'])->name('pos');
 
-    Route::prefix('pos')->group(function () {
-        Route::resource('/', PosController::class);
-        Route::get('/carts/getUserCart', [CartController::class, 'getUserCart']);
-        Route::post('/carts/addProduct', [CartController::class, 'addProduct']);
-        Route::post('/carts/addItem', [CartController::class, 'addItem']);
-        Route::post('/carts/updateProduct', [CartController::class, 'updateProduct']);
-        Route::post('/carts/removeProduct', [CartController::class, 'removeProduct']);
-        Route::post('/carts/revoke', [CartController::class, 'revoke']);
-        Route::post('/carts/updateVariant', [CartController::class, 'updateVariant']);
-        Route::post('/carts/store-transaction', [CartController::class, 'storeTransaction']);
-        Route::get('/debt-payments', [DebtPaymentController::class, 'index']);
-        Route::post('/debt-payments/store-payment', [DebtPaymentController::class, 'storePayment']);
+        Route::prefix('pos')->group(function () {
+            Route::resource('/', PosController::class);
+            Route::get('/carts/getUserCart', [CartController::class, 'getUserCart']);
+            Route::post('/carts/addProduct', [CartController::class, 'addProduct']);
+            Route::post('/carts/addItem', [CartController::class, 'addItem']);
+            Route::post('/carts/updateProduct', [CartController::class, 'updateProduct']);
+            Route::post('/carts/removeProduct', [CartController::class, 'removeProduct']);
+            Route::post('/carts/revoke', [CartController::class, 'revoke']);
+            Route::post('/carts/updateVariant', [CartController::class, 'updateVariant']);
+            Route::post('/carts/store-transaction', [CartController::class, 'storeTransaction']);
+            Route::get('/debt-payments', [DebtPaymentController::class, 'index']);
+            Route::post('/debt-payments/store-payment', [DebtPaymentController::class, 'storePayment']);
+            Route::get('/count-transaction', [PosController::class, 'countTransaction']);
+        });
     });
-
+    
     // Settings Routes
     Route::resource('/userSettings', UserSettingController::class);
     Route::resource('/globalSettings', SettingController::class);

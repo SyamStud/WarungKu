@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Pos;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Transaction;
 
 class PosController extends Controller
 {
@@ -22,5 +23,12 @@ class PosController extends Controller
 
         // Deteksi perangkat mobile berdasarkan user-agent string
         return preg_match('/(android|iphone|ipad|ipod|mobile|blackberry|opera mini|opera mobi|iemobile|windows phone|palm|webos)/i', $userAgent);
+    }
+
+    public function countTransaction()
+    {
+        $total = Transaction::count();
+        $todayCount = Transaction::whereDate('created_at', now()->toDateString())->count();
+        return response()->json(['total' => $total, 'today' => $todayCount]);
     }
 }

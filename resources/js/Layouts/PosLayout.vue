@@ -4,8 +4,8 @@
             <div class="w-full overflow-auto bg-white fixed top-0 z-10">
                 <div class="w-full flex justify-between">
                     <nav class="flex items-center px-5 gap-8">
-                        <div v-if="isAdmin">
-                            <Link href="/admin/dashboard" class="font-semibold text-sm text-black flex gap-1">
+                        <div>
+                            <Link v-if="isAdmin" href="/admin/dashboard" class="font-semibold text-sm text-black flex gap-1">
                             <img width="20" height="20" src="https://img.icons8.com/color/48/dashboard-layout.png"
                                 alt="dashboard-layout" />
                             Dashboard
@@ -27,20 +27,6 @@
                             Pembayaran Hutang
                             </Link>
                         </div>
-                        <!-- <div>
-                            <Link href="/products" class="font-semibold text-sm text-black flex gap-1">
-                            <img width="20" height="20" src="https://img.icons8.com/color/48/product--v1.png"
-                                alt="product--v1" />
-                            Informasi Produk
-                            </Link>
-                        </div> -->
-                        <!-- <div>
-                            <Link href="/my-transactions" class="font-semibold text-sm text-black flex gap-1">
-                            <img width="20" height="20" src="https://img.icons8.com/color/48/refund-2--v1.png"
-                                alt="refund-2--v1" />
-                            Transaksi Saya
-                            </Link>
-                        </div> -->
                         <div>
                             <Link href="/settings" class="font-semibold text-sm text-black flex gap-1">
                             <img width="20" height="20" src="https://img.icons8.com/color/48/gear.png" alt="gear" />

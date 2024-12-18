@@ -420,7 +420,7 @@ const canAddMoreVariants = computed(() => {
                         </div>
                     </div>
 
-                    <Button v-if="canAddMoreVariants" type="button" @click="addVariantInput"
+                    <!-- <Button v-if="canAddMoreVariants" type="button" @click="addVariantInput"
                         class="mt-4 gap-2 flex bg-green-600 hover:bg-green-700">
                         <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24">
                             <g fill="none" fill-rule="evenodd">
@@ -431,7 +431,7 @@ const canAddMoreVariants = computed(() => {
                             </g>
                         </svg>
                         Tambah Variasi
-                    </Button>
+                    </Button> -->
 
                     <Button style="margin-top: 25px;" type="submit" :class="{ 'bg-slate-500': isLoading }"
                         :disabled="isLoading">

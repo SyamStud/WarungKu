@@ -96,6 +96,6 @@ class TransactionItemController extends Controller
         }
 
         // Panggil export menggunakan Maatwebsite Excel atau metode lainnya
-        return Excel::download(new TransactionItemsExport($startDate, $endDate), 'transaksi-' . now() . '.xlsx');
+        return Excel::download(new TransactionItemsExport($startDate, $endDate), 'transaksi ' . $startDate . ' sd ' . $endDate . '.xlsx');
     }
 }

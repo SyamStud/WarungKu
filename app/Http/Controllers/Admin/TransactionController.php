@@ -172,10 +172,10 @@ class TransactionController extends Controller
 
         // Pastikan tanggal diberikan
         if (!$startDate || !$endDate) {
-            return response()->json(['error' => 'Start date and end date are required'], 400);
+            return response()->json(['error' => 'Start date and end date are required'], 400);            
         }
 
         // Panggil export menggunakan Maatwebsite Excel atau metode lainnya
-        return Excel::download(new TransactionsExport($startDate, $endDate), 'transaksi-' . now() . '.xlsx');
+        return Excel::download(new TransactionsExport($startDate, $endDate), 'transaksi ' . $startDate . ' sd ' . $endDate . '.xlsx');
     }
 }

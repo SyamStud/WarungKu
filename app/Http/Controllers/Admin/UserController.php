@@ -72,6 +72,7 @@ class UserController extends Controller
             'address' => $request->address,
             'photo' => 'storage/' . $photoPath,
             'store_id' => Auth::user()->store->id,
+            'email_verified_at' => now(),
         ]);
 
         $user->assignRole($request->role);

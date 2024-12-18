@@ -119,11 +119,15 @@ class CartController extends Controller
 
         $cart = Cart::where('user_id', $userId)->where('store_id', Auth::user()->store->id)->first();
 
+        $total = Transaction::count();
+        $todayCount = Transaction::whereDate('created_at', now()->toDateString())->count();
+
         if (!$cart) {
             return response()->json([
                 'message' => 'Cart is empty',
                 'status' => 'success',
                 'data' => [],
+                'number_of_transaction' => $todayCount,
             ]);
         }
 
@@ -166,6 +170,7 @@ class CartController extends Controller
             'grand_total' => $cart->grand_total,
             'transaction_code' => $cart->transaction_code,
             'cart' => $cart,
+            'number_of_transaction' => $todayCount,
         ]);
     }
 

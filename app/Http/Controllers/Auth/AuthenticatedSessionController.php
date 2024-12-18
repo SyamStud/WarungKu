@@ -33,13 +33,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        
+
         if (Auth::user()->hasRole('super-admin')) {
             return redirect()->intended(route('dashboard.superadmin', [], false));
         } elseif (Auth::user()->hasRole('cashier')) {
             return redirect()->intended('/pos');
         } elseif (Auth::user()->hasRole('admin')) {
             return redirect()->intended(route('dashboard', [], false));
+        } else if (Auth::user()->hasRole('input-staff')) {
+            return redirect()->intended(route('products.index', [], false));
         } else {
             return redirect()->intended(route('noStore', [], false)); // Default route if no role matches
         }
