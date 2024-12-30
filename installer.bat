@@ -6,7 +6,7 @@ set /p target_dir="Enter the target directory name: "
 
 :: Clone the repository (develop branch only)
 echo Cloning the develop branch...
-git clone --branch webusb --single-branch https://github.com/SyamStud/WarungKu.git %target_dir%
+git clone --branch main --single-branch https://github.com/SyamStud/WarungKu.git %target_dir%
 if errorlevel 1 goto error
 
 :: Navigate to the project directory
