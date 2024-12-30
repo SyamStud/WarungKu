@@ -1,0 +1,8 @@
+node_modules
+vendor
+database
+bootstrap/cache
+storage
+.env
+TODO.txt
+public
