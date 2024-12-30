@@ -149,8 +149,8 @@ const tabs = computed(() => {
             name: 'Transaksi',
             imageSrc: 'https://img.icons8.com/?size=100&id=13009&format=png&color=000000',
             tools: [
-                { link: "/admin/carts", name: 'Transaksi Sementara', imageSrc: 'https://img.icons8.com/?size=100&id=18982&format=png&color=000000' },
-                { link: "/admin/cart-items", name: 'Item Transaksi Sementara', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
+                // { link: "/admin/carts", name: 'Transaksi Sementara', imageSrc: 'https://img.icons8.com/?size=100&id=18982&format=png&color=000000' },
+                // { link: "/admin/cart-items", name: 'Item Transaksi Sementara', imageSrc: 'https://img.icons8.com/?size=100&id=12034&format=png&color=000000' },
                 { link: "/admin/transactions", name: 'Transaksi', imageSrc: 'https://img.icons8.com/?size=100&id=63724&format=png&color=000000' },
                 { link: "/admin/transaction-items", name: 'Item Transaksi', imageSrc: 'https://img.icons8.com/?size=100&id=13123&format=png&color=000000' },
                 { link: "/admin/debts", name: 'Hutang', imageSrc: 'https://img.icons8.com/?size=100&id=tcIzvG8b1BjB&format=png&color=000000' },
@@ -185,7 +185,7 @@ const tabs = computed(() => {
             imageSrc: 'https://img.icons8.com/?size=100&id=13532&format=png&color=000000',
             tools: [
                 { link: "/admin/reports/transaction", name: 'Laporan Penjualan', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
-                { link: "/admin/reports/purchase", name: 'Laporan Pembelian', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
+                // { link: "/admin/reports/purchase", name: 'Laporan Pembelian', imageSrc: 'https://img.icons8.com/?size=100&id=103978&format=png&color=000000' },
             ]
         },
         {

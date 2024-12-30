@@ -222,7 +222,7 @@ const tabs = [
         name: 'Iklan',
         imageSrc: 'https://img.icons8.com/?size=100&id=13757&format=png&color=000000',
         tools: [
-            { link: "/super-admin/ads/slides", name: 'Iklan Slide', imageSrc: 'https://img.icons8.com/?size=100&id=ywXnIjEbliQd&format=png&color=000000' },
+            // { link: "/super-admin/ads/slides", name: 'Iklan Slide', imageSrc: 'https://img.icons8.com/?size=100&id=ywXnIjEbliQd&format=png&color=000000' },
             { link: "/super-admin/ads/receipts", name: 'Iklan Struk', imageSrc: 'https://img.icons8.com/?size=100&id=pyTMIrisYjm1&format=png&color=000000' },
         ]
     },
